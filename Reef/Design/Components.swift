@@ -3,12 +3,17 @@ import SwiftUI
 /// A circular progress ring.
 ///
 /// Used for battery charge today, and meant for timers, downloads, stats
-/// gauges, and the circular HUD as those arrive.
+/// gauges, and the circular HUD as those arrive. The ring sweeps in from empty
+/// when it appears and springs to each new value, so a gauge reads as live
+/// rather than printed. With Reduce Motion on, it jumps straight to the value.
 struct RingGauge: View {
     /// Progress from 0 to 1. Values outside that range are clamped.
     var progress: Double
     var tint: Color
     var lineWidth: CGFloat = 5
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var shown: Double = 0
 
     private var clamped: Double { min(1, max(0, progress)) }
 
@@ -17,7 +22,7 @@ struct RingGauge: View {
             Circle()
                 .stroke(Color.white.opacity(0.12), lineWidth: lineWidth)
             Circle()
-                .trim(from: 0, to: clamped)
+                .trim(from: 0, to: shown)
                 .stroke(
                     tint.gradient,
                     style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
@@ -25,6 +30,18 @@ struct RingGauge: View {
                 .shadow(color: tint.opacity(0.45), radius: 4)
         }
         .padding(lineWidth / 2)
+        .onAppear { show(clamped) }
+        .onChange(of: clamped) { _, value in show(value) }
+    }
+
+    private func show(_ value: Double) {
+        guard !reduceMotion else {
+            shown = value
+            return
+        }
+        withAnimation(.spring(response: 0.7, dampingFraction: 0.9)) {
+            shown = value
+        }
     }
 }
 

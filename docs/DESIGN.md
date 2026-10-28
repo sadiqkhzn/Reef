@@ -137,7 +137,7 @@ Defined in `Reef/Design/Appearance.swift` and `Reef/Design/IslandSurface.swift`.
 | Material | Look | Implementation |
 |---|---|---|
 | Midnight | Solid black with a 6% top sheen and a hairline rim | `Color.black` |
-| Frosted | Blurred desktop, 38% black tint, 12% sheen, specular gradient rim | `NSVisualEffectView` (`.hudWindow`, behind window) |
+| Frosted | Blurred desktop, 50% black tint, 12% sheen, specular gradient rim | `NSVisualEffectView` (`.hudWindow`, behind window) |
 | Liquid Glass | System glass, dark tint, hairline rim | `glassEffect(.regular.tint(...), in: NotchShape)` on macOS 26; frosted elsewhere |
 
 Liquid Glass is the default. It compiles only with the macOS 26 SDK (guarded by
@@ -180,6 +180,8 @@ Rules:
   8 pt, at 96% scale anchored to the top, and transparent. This is the
   `islandContent` transition.
 - Numbers roll with `contentTransition(.numericText())`.
+- Ring gauges sweep in from empty when they appear and spring to each new
+  value.
 - With Reduce Motion on, every spring becomes a 0.18 s ease.
 - Hover opens after a 0.2 s settle; leaving closes after 0.15 s.
 

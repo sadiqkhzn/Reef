@@ -130,7 +130,7 @@ private struct FrostedFill: View {
     var body: some View {
         ZStack {
             VisualEffectBlur(material: .hudWindow, blendingMode: blendingMode)
-            Color.black.opacity(0.38)
+            Color.black.opacity(0.5)
             Sheen(strength: 0.12)
         }
     }
@@ -145,7 +145,7 @@ private struct LiquidGlassFill: View {
         #if compiler(>=6.2)
         if #available(macOS 26.0, *) {
             Color.clear
-                .glassEffect(.regular.tint(Color.black.opacity(0.35)), in: shape)
+                .glassEffect(.regular.tint(Color.black.opacity(0.45)), in: shape)
         } else {
             FrostedFill()
         }
