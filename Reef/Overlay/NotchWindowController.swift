@@ -4,40 +4,49 @@ import SwiftUI
 
 /// Owns the overlay panel and keeps it in the right place.
 ///
-/// It measures the active screen, sizes the collapsed overlay to match the
-/// notch when there is one, and recenters the panel whenever the phase changes
-/// or the display layout changes (an external monitor arriving, the lid
-/// closing, resolution changes).
+/// The panel stays at a fixed size that is large enough for the open overlay.
+/// It never resizes while opening or closing; the SwiftUI content animates the
+/// silhouette inside it. The controller only moves the panel onto the active
+/// screen, resizes it when the display layout changes, and keeps the panel's
+/// click-through region in step with the current phase.
 @MainActor
 final class NotchWindowController {
     private let panel: NotchPanel
+    private let container: OverlayContainerView
     private let state: NotchState
-    private let hostingView: NSHostingView<AnyView>
     private var cancellables: Set<AnyCancellable> = []
 
-    /// Small extra gap below the menu bar on Macs without a notch, so the pill
-    /// has a little breathing room rather than touching it.
+    /// Gap below the menu bar on Macs without a notch so the pill is not flush
+    /// against it.
     private let floatingBottomPadding: CGFloat = 2
+    /// Slack on each side and below the overlay so the fixed panel has room for
+    /// the open state and a little breathing space.
+    private let panelSidePadding: CGFloat = 48
+    private let panelBottomPadding: CGFloat = 12
 
-    /// How long the open and close animation runs. The panel waits this long
-    /// before it shrinks on close so the content is not clipped mid-animation.
-    private let phaseAnimationDuration: TimeInterval = 0.45
+    /// Pause before the overlay opens after the pointer arrives, so a passing
+    /// pointer does not open it. The quick grow on hover covers this pause.
+    private let openDelay: TimeInterval = 0.2
+    /// Short grace period before it closes, so crossing an inner edge does not
+    /// make it flicker shut.
+    private let closeDelay: TimeInterval = 0.15
+    private var phaseWork: DispatchWorkItem?
 
     init(state: NotchState) {
         self.state = state
 
-        let screen = NotchWindowController.activeScreen()
-        let startFrame = ScreenMetrics.overlayFrame(
-            screenFrame: screen?.frame ?? .zero,
-            size: ScreenMetrics.defaultPillSize)
+        let initialSize = CGSize(width: 420, height: 200)
+        panel = NotchPanel(contentRect: CGRect(origin: .zero, size: initialSize))
 
-        panel = NotchPanel(contentRect: startFrame)
+        container = OverlayContainerView(frame: CGRect(origin: .zero, size: initialSize))
+        container.autoresizesSubviews = true
 
-        let root = AnyView(OverlayRootView().environmentObject(state))
-        hostingView = NSHostingView(rootView: root)
-        hostingView.frame = CGRect(origin: .zero, size: startFrame.size)
-        hostingView.autoresizingMask = [.width, .height]
-        panel.contentView = hostingView
+        let host = NSHostingView(
+            rootView: AnyView(OverlayRootView().environmentObject(state)))
+        host.frame = container.bounds
+        host.autoresizingMask = [.width, .height]
+        container.addSubview(host)
+        panel.contentView = container
 
         observeScreenChanges()
         observeHover()
@@ -52,11 +61,9 @@ final class NotchWindowController {
 
     // MARK: - Screen selection
 
-    /// The screen the overlay should appear on.
-    ///
-    /// Preference order: the screen the pointer is on, then the main screen,
-    /// then the first attached screen. When the laptop lid is closed the main
-    /// screen is the external display, which is what we want.
+    /// The screen the overlay should appear on: the one under the pointer, then
+    /// the main screen, then the first attached screen. When the lid is closed
+    /// the main screen is the external display, which is what we want.
     static func activeScreen() -> NSScreen? {
         let mouse = NSEvent.mouseLocation
         let underPointer = NSScreen.screens.first { NSMouseInRect(mouse, $0.frame, false) }
@@ -71,6 +78,21 @@ final class NotchWindowController {
             rightAreaWidth: screen.auxiliaryTopRightArea?.width)
     }
 
+    private func menuBarHeight(for screen: NSScreen) -> CGFloat {
+        max(0, screen.frame.maxY - screen.visibleFrame.maxY)
+    }
+
+    // MARK: - Sizing
+
+    /// Fixed panel size for a screen. Wide and tall enough for the open overlay,
+    /// with a little slack around it.
+    private func panelSize(collapsed: CGSize) -> CGSize {
+        let openWidth = max(collapsed.width, NotchState.expandedMinWidth)
+        return CGSize(
+            width: openWidth + panelSidePadding,
+            height: NotchState.expandedHeight + panelBottomPadding)
+    }
+
     // MARK: - Positioning
 
     private func reposition() {
@@ -79,23 +101,35 @@ final class NotchWindowController {
         let notch = notch(for: screen)
         state.collapsedSize = ScreenMetrics.collapsedSize(for: notch)
 
-        // On a notched Mac the overlay hugs the notch at the very top edge. On
-        // a Mac without a notch it sits just below the menu bar so it stays
-        // fully visible instead of hiding behind it.
-        let inset: CGFloat = notch.exists ? 0 : menuBarHeight(for: screen) + floatingBottomPadding
-        let frame = ScreenMetrics.overlayFrame(
-            screenFrame: screen.frame,
-            size: state.targetSize,
-            topInset: inset)
+        let size = panelSize(collapsed: state.collapsedSize)
+        let inset: CGFloat = notch.exists
+            ? 0
+            : menuBarHeight(for: screen) + floatingBottomPadding
 
-        panel.setFrame(frame, display: true, animate: false)
+        let x = screen.frame.minX + (screen.frame.width - size.width) / 2
+        let originY = screen.frame.maxY - inset - size.height
+        panel.setFrame(
+            CGRect(x: x, y: originY, width: size.width, height: size.height),
+            display: true,
+            animate: false)
+
+        updateInteractiveRect()
     }
 
-    /// Height of the menu bar on a screen, measured as the gap between the top
-    /// of the screen and the top of its usable area.
-    private func menuBarHeight(for screen: NSScreen) -> CGFloat {
-        max(0, screen.frame.maxY - screen.visibleFrame.maxY)
+    /// Keep the panel's clickable and hover-sensing region matched to the
+    /// overlay. The overlay is anchored to the top center of the panel, so the
+    /// region sits flush with the top.
+    private func updateInteractiveRect() {
+        let size = state.hitSize
+        let panelSize = panel.frame.size
+        container.interactiveRect = CGRect(
+            x: (panelSize.width - size.width) / 2,
+            y: panelSize.height - size.height,
+            width: size.width,
+            height: size.height)
     }
+
+    // MARK: - Observation
 
     private func observeScreenChanges() {
         NotificationCenter.default
@@ -104,38 +138,36 @@ final class NotchWindowController {
             .store(in: &cancellables)
     }
 
-    /// Turn hover into an open or closed phase. A short settle time avoids the
-    /// overlay flickering open when the pointer only grazes the notch.
+    /// Turn hover into an open or closed phase. Opening waits a short pause so a
+    /// passing pointer does not open it; closing waits a shorter grace period so
+    /// it does not flicker shut when the pointer crosses an inner edge. The
+    /// quick grow on hover is handled in the view and happens at once.
     private func observeHover() {
         state.$isHovering
             .removeDuplicates()
-            .debounce(for: .milliseconds(90), scheduler: RunLoop.main)
             .sink { [weak self] hovering in
                 guard let self else { return }
-                self.state.phase = hovering ? .expanded : .collapsed
+                self.phaseWork?.cancel()
+
+                let target: NotchState.Phase = hovering ? .expanded : .collapsed
+                let delay = hovering ? self.openDelay : self.closeDelay
+                let work = DispatchWorkItem { [weak self] in
+                    self?.state.phase = target
+                }
+                self.phaseWork = work
+                DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: work)
             }
             .store(in: &cancellables)
     }
 
-    /// Resize the panel around the phase change. Opening grows the panel at
-    /// once so the content has room to expand into. Closing keeps the panel
-    /// large until the animation finishes, then shrinks it back to the pill.
+    /// Keep the click-through region in step with the phase. The panel does not
+    /// resize; only the interactive area changes.
     private func observePhase() {
         state.$phase
             .removeDuplicates()
             .receive(on: RunLoop.main)
-            .sink { [weak self] phase in
-                guard let self else { return }
-                switch phase {
-                case .expanded:
-                    self.reposition()
-                case .collapsed:
-                    DispatchQueue.main.asyncAfter(deadline: .now() + self.phaseAnimationDuration) {
-                        if self.state.phase == .collapsed {
-                            self.reposition()
-                        }
-                    }
-                }
+            .sink { [weak self] _ in
+                self?.updateInteractiveRect()
             }
             .store(in: &cancellables)
     }
