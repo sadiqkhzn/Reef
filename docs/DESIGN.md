@@ -232,6 +232,7 @@ or artwork, a 48 pt **trailing wing** with a value or meter, and an optional
 | Charging | Bolt, pulsing | Percent | Charging green | Built |
 | Fully charged | Full battery | Check | Charging green | Built |
 | Low battery | Battery 25% (amber) or 0% (red, pulsing) | Percent | Warning / critical | Built |
+| Device connected | Device symbol (AirPods, AirPods Pro, Max, Beats, keyboard, mouse) | Check | Charging green | Built |
 | Now playing | Album art, 20 pt, 6 pt radius | Five-bar equalizer in the accent | Accent | Specified |
 | Focus | Focus symbol | Focus name, scrolling if long | Focus color | Specified |
 | Privacy | Mic and camera dots (orange, green) | Nothing | System | Specified |
@@ -245,10 +246,38 @@ or artwork, a 48 pt **trailing wing** with a value or meter, and an optional
 | Extension | Extension icon | Extension value | Extension tint | Specified |
 
 Priority decides which activity shows: critical battery, then recording and
-privacy, then low battery, timers and reminders, charging, media, and the rest.
+privacy, then low battery, devices, timers and reminders, charging, media, and
+the rest.
+
+**Quick peek.** For its first two seconds, every activity grows a second line
+of detail under the wings (26 pt), such as "Charging · 64%" or "AirPods Pro ·
+Connected", then folds back to the wings alone. Media peeks again when the
+track changes or playback resumes, and while the pointer rests on the album
+art. A line that does not fit scrolls as a marquee with faded ends.
 Battery activities show for 4 to 6 seconds; ongoing ones (media, recording,
 timers) stay while active. Each activity can be turned off in Settings, Live
 Activities, which also has a Preview button for each one.
+
+### Interaction parity with Alcove
+
+Alcove's interactive demo at tryalcove.com sets the bar for how an island
+should feel. Every behavior it shows is mapped here, with where it stands in
+Reef. The design board's big screen implements all of them.
+
+| Alcove behavior | Reef | Status |
+|---|---|---|
+| Hover lifts the island (scale 1.075, bouncy spring, soft shadow) | Hover peek grows the island 10 by 5 pt with the peek spring and brightens the rim | Built |
+| Press dips the island (scale 0.94) | Press dips the resting island to 0.96 | Built |
+| Wings widen on a spring for notifications and activities | Wings spread 48 pt each side on the wings spring | Built |
+| Quick peek: a second line under the wings, marquee if long | Quick peek for every activity's first two seconds | Built |
+| AirPods connected, with a battery ring | Device connected with the right symbol for the device; per-ear battery joins with the devices feature | Built (battery specified) |
+| Lock icon in the island on the lock screen, shackle opens on unlock | Lock screen island replica (section 15) | Specified |
+| Now playing: album art left, equalizer in the art's colors right | Now playing wings | Specified |
+| Hover the equalizer to reveal play and pause; click to toggle | Same, with the art dimming while paused | Specified |
+| Hover the album art to peek at track and artist | Same | Specified |
+| Track change flips the art and peeks | Same | Specified |
+| Lock screen: rolling digits for the time, Focus and weather, media widget | Lock screen widgets (section 15) | Specified |
+| Menu bar and dock slide in after unlock | Not part of Reef; the system does this | Not applicable |
 
 ---
 

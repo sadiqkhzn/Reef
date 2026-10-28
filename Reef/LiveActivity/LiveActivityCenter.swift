@@ -12,6 +12,7 @@ final class LiveActivityCenter: ObservableObject {
     private let settings: ReefSettings
     private var lastBattery: BatterySnapshot
     private var dismissWork: DispatchWorkItem?
+    private var peekWork: DispatchWorkItem?
     private var cancellables: Set<AnyCancellable> = []
 
     init(state: NotchState, settings: ReefSettings, battery: BatteryModel) {
@@ -35,13 +36,29 @@ final class LiveActivityCenter: ObservableObject {
         }
 
         dismissWork?.cancel()
+        peekWork?.cancel()
         state.liveActivity = activity
+        state.isPeeking = true
+
+        let peek = DispatchWorkItem { [weak self] in
+            self?.state.isPeeking = false
+        }
+        peekWork = peek
+        let peekTime = min(LiveActivity.peekDuration, activity.duration)
+        DispatchQueue.main.asyncAfter(deadline: .now() + peekTime, execute: peek)
 
         let work = DispatchWorkItem { [weak self] in
+            self?.state.isPeeking = false
             self?.state.liveActivity = nil
         }
         dismissWork = work
         DispatchQueue.main.asyncAfter(deadline: .now() + activity.duration, execute: work)
+    }
+
+    /// A Bluetooth device connected.
+    func deviceConnected(named name: String) {
+        guard settings.showsDeviceActivity else { return }
+        present(.deviceConnected(name: name, kind: DeviceKind(name: name)))
     }
 
     private func batteryChanged(to next: BatterySnapshot) {
@@ -57,6 +74,7 @@ final class LiveActivityCenter: ObservableObject {
         switch activity {
         case .charging, .fullyCharged: return settings.showsChargingActivity
         case .lowBattery: return settings.showsLowBatteryActivity
+        case .deviceConnected: return settings.showsDeviceActivity
         }
     }
 }

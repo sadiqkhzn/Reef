@@ -49,6 +49,7 @@ struct IslandPreview: View {
                     LiveActivityWings(
                         activity: .charging(percent: sample.percent),
                         centerWidth: restingSize.width,
+                        rowHeight: restingSize.height,
                         showsLabel: true)
                         .frame(height: restingSize.height)
                         .transition(.islandContent)

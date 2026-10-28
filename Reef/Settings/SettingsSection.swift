@@ -62,7 +62,7 @@ enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
             return ["glass", "liquid", "frosted", "midnight", "material", "theme", "accent",
                     "color", "motion", "animation", "spring"]
         case .liveActivities:
-            return ["battery", "charging", "low", "wings", "activity"]
+            return ["battery", "charging", "low", "wings", "activity", "airpods", "bluetooth", "devices", "headphones"]
         case .about:
             return ["version", "credits", "license", "github"]
         }

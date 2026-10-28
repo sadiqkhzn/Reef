@@ -28,6 +28,10 @@ final class NotchState: ObservableObject {
     /// The live activity shown in the wings while resting, if any.
     @Published var liveActivity: LiveActivity?
 
+    /// True while the wings show a second line of detail under them, which
+    /// happens briefly when an activity arrives.
+    @Published var isPeeking: Bool = false
+
     /// Resting size of the overlay for the current screen. The window
     /// controller sets this after measuring the active display.
     @Published var collapsedSize = CGSize(
@@ -43,6 +47,8 @@ final class NotchState: ObservableObject {
     /// Width of each wing the resting overlay grows on either side to show a
     /// live activity.
     static let wingWidth: CGFloat = 48
+    /// Height of the detail line the wings grow while peeking.
+    static let peekRowHeight: CGFloat = 26
 
     /// Extra height below the resting overlay that still counts as hovering it,
     /// so the pointer can reach it from just under the notch.
@@ -63,12 +69,13 @@ final class NotchState: ObservableObject {
         Self.expandedSize(collapsed: collapsedSize)
     }
 
-    /// Resting size including the wings while a live activity shows.
+    /// Resting size including the wings while a live activity shows, and the
+    /// detail line while it peeks.
     var restingSize: CGSize {
         guard liveActivity != nil else { return collapsedSize }
         return CGSize(
             width: collapsedSize.width + Self.wingWidth * 2,
-            height: collapsedSize.height)
+            height: collapsedSize.height + (isPeeking ? Self.peekRowHeight : 0))
     }
 
     /// The size the silhouette is drawn at right now. While resting it is the

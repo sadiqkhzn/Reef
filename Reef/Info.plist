@@ -24,6 +24,8 @@
 	<true/>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2026 Sadiq Khan. MIT License.</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Reef shows a live activity when AirPods, headphones, or other Bluetooth devices connect.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>NSSupportsAutomaticTermination</key>

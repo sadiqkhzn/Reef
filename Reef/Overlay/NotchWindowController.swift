@@ -203,12 +203,15 @@ final class NotchWindowController {
             .store(in: &cancellables)
     }
 
-    /// The wings widen the resting overlay, so the hover region follows them.
+    /// The wings widen the resting overlay and the quick peek deepens it, so
+    /// the hover region follows both.
     private func observeLiveActivity() {
         state.$liveActivity
             .removeDuplicates()
+            .map { _ in () }
+            .merge(with: state.$isPeeking.removeDuplicates().map { _ in () })
             .receive(on: RunLoop.main)
-            .sink { [weak self] _ in
+            .sink { [weak self] in
                 self?.updateInteractiveRect()
             }
             .store(in: &cancellables)

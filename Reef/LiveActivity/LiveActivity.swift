@@ -12,11 +12,14 @@ enum LiveActivity: Equatable {
     case fullyCharged
     /// The battery crossed a low threshold while on battery power.
     case lowBattery(percent: Int, isCritical: Bool)
+    /// A Bluetooth device such as AirPods just connected.
+    case deviceConnected(name: String, kind: DeviceKind)
 
     /// Higher wins when two activities compete for the wings.
     var priority: Int {
         switch self {
         case .lowBattery(_, let isCritical): return isCritical ? 30 : 20
+        case .deviceConnected: return 15
         case .charging: return 10
         case .fullyCharged: return 5
         }
@@ -26,9 +29,14 @@ enum LiveActivity: Equatable {
     var duration: TimeInterval {
         switch self {
         case .charging, .fullyCharged: return 4
+        case .deviceConnected: return 3.5
         case .lowBattery: return 6
         }
     }
+
+    /// How long the quick peek, the second line of detail under the wings,
+    /// shows when the activity arrives.
+    static let peekDuration: TimeInterval = 2
 
     /// Short text shown between the wings when there is no hardware notch in
     /// the way.
@@ -37,6 +45,18 @@ enum LiveActivity: Equatable {
         case .charging: return "Charging"
         case .fullyCharged: return "Fully charged"
         case .lowBattery(_, let isCritical): return isCritical ? "Battery critical" : "Low battery"
+        case .deviceConnected: return "Connected"
+        }
+    }
+
+    /// The line of detail shown in the quick peek.
+    var detail: String {
+        switch self {
+        case .charging(let percent): return "Charging · \(percent)%"
+        case .fullyCharged: return "Battery fully charged"
+        case .lowBattery(let percent, let isCritical):
+            return isCritical ? "Battery critical · Plug in soon" : "Low battery · \(percent)% left"
+        case .deviceConnected(let name, _): return "\(name) · Connected"
         }
     }
 
@@ -46,6 +66,56 @@ enum LiveActivity: Equatable {
         case .charging(let percent): return "Charging, \(percent) percent"
         case .fullyCharged: return "Battery fully charged"
         case .lowBattery(let percent, _): return "\(label), \(percent) percent"
+        case .deviceConnected(let name, _): return "\(name) connected"
+        }
+    }
+}
+
+/// The kind of Bluetooth device, guessed from its name, so the wings can show
+/// a fitting symbol.
+enum DeviceKind: Equatable {
+    case airpods
+    case airpodsPro
+    case airpodsMax
+    case beats
+    case headphones
+    case keyboard
+    case mouse
+    case trackpad
+    case gameController
+    case other
+
+    /// Guess the kind from the name the device advertises, such as
+    /// "Sadiq's AirPods Pro" or "Magic Keyboard". Unknown names fall back to
+    /// `.other`.
+    init(name: String) {
+        let n = name.lowercased()
+        func has(_ words: String...) -> Bool { words.contains { n.contains($0) } }
+        if has("airpods max") { self = .airpodsMax }
+        else if has("airpods pro") { self = .airpodsPro }
+        else if has("airpods") { self = .airpods }
+        else if has("beats", "powerbeats") { self = .beats }
+        else if has("headphone", "buds", "bose", "sony wh", "wh-1000", "headset") { self = .headphones }
+        else if has("keyboard") { self = .keyboard }
+        else if has("trackpad") { self = .trackpad }
+        else if has("mouse") { self = .mouse }
+        else if has("controller", "dualsense", "dualshock", "xbox") { self = .gameController }
+        else { self = .other }
+    }
+
+    /// SF Symbol for the leading wing.
+    var symbol: String {
+        switch self {
+        case .airpods: return "airpods"
+        case .airpodsPro: return "airpodspro"
+        case .airpodsMax: return "airpodsmax"
+        case .beats: return "beats.headphones"
+        case .headphones: return "headphones"
+        case .keyboard: return "keyboard"
+        case .mouse: return "magicmouse"
+        case .trackpad: return "hand.point.up.left"
+        case .gameController: return "gamecontroller"
+        case .other: return "dot.radiowaves.left.and.right"
         }
     }
 }

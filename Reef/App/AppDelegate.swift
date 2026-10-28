@@ -12,6 +12,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let state = NotchState()
     private var battery: BatteryModel?
     private var activities: LiveActivityCenter?
+    private var bluetooth: BluetoothMonitor?
     private var controller: NotchWindowController?
     private var settingsWindow: SettingsWindowController?
     private var statusItem: NSStatusItem?
@@ -23,6 +24,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let activities = LiveActivityCenter(state: state, settings: settings, battery: battery)
         self.battery = battery
         self.activities = activities
+
+        let bluetooth = BluetoothMonitor()
+        bluetooth.onConnect = { [weak activities] name in
+            activities?.deviceConnected(named: name)
+        }
+        bluetooth.start()
+        self.bluetooth = bluetooth
 
         let controller = NotchWindowController(state: state, settings: settings, battery: battery)
         controller.show()

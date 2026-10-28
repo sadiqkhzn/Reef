@@ -25,6 +25,7 @@ targets:
         LSUIElement: true
         NSHumanReadableCopyright: "Copyright © 2026 Sadiq Khan. MIT License."
         NSPrincipalClass: NSApplication
+        NSBluetoothAlwaysUsageDescription: "Reef shows a live activity when AirPods, headphones, or other Bluetooth devices connect."
         NSSupportsAutomaticTermination: true
         NSSupportsSuddenTermination: true
     settings:

@@ -46,3 +46,9 @@ All notable changes to Reef are recorded here.
   launches.
 - `docs/DESIGN.md`, the design reference for every planned surface.
 - CI also builds with the macOS 26 SDK so the Liquid Glass path is compiled.
+- Quick peek: every live activity shows a line of detail under the wings for
+  its first two seconds, such as "Charging · 64%".
+- Device activity: when AirPods, headphones, a keyboard, a mouse, or another
+  Bluetooth device connects, the wings show the device's symbol, with a toggle
+  and a preview in Settings, Live Activities.
+- The resting island dips slightly when pressed, so a click feels physical.

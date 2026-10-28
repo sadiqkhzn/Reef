@@ -82,6 +82,28 @@ final class NotchStateTests: XCTestCase {
             accuracy: 0.001)
     }
 
+    func testPeekDeepensWings() {
+        let state = NotchState()
+        state.collapsedSize = CGSize(width: 200, height: 32)
+        state.liveActivity = .charging(percent: 40)
+        state.isPeeking = true
+
+        XCTAssertEqual(
+            state.restingSize.height, 32 + NotchState.peekRowHeight, accuracy: 0.001)
+        XCTAssertEqual(
+            state.hitSize.height,
+            32 + NotchState.peekRowHeight + NotchState.hoverMargin,
+            accuracy: 0.001)
+    }
+
+    func testPeekWithoutActivityChangesNothing() {
+        let state = NotchState()
+        state.collapsedSize = CGSize(width: 200, height: 32)
+        state.isPeeking = true
+
+        XCTAssertEqual(state.restingSize, CGSize(width: 200, height: 32))
+    }
+
     func testOpenIgnoresWings() {
         let state = NotchState()
         state.collapsedSize = CGSize(width: 200, height: 32)

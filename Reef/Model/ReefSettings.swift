@@ -16,6 +16,7 @@ final class ReefSettings: ObservableObject {
         static let motion = "motionStyle"
         static let chargingActivity = "liveActivity.charging"
         static let lowBatteryActivity = "liveActivity.lowBattery"
+        static let deviceActivity = "liveActivity.devices"
     }
 
     static let defaultOverlayStyle: OverlayStyle = .floating
@@ -49,6 +50,11 @@ final class ReefSettings: ObservableObject {
         didSet { defaults.set(showsLowBatteryActivity, forKey: Key.lowBatteryActivity) }
     }
 
+    /// Show the wings when headphones or another Bluetooth device connects.
+    @Published var showsDeviceActivity: Bool {
+        didSet { defaults.set(showsDeviceActivity, forKey: Key.deviceActivity) }
+    }
+
     private let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard) {
@@ -59,6 +65,7 @@ final class ReefSettings: ObservableObject {
         motion = Self.value(defaults, Key.motion) ?? Self.defaultMotion
         showsChargingActivity = defaults.object(forKey: Key.chargingActivity) as? Bool ?? true
         showsLowBatteryActivity = defaults.object(forKey: Key.lowBatteryActivity) as? Bool ?? true
+        showsDeviceActivity = defaults.object(forKey: Key.deviceActivity) as? Bool ?? true
     }
 
     /// Put every value back to its default.
@@ -69,6 +76,7 @@ final class ReefSettings: ObservableObject {
         motion = Self.defaultMotion
         showsChargingActivity = true
         showsLowBatteryActivity = true
+        showsDeviceActivity = true
     }
 
     private static func value<T: RawRepresentable>(_ defaults: UserDefaults, _ key: String) -> T?

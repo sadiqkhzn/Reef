@@ -4,7 +4,7 @@
 
 ![platform](https://img.shields.io/badge/platform-macOS%2014%2B-blue)
 ![license](https://img.shields.io/badge/license-MIT-green)
-![tests](https://img.shields.io/badge/tests-53%20passing-brightgreen)
+![tests](https://img.shields.io/badge/tests-62%20passing-brightgreen)
 
 Reef sits quietly along the top edge of the screen. On a MacBook with a notch
 it wraps around the notch; on any other Mac it shows a small rounded pill just
@@ -82,6 +82,7 @@ xcodebuild -project Reef.xcodeproj -scheme Reef -destination 'platform=macOS' te
 - [x] Hover to open, with a smooth expand and collapse.
 - [x] Glass island design system: materials, accents, and motion presets.
 - [x] Battery live activities: charging, fully charged, and low battery.
+- [x] Device live activity when AirPods and other Bluetooth devices connect, with a quick peek.
 - [x] A settings window with appearance and live activity controls.
 - [ ] Nearby device status (AirPods and other Bluetooth devices).
 - [ ] A notarized `.dmg` once a signing certificate is in place.

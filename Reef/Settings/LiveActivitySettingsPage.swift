@@ -30,10 +30,21 @@ struct LiveActivitySettingsPage: View {
                     activities.present(
                         .lowBattery(percent: BatteryActivityPolicy.lowThreshold, isCritical: false))
                 }
+
+                ActivityRow(
+                    title: "Devices",
+                    detail: "When AirPods, headphones, or another Bluetooth device connects.",
+                    symbol: "airpodspro",
+                    tint: .white,
+                    isOn: $settings.showsDeviceActivity
+                ) {
+                    activities.present(.deviceConnected(name: "AirPods Pro", kind: .airpodsPro))
+                }
             } header: {
                 Text("Activities")
             } footer: {
-                Text("Live activities show briefly beside the notch without opening Reef. "
+                Text("Live activities show briefly beside the notch without opening Reef, "
+                    + "with a line of detail underneath for the first two seconds. "
                     + "Media, timers, downloads, and more join this list as they arrive.")
                     .foregroundStyle(.secondary)
             }

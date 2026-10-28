@@ -4,21 +4,39 @@ import SwiftUI
 ///
 /// The leading wing carries a glyph and the trailing wing a value. The middle
 /// is left empty where the hardware notch is; on a screen without one it shows
-/// a short label instead, so the pill does not read as a gap.
+/// a short label instead, so the pill does not read as a gap. While peeking, a
+/// line of detail sits under the wings.
 struct LiveActivityWings: View {
     var activity: LiveActivity
     /// Width of the middle region, which matches the notch or the resting pill.
     var centerWidth: CGFloat
+    /// Height of the wing row, which matches the resting island.
+    var rowHeight: CGFloat
     var showsLabel: Bool
+    var isPeeking: Bool = false
 
     var body: some View {
-        HStack(spacing: 0) {
-            leading
-                .frame(width: NotchState.wingWidth)
-            center
-                .frame(width: centerWidth)
-            trailing
-                .frame(width: NotchState.wingWidth)
+        VStack(spacing: 0) {
+            HStack(spacing: 0) {
+                leading
+                    .frame(width: NotchState.wingWidth)
+                center
+                    .frame(width: centerWidth)
+                trailing
+                    .frame(width: NotchState.wingWidth)
+            }
+            .frame(height: rowHeight)
+
+            if isPeeking {
+                Text(activity.detail)
+                    .font(ReefTheme.Typography.caption)
+                    .foregroundStyle(ReefTheme.Ink.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .padding(.horizontal, ReefTheme.Spacing.l)
+                    .frame(height: NotchState.peekRowHeight)
+                    .transition(.islandContent)
+            }
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(activity.accessibilityLabel)
@@ -30,6 +48,8 @@ struct LiveActivityWings: View {
             return ReefTheme.Status.charging
         case .lowBattery(_, let isCritical):
             return isCritical ? ReefTheme.Status.critical : ReefTheme.Status.warning
+        case .deviceConnected:
+            return ReefTheme.Status.charging
         }
     }
 
@@ -50,6 +70,10 @@ struct LiveActivityWings: View {
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(tint)
                 .symbolEffect(.pulse, options: .repeating, isActive: isCritical)
+        case .deviceConnected(_, let kind):
+            Image(systemName: kind.symbol)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(ReefTheme.Ink.primary)
         }
     }
 
@@ -75,9 +99,9 @@ struct LiveActivityWings: View {
                 .monospacedDigit()
                 .foregroundStyle(tint)
                 .contentTransition(.numericText())
-        case .fullyCharged:
-            Image(systemName: "checkmark")
-                .font(.system(size: 11, weight: .bold))
+        case .fullyCharged, .deviceConnected:
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(tint)
         }
     }

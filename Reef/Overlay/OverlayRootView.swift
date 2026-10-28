@@ -17,6 +17,9 @@ struct OverlayRootView: View {
     @EnvironmentObject private var settings: ReefSettings
     @EnvironmentObject private var battery: BatteryModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// True while the mouse button is down on the resting island, which dips
+    /// it slightly so a click feels physical.
+    @State private var isPressed = false
 
     private var style: OverlayStyle { settings.overlayStyle }
     private var isOpen: Bool { state.phase == .expanded }
@@ -80,13 +83,23 @@ struct OverlayRootView: View {
                 LiveActivityWings(
                     activity: activity,
                     centerWidth: state.collapsedSize.width,
-                    showsLabel: notchClearance == 0)
-                    .frame(height: state.collapsedSize.height)
+                    rowHeight: state.collapsedSize.height,
+                    showsLabel: notchClearance == 0,
+                    isPeeking: state.isPeeking)
+                    .frame(height: state.restingSize.height, alignment: .top)
                     .transition(.islandContent)
             }
         }
+        .scaleEffect(isPressed && !isOpen ? 0.96 : 1, anchor: .top)
+        .animation(
+            MotionStyle.animation(MotionStyle.Spring(response: 0.3, dampingFraction: 0.7), reduceMotion: reduceMotion),
+            value: isPressed)
         .frame(width: state.hitSize.width, height: state.hitSize.height, alignment: .top)
         .contentShape(Rectangle())
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in isPressed = true }
+                .onEnded { _ in isPressed = false })
         .onHover { hovering in
             state.isHovering = hovering
         }
@@ -97,6 +110,9 @@ struct OverlayRootView: View {
         .animation(
             MotionStyle.animation(settings.motion.wings, reduceMotion: reduceMotion),
             value: state.liveActivity)
+        .animation(
+            MotionStyle.animation(settings.motion.wings, reduceMotion: reduceMotion),
+            value: state.isPeeking)
         .animation(sizeAnimation, value: style)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         // Hopping to another screen: shrink and fade out, then pop back in on the
