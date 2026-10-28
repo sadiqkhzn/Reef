@@ -40,3 +40,32 @@ struct BatterySnapshot: Equatable {
             isPluggedIn: state == "AC Power")
     }
 }
+
+extension BatterySnapshot {
+    /// What the power state means in words, for the open island.
+    enum Status: Equatable {
+        case charging
+        case fullyCharged
+        /// On wall power but holding its charge, as macOS does with optimized
+        /// charging.
+        case notCharging
+        case onBattery
+    }
+
+    var status: Status {
+        if isCharging { return .charging }
+        if isPluggedIn { return percent >= 100 ? .fullyCharged : .notCharging }
+        return .onBattery
+    }
+}
+
+extension BatterySnapshot.Status {
+    var title: String {
+        switch self {
+        case .charging: return "Charging"
+        case .fullyCharged: return "Fully charged"
+        case .notCharging: return "Not charging"
+        case .onBattery: return "On battery"
+        }
+    }
+}

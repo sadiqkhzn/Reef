@@ -18,12 +18,20 @@ is in scope. Features that fight for attention or add noise are not.
 The checked-in source of truth is `project.yml`. Edit that, not the generated
 `.xcodeproj`, then run `xcodegen generate` again.
 
+## Branches
+
+Name each branch after the change it carries, in lowercase words joined by
+hyphens, for example `glass-island-design-system` or `media-live-activity`.
+Leave tool and author names out of branch names.
+
 ## Pull requests
 
 - Keep each pull request focused on one concern.
 - Prefix the title with `feat:`, `fix:`, `docs:`, `chore:`, `refactor:`, `test:`, or `ci:`.
 - Explain what changed and why in the body.
 - Add tests for logic that can be tested without the UI.
+- New UI follows the design language in [docs/DESIGN.md](docs/DESIGN.md): use the
+  tokens in `Reef/Design/` rather than inline colors, sizes, or springs.
 
 ## Tests
 

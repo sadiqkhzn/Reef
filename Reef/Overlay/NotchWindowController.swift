@@ -7,19 +7,20 @@ import SwiftUI
 /// The panel stays at a fixed size that is large enough for the open overlay.
 /// It never resizes while opening or closing; the SwiftUI content animates the
 /// silhouette inside it. The controller only moves the panel onto the active
-/// screen, resizes it when the display layout changes, and keeps the panel's
-/// click-through region in step with the current phase.
+/// screen, resizes it when the display layout or the overlay style changes,
+/// and keeps the panel's click-through region in step with the current state.
 @MainActor
 final class NotchWindowController {
     private let panel: NotchPanel
     private let container: OverlayContainerView
     private let state: NotchState
+    private let settings: ReefSettings
     private var cancellables: Set<AnyCancellable> = []
 
     /// Slack on each side and below the overlay so the fixed panel has room for
-    /// the open state and a little breathing space.
+    /// the open state, the notch shoulders, and the floating shadow.
     private let panelSidePadding: CGFloat = 48
-    private let panelBottomPadding: CGFloat = 12
+    private let panelBottomPadding: CGFloat = 20
 
     /// Pause before the overlay opens after the pointer arrives, so a passing
     /// pointer does not open it. The quick grow on hover covers this pause.
@@ -34,8 +35,9 @@ final class NotchWindowController {
     private var lastScreenFrame: CGRect?
     private var screenFollowTimer: Timer?
 
-    init(state: NotchState) {
+    init(state: NotchState, settings: ReefSettings, battery: BatteryModel) {
         self.state = state
+        self.settings = settings
 
         let initialSize = CGSize(width: 420, height: 200)
         panel = NotchPanel(contentRect: CGRect(origin: .zero, size: initialSize))
@@ -44,7 +46,11 @@ final class NotchWindowController {
         container.autoresizesSubviews = true
 
         let host = NSHostingView(
-            rootView: AnyView(OverlayRootView().environmentObject(state)))
+            rootView: AnyView(
+                OverlayRootView()
+                    .environmentObject(state)
+                    .environmentObject(settings)
+                    .environmentObject(battery)))
         host.frame = container.bounds
         host.autoresizingMask = [.width, .height]
         container.addSubview(host)
@@ -53,6 +59,8 @@ final class NotchWindowController {
         observeScreenChanges()
         observeHover()
         observePhase()
+        observeLiveActivity()
+        observeStyle()
         followActiveScreen()
         reposition()
     }
@@ -87,13 +95,15 @@ final class NotchWindowController {
 
     // MARK: - Sizing
 
-    /// Fixed panel size for a screen. Wide and tall enough for the open overlay,
-    /// with a little slack around it.
+    /// Fixed panel size for a screen. Wide and tall enough for the open overlay
+    /// and for the resting overlay with its wings spread, with a little slack
+    /// around it.
     private func panelSize(collapsed: CGSize) -> CGSize {
-        let openWidth = max(collapsed.width, NotchState.expandedMinWidth)
+        let open = NotchState.expandedSize(collapsed: collapsed)
+        let winged = collapsed.width + NotchState.wingWidth * 2 + NotchState.peekGrow.width
         return CGSize(
-            width: openWidth + panelSidePadding,
-            height: NotchState.expandedHeight + panelBottomPadding)
+            width: max(open.width, winged) + panelSidePadding,
+            height: open.height + panelBottomPadding)
     }
 
     // MARK: - Positioning
@@ -101,8 +111,10 @@ final class NotchWindowController {
     private func reposition() {
         guard let screen = NotchWindowController.activeScreen() else { return }
 
+        let style = settings.overlayStyle
         let notch = notch(for: screen)
-        switch OverlayStyle.current {
+        state.hasNotch = notch.exists
+        switch style {
         case .attached:
             state.collapsedSize = ScreenMetrics.collapsedSize(
                 for: notch,
@@ -112,7 +124,7 @@ final class NotchWindowController {
             // above and below, so it is centered in the strip and never crosses
             // into app windows.
             let stripHeight = menuBarHeight(for: screen)
-            let height = max(18, stripHeight - OverlayStyle.current.topGap * 2)
+            let height = max(18, stripHeight - style.topGap * 2)
             state.collapsedSize = CGSize(
                 width: OverlayStyle.floatingRestingSize.width,
                 height: height)
@@ -125,7 +137,7 @@ final class NotchWindowController {
         // until it is opened.
         let size = panelSize(collapsed: state.collapsedSize)
         let x = screen.frame.minX + (screen.frame.width - size.width) / 2
-        let originY = screen.frame.maxY - size.height - OverlayStyle.current.topGap
+        let originY = screen.frame.maxY - size.height - style.topGap
         panel.setFrame(
             CGRect(x: x, y: originY, width: size.width, height: size.height),
             display: true,
@@ -187,6 +199,34 @@ final class NotchWindowController {
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in
                 self?.updateInteractiveRect()
+            }
+            .store(in: &cancellables)
+    }
+
+    /// The wings widen the resting overlay and the quick peek deepens it, so
+    /// the hover region follows both.
+    private func observeLiveActivity() {
+        state.$liveActivity
+            .removeDuplicates()
+            .map { _ in () }
+            .merge(with: state.$isPeeking.removeDuplicates().map { _ in () })
+            .receive(on: RunLoop.main)
+            .sink { [weak self] in
+                self?.updateInteractiveRect()
+            }
+            .store(in: &cancellables)
+    }
+
+    /// Switching between attached and floating changes the resting size and
+    /// where the panel sits, so play the same fade-and-pop used for changing
+    /// screens.
+    private func observeStyle() {
+        settings.$overlayStyle
+            .dropFirst()
+            .removeDuplicates()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.relocate()
             }
             .store(in: &cancellables)
     }

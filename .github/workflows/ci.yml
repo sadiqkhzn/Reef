@@ -29,3 +29,36 @@ jobs:
             -configuration Debug \
             -destination 'platform=macOS' \
             test
+
+  # The Liquid Glass material only compiles with the macOS 26 SDK. The job
+  # above uses the runner's default Xcode, which skips that code, so this job
+  # builds once more with the newest Xcode 26 on the runner.
+  build-macos-26-sdk:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode 26
+        run: |
+          xcode=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -n 1)
+          if [ -z "$xcode" ]; then
+            echo "::error::No Xcode 26 found on this runner"
+            exit 1
+          fi
+          sudo xcode-select -s "$xcode"
+          xcodebuild -version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate project
+        run: xcodegen generate
+
+      - name: Build
+        run: |
+          xcodebuild \
+            -project Reef.xcodeproj \
+            -scheme Reef \
+            -configuration Debug \
+            -destination 'platform=macOS' \
+            build

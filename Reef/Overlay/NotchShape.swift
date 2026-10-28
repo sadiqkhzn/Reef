@@ -2,28 +2,45 @@ import SwiftUI
 
 /// The silhouette of the overlay.
 ///
-/// The top corners carry a small radius so the shape sits almost flush with the
-/// top edge of the screen, blending into the physical notch. The bottom corners
-/// are rounded more generously so the body reads as a soft pill. Both radii are
-/// animatable, which lets the shape ease open as the overlay grows.
+/// Two forms share one shape so the overlay can animate between them:
+///
+/// - With `shoulder` at zero, the top corners are convex with
+///   `topCornerRadius`, which gives the floating bubble its uniformly rounded
+///   look.
+/// - With `shoulder` above zero, the top corners turn concave and flare out
+///   along the top edge, the way the hardware notch flows out of the menu bar.
+///   The body then sits `shoulder` points in from each side of the rect, so the
+///   rect should be drawn that much wider on each side.
+///
+/// The bottom corners are rounded with `bottomCornerRadius` in both forms. All
+/// three values are animatable, so the shape eases open as the overlay grows.
 struct NotchShape: Shape {
     var topCornerRadius: CGFloat
     var bottomCornerRadius: CGFloat
+    var shoulder: CGFloat
 
-    init(topCornerRadius: CGFloat = 6, bottomCornerRadius: CGFloat = 13) {
+    init(topCornerRadius: CGFloat = 6, bottomCornerRadius: CGFloat = 13, shoulder: CGFloat = 0) {
         self.topCornerRadius = topCornerRadius
         self.bottomCornerRadius = bottomCornerRadius
+        self.shoulder = shoulder
     }
 
-    var animatableData: AnimatablePair<CGFloat, CGFloat> {
-        get { AnimatablePair(topCornerRadius, bottomCornerRadius) }
+    var animatableData: AnimatablePair<AnimatablePair<CGFloat, CGFloat>, CGFloat> {
+        get { AnimatablePair(AnimatablePair(topCornerRadius, bottomCornerRadius), shoulder) }
         set {
-            topCornerRadius = newValue.first
-            bottomCornerRadius = newValue.second
+            topCornerRadius = newValue.first.first
+            bottomCornerRadius = newValue.first.second
+            shoulder = newValue.second
         }
     }
 
     func path(in rect: CGRect) -> Path {
+        shoulder > 0 ? flaredPath(in: rect) : roundedPath(in: rect)
+    }
+
+    /// Convex top corners: a plain rounded rectangle with separate top and
+    /// bottom radii.
+    private func roundedPath(in rect: CGRect) -> Path {
         let half = min(rect.width, rect.height) / 2
         let top = min(topCornerRadius, half)
         let bottom = min(bottomCornerRadius, half)
@@ -54,6 +71,42 @@ struct NotchShape: Shape {
         path.addQuadCurve(
             to: CGPoint(x: rect.minX + top, y: rect.minY),
             control: CGPoint(x: rect.minX, y: rect.minY))
+        path.closeSubpath()
+        return path
+    }
+
+    /// Concave top corners that flare out along the top edge.
+    private func flaredPath(in rect: CGRect) -> Path {
+        let flare = min(shoulder, rect.width / 4, rect.height / 2)
+        let left = rect.minX + flare
+        let right = rect.maxX - flare
+        let bottom = min(bottomCornerRadius, (right - left) / 2, rect.height - flare)
+
+        var path = Path()
+        // Start at the top-left tip of the flare.
+        path.move(to: CGPoint(x: rect.minX, y: rect.minY))
+        // Left shoulder curving down into the body.
+        path.addQuadCurve(
+            to: CGPoint(x: left, y: rect.minY + flare),
+            control: CGPoint(x: left, y: rect.minY))
+        // Left edge down.
+        path.addLine(to: CGPoint(x: left, y: rect.maxY - bottom))
+        // Bottom-left corner.
+        path.addQuadCurve(
+            to: CGPoint(x: left + bottom, y: rect.maxY),
+            control: CGPoint(x: left, y: rect.maxY))
+        // Bottom edge, left to right.
+        path.addLine(to: CGPoint(x: right - bottom, y: rect.maxY))
+        // Bottom-right corner.
+        path.addQuadCurve(
+            to: CGPoint(x: right, y: rect.maxY - bottom),
+            control: CGPoint(x: right, y: rect.maxY))
+        // Right edge up.
+        path.addLine(to: CGPoint(x: right, y: rect.minY + flare))
+        // Right shoulder curving out to the top-right tip.
+        path.addQuadCurve(
+            to: CGPoint(x: rect.maxX, y: rect.minY),
+            control: CGPoint(x: right, y: rect.minY))
         path.closeSubpath()
         return path
     }

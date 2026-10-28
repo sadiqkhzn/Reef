@@ -24,3 +24,31 @@ All notable changes to Reef are recorded here.
   while on battery. Desktop Macs with no battery simply omit the badge.
 - Battery parsing is a pure function with unit tests covering scaling,
   rounding, clamping, and missing fields.
+- A design system in `Reef/Design/`: spacing, radius, type, ink, and status
+  tokens; accent colors; and three motion presets (Smooth, Snappy, Bouncy)
+  that fall back to short fades with Reduce Motion.
+- Glass island materials: Midnight (solid black), Frosted (blurred desktop with
+  a specular rim), and Liquid Glass on macOS 26, which falls back to Frosted on
+  earlier systems. Reduce Transparency draws solid and Increase Contrast draws
+  a clear edge. On notched displays a solid band keeps the cutout hidden while
+  the glass shows below it.
+- The attached shape now flares out of the top edge with concave shoulders,
+  like the hardware notch.
+- Live activities: the resting island spreads wings around the notch when
+  power is connected, when the battery is full, and when it drops to 20% and
+  again at 10%. Activities are ranked so the most important one shows.
+- A redesigned open island: a header row beside the notch, a time card, and a
+  battery card with a ring gauge and charging status. Content resolves in with
+  a blur rather than a plain fade.
+- A settings window with a searchable, grouped sidebar: General (island style,
+  open at login), Appearance (live preview, material, accent, motion), Live
+  Activities (toggles and previews), and About. Choices persist across
+  launches.
+- `docs/DESIGN.md`, the design reference for every planned surface.
+- CI also builds with the macOS 26 SDK so the Liquid Glass path is compiled.
+- Quick peek: every live activity shows a line of detail under the wings for
+  its first two seconds, such as "Charging · 64%".
+- Device activity: when AirPods, headphones, a keyboard, a mouse, or another
+  Bluetooth device connects, the wings show the device's symbol, with a toggle
+  and a preview in Settings, Live Activities.
+- The resting island dips slightly when pressed, so a click feels physical.

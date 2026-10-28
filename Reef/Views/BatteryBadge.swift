@@ -6,23 +6,25 @@ struct BatteryBadge: View {
     var snapshot: BatterySnapshot
 
     private var fillColor: Color {
-        if snapshot.isCharging || snapshot.isPluggedIn { return .green }
+        if snapshot.isCharging || snapshot.isPluggedIn { return ReefTheme.Status.charging }
         switch snapshot.percent {
-        case ...10: return .red
-        case ...20: return .yellow
-        default: return .white
+        case ...BatteryActivityPolicy.criticalThreshold: return ReefTheme.Status.critical
+        case ...BatteryActivityPolicy.lowThreshold: return ReefTheme.Status.warning
+        default: return ReefTheme.Ink.primary
         }
     }
 
     var body: some View {
         HStack(spacing: 6) {
             Text("\(snapshot.percent)%")
-                .font(.system(size: 13, weight: .medium, design: .rounded))
-                .foregroundStyle(.white)
+                .font(ReefTheme.Typography.wing)
+                .foregroundStyle(ReefTheme.Ink.primary)
                 .monospacedDigit()
 
-            body(width: 26, height: 13)
+            body(width: 24, height: 12)
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Battery \(snapshot.percent) percent")
     }
 
     private func body(width: CGFloat, height: CGFloat) -> some View {
