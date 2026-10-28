@@ -25,12 +25,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.battery = battery
         self.activities = activities
 
-        let bluetooth = BluetoothMonitor()
-        bluetooth.onConnect = { [weak activities] name in
-            activities?.deviceConnected(named: name)
-        }
-        bluetooth.start()
-        self.bluetooth = bluetooth
+        startBluetooth(activities: activities)
 
         let controller = NotchWindowController(state: state, settings: settings, battery: battery)
         controller.show()
@@ -43,6 +38,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         installMenuBarItem()
+    }
+
+    /// True when the app is only hosting the unit tests.
+    private var isHostingTests: Bool {
+        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+    }
+
+    /// Watch for Bluetooth devices connecting. Registering can wait on the
+    /// Bluetooth permission check, so it runs after launch has finished, and
+    /// it is skipped entirely when hosting tests, where nobody can answer the
+    /// permission prompt.
+    private func startBluetooth(activities: LiveActivityCenter) {
+        guard !isHostingTests else { return }
+        Task { @MainActor [weak self, weak activities] in
+            let bluetooth = BluetoothMonitor()
+            bluetooth.onConnect = { name in
+                activities?.deviceConnected(named: name)
+            }
+            bluetooth.start()
+            self?.bluetooth = bluetooth
+        }
     }
 
     private func installMenuBarItem() {
