@@ -26,15 +26,51 @@ final class NotchState: ObservableObject {
     /// Height the overlay opens to.
     static let expandedHeight: CGFloat = 180
 
-    /// Target size of the whole overlay for the current phase.
-    var targetSize: CGSize {
+    /// Extra height below the resting overlay that still counts as hovering it,
+    /// so the pointer can reach it from just under the notch.
+    static let hoverMargin: CGFloat = 12
+    /// A little grow applied to the resting overlay while the pointer is over
+    /// it, before it opens fully. This is the quick acknowledgement of hover.
+    static let peekGrow = CGSize(width: 10, height: 5)
+
+    /// Size of the overlay when fully open.
+    var expandedSize: CGSize {
+        CGSize(
+            width: max(collapsedSize.width, Self.expandedMinWidth),
+            height: Self.expandedHeight)
+    }
+
+    /// The size the silhouette is drawn at right now. While resting it is the
+    /// collapsed size, growing a touch on hover; while open it is the open size.
+    var visibleSize: CGSize {
         switch phase {
-        case .collapsed:
-            return collapsedSize
         case .expanded:
+            return expandedSize
+        case .collapsed:
+            guard isHovering else { return collapsedSize }
             return CGSize(
-                width: max(collapsedSize.width, Self.expandedMinWidth),
-                height: Self.expandedHeight)
+                width: collapsedSize.width + Self.peekGrow.width,
+                height: collapsedSize.height + Self.peekGrow.height)
         }
+    }
+
+    /// The area that senses hover and receives clicks. While resting it reaches
+    /// a little below the notch so it is easy to trigger; while open it matches
+    /// the open overlay.
+    var hitSize: CGSize {
+        switch phase {
+        case .expanded:
+            return expandedSize
+        case .collapsed:
+            return CGSize(
+                width: collapsedSize.width + Self.peekGrow.width,
+                height: collapsedSize.height + Self.hoverMargin)
+        }
+    }
+
+    /// Resting size of the overlay for the current phase, ignoring hover. Used
+    /// where only the phase matters.
+    var targetSize: CGSize {
+        phase == .expanded ? expandedSize : collapsedSize
     }
 }
