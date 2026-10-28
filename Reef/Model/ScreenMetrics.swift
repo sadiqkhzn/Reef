@@ -15,8 +15,10 @@ enum ScreenMetrics {
         var size: CGSize
     }
 
-    /// Collapsed overlay size used on Macs that have no notch.
-    static let defaultPillSize = CGSize(width: 190, height: 32)
+    /// Width of the resting overlay on Macs that have no notch.
+    static let defaultPillWidth: CGFloat = 190
+    /// Resting height used when the menu bar height is not known.
+    static let fallbackPillHeight: CGFloat = 24
 
     /// Width used for a notch when the system does not report the areas beside
     /// it. This is a sensible middle value across current notched MacBooks.
@@ -50,9 +52,17 @@ enum ScreenMetrics {
         return Notch(exists: true, size: CGSize(width: width, height: safeAreaTop))
     }
 
-    /// Size of the collapsed overlay for a given notch.
-    static func collapsedSize(for notch: Notch) -> CGSize {
-        notch.exists ? notch.size : defaultPillSize
+    /// Size of the resting overlay.
+    ///
+    /// On a notched Mac it matches the notch. On a Mac without a notch it is a
+    /// pill as tall as the menu bar, so when it is anchored to the top of the
+    /// screen it sits inside the menu bar strip rather than over app windows.
+    static func collapsedSize(for notch: Notch, menuBarHeight: CGFloat) -> CGSize {
+        if notch.exists {
+            return notch.size
+        }
+        let height = menuBarHeight > 0 ? menuBarHeight : fallbackPillHeight
+        return CGSize(width: defaultPillWidth, height: height)
     }
 
     /// Frame for an overlay of `size`, centered along the top edge of a screen.

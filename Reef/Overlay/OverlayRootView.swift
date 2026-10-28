@@ -12,9 +12,17 @@ struct OverlayRootView: View {
     @StateObject private var battery = BatteryModel()
 
     private var shape: NotchShape {
-        NotchShape(
-            topCornerRadius: 6,
-            bottomCornerRadius: state.phase == .expanded ? 20 : 13)
+        switch OverlayStyle.current {
+        case .attached:
+            return NotchShape(
+                topCornerRadius: 6,
+                bottomCornerRadius: state.phase == .expanded ? 20 : 13)
+        case .floating:
+            // Equal radii give a uniformly rounded bubble. At rest it is a
+            // capsule; open it is a softly rounded panel.
+            let radius: CGFloat = state.phase == .expanded ? 24 : state.visibleSize.height / 2
+            return NotchShape(topCornerRadius: radius, bottomCornerRadius: radius)
+        }
     }
 
     /// Open and close use a critically damped spring so there is no bounce, with
@@ -29,6 +37,10 @@ struct OverlayRootView: View {
         ZStack(alignment: .top) {
             OverlayBackground(shape: shape)
                 .frame(width: state.visibleSize.width, height: state.visibleSize.height)
+                .shadow(
+                    color: .black.opacity(OverlayStyle.current.hasShadow ? 0.28 : 0),
+                    radius: 3,
+                    y: 0)
 
             if state.phase == .expanded {
                 ExpandedView(battery: battery.snapshot)
@@ -44,5 +56,14 @@ struct OverlayRootView: View {
         .animation(sizeAnimation, value: state.phase)
         .animation(.spring(response: 0.3, dampingFraction: 0.72), value: state.isHovering)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        // Hopping to another screen: shrink and fade out, then pop back in on the
+        // new screen rather than teleporting.
+        .scaleEffect(state.isRelocating ? 0.9 : 1, anchor: .top)
+        .opacity(state.isRelocating ? 0 : 1)
+        .animation(
+            state.isRelocating
+                ? .easeIn(duration: 0.12)
+                : .spring(response: 0.34, dampingFraction: 0.78),
+            value: state.isRelocating)
     }
 }

@@ -57,12 +57,25 @@ final class ScreenMetricsTests: XCTestCase {
 
     func testCollapsedSizeMatchesNotch() {
         let notch = ScreenMetrics.Notch(exists: true, size: CGSize(width: 232, height: 38))
-        XCTAssertEqual(ScreenMetrics.collapsedSize(for: notch), CGSize(width: 232, height: 38))
+        // The menu bar height is ignored when there is a notch.
+        XCTAssertEqual(
+            ScreenMetrics.collapsedSize(for: notch, menuBarHeight: 30),
+            CGSize(width: 232, height: 38))
     }
 
-    func testCollapsedSizeUsesDefaultPillWithoutNotch() {
+    func testCollapsedSizeMatchesMenuBarWithoutNotch() {
         let notch = ScreenMetrics.Notch(exists: false, size: .zero)
-        XCTAssertEqual(ScreenMetrics.collapsedSize(for: notch), ScreenMetrics.defaultPillSize)
+        let size = ScreenMetrics.collapsedSize(for: notch, menuBarHeight: 30)
+
+        XCTAssertEqual(size.width, ScreenMetrics.defaultPillWidth, accuracy: 0.001)
+        XCTAssertEqual(size.height, 30, accuracy: 0.001)
+    }
+
+    func testCollapsedSizeFallsBackWhenMenuBarUnknown() {
+        let notch = ScreenMetrics.Notch(exists: false, size: .zero)
+        let size = ScreenMetrics.collapsedSize(for: notch, menuBarHeight: 0)
+
+        XCTAssertEqual(size.height, ScreenMetrics.fallbackPillHeight, accuracy: 0.001)
     }
 
     // MARK: - Frame placement
@@ -81,7 +94,7 @@ final class ScreenMetricsTests: XCTestCase {
 
     func testOverlayFrameRespectsTopInset() {
         let screen = CGRect(x: 0, y: 0, width: 1440, height: 900)
-        let size = ScreenMetrics.defaultPillSize
+        let size = CGSize(width: ScreenMetrics.defaultPillWidth, height: 24)
 
         let frame = ScreenMetrics.overlayFrame(screenFrame: screen, size: size, topInset: 3)
 

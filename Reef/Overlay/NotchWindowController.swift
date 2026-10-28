@@ -16,9 +16,6 @@ final class NotchWindowController {
     private let state: NotchState
     private var cancellables: Set<AnyCancellable> = []
 
-    /// Gap below the menu bar on Macs without a notch so the pill is not flush
-    /// against it.
-    private let floatingBottomPadding: CGFloat = 2
     /// Slack on each side and below the overlay so the fixed panel has room for
     /// the open state and a little breathing space.
     private let panelSidePadding: CGFloat = 48
@@ -31,6 +28,11 @@ final class NotchWindowController {
     /// make it flicker shut.
     private let closeDelay: TimeInterval = 0.15
     private var phaseWork: DispatchWorkItem?
+
+    /// The screen the overlay is currently placed on, used to notice when the
+    /// pointer moves to another display.
+    private var lastScreenFrame: CGRect?
+    private var screenFollowTimer: Timer?
 
     init(state: NotchState) {
         self.state = state
@@ -51,6 +53,7 @@ final class NotchWindowController {
         observeScreenChanges()
         observeHover()
         observePhase()
+        followActiveScreen()
         reposition()
     }
 
@@ -99,20 +102,36 @@ final class NotchWindowController {
         guard let screen = NotchWindowController.activeScreen() else { return }
 
         let notch = notch(for: screen)
-        state.collapsedSize = ScreenMetrics.collapsedSize(for: notch)
+        switch OverlayStyle.current {
+        case .attached:
+            state.collapsedSize = ScreenMetrics.collapsedSize(
+                for: notch,
+                menuBarHeight: menuBarHeight(for: screen))
+        case .floating:
+            // Keep the floating bubble inside the menu bar strip with equal gaps
+            // above and below, so it is centered in the strip and never crosses
+            // into app windows.
+            let stripHeight = menuBarHeight(for: screen)
+            let height = max(18, stripHeight - OverlayStyle.current.topGap * 2)
+            state.collapsedSize = CGSize(
+                width: OverlayStyle.floatingRestingSize.width,
+                height: height)
+        }
 
+        // The panel is anchored near the top of the screen. The attached style
+        // sits flush against the top edge, hugging the notch or filling the menu
+        // bar strip; the floating style drops a few points below so the bubble
+        // reads as detached. Either way the overlay stays out of app windows
+        // until it is opened.
         let size = panelSize(collapsed: state.collapsedSize)
-        let inset: CGFloat = notch.exists
-            ? 0
-            : menuBarHeight(for: screen) + floatingBottomPadding
-
         let x = screen.frame.minX + (screen.frame.width - size.width) / 2
-        let originY = screen.frame.maxY - inset - size.height
+        let originY = screen.frame.maxY - size.height - OverlayStyle.current.topGap
         panel.setFrame(
             CGRect(x: x, y: originY, width: size.width, height: size.height),
             display: true,
             animate: false)
 
+        lastScreenFrame = screen.frame
         updateInteractiveRect()
     }
 
@@ -170,5 +189,33 @@ final class NotchWindowController {
                 self?.updateInteractiveRect()
             }
             .store(in: &cancellables)
+    }
+
+    /// Follow the pointer to whichever screen it is on, like the menu bar does.
+    /// Polling the pointer location is simple and dependable across apps that do
+    /// or do not themselves track the mouse.
+    private func followActiveScreen() {
+        let timer = Timer(timeInterval: 0.25, repeats: true) { [weak self] _ in
+            guard let self, let screen = NotchWindowController.activeScreen() else { return }
+            guard screen.frame != self.lastScreenFrame else { return }
+
+            // Claim the new screen right away so the timer does not fire again
+            // mid-hop, then play the fade-and-pop across.
+            self.lastScreenFrame = screen.frame
+            self.relocate()
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        screenFollowTimer = timer
+    }
+
+    /// Fade and shrink the overlay out, move it to the active screen while it is
+    /// invisible, then let it pop back in there.
+    private func relocate() {
+        state.isRelocating = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.13) { [weak self] in
+            guard let self else { return }
+            self.reposition()
+            self.state.isRelocating = false
+        }
     }
 }
