@@ -18,6 +18,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // During unit tests the app is only a host for the test bundle. Skip the
+        // live overlay so nothing touches the screen or the music apps.
+        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
+            return
+        }
+
         NSApp.setActivationPolicy(.accessory)
 
         let battery = BatteryModel()

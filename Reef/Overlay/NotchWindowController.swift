@@ -22,12 +22,13 @@ final class NotchWindowController {
     private let panelSidePadding: CGFloat = 48
     private let panelBottomPadding: CGFloat = 20
 
-    /// Pause before the overlay opens after the pointer arrives, so a passing
-    /// pointer does not open it. The quick grow on hover covers this pause.
-    private let openDelay: TimeInterval = 0.2
+    /// Dwell on the bare island before it opens on its own. Hovering only peeks;
+    /// a click opens it at once, so this is a long fallback rather than the main
+    /// way in.
+    private let openDelay: TimeInterval = 3.0
     /// Short grace period before it closes, so crossing an inner edge does not
     /// make it flicker shut.
-    private let closeDelay: TimeInterval = 0.15
+    private let closeDelay: TimeInterval = 0.2
     private var phaseWork: DispatchWorkItem?
 
     /// The screen the overlay is currently placed on, used to notice when the
@@ -60,6 +61,7 @@ final class NotchWindowController {
         observeHover()
         observePhase()
         observeLiveActivity()
+        observeNowPlaying()
         observeStyle()
         followActiveScreen()
         reposition()
@@ -114,11 +116,24 @@ final class NotchWindowController {
         let style = settings.overlayStyle
         let notch = notch(for: screen)
         state.hasNotch = notch.exists
+        // Update the drawn style here, while the overlay is hidden during a
+        // style change, so the shape changes together with the size and position.
+        state.displayedStyle = style
         switch style {
         case .attached:
-            state.collapsedSize = ScreenMetrics.collapsedSize(
-                for: notch,
-                menuBarHeight: menuBarHeight(for: screen))
+            if notch.exists {
+                // Hug the real notch exactly.
+                state.collapsedSize = ScreenMetrics.collapsedSize(
+                    for: notch,
+                    menuBarHeight: menuBarHeight(for: screen))
+            } else {
+                // No notch to hug: sit inside the menu bar strip with a small
+                // bottom gap so it does not touch window content, like floating.
+                let stripHeight = menuBarHeight(for: screen)
+                state.collapsedSize = CGSize(
+                    width: ScreenMetrics.defaultPillWidth,
+                    height: max(18, stripHeight - 5))
+            }
         case .floating:
             // Keep the floating bubble inside the menu bar strip with equal gaps
             // above and below, so it is centered in the strip and never crosses
@@ -169,24 +184,36 @@ final class NotchWindowController {
             .store(in: &cancellables)
     }
 
-    /// Turn hover into an open or closed phase. Opening waits a short pause so a
-    /// passing pointer does not open it; closing waits a shorter grace period so
-    /// it does not flicker shut when the pointer crosses an inner edge. The
-    /// quick grow on hover is handled in the view and happens at once.
+    /// Turn hover into peek and, eventually, open.
+    ///
+    /// Hovering only peeks (the small grow is handled in the view). The island
+    /// opens fully only after a long dwell on the bare island, or on a click.
+    /// Hovering an interactive control does not open it: moving onto a control
+    /// cancels the pending open, and moving back to the bare island starts the
+    /// dwell again. Leaving closes it after a short grace period.
     private func observeHover() {
-        state.$isHovering
-            .removeDuplicates()
-            .sink { [weak self] hovering in
+        Publishers.CombineLatest(state.$isHovering, state.$isOverControl)
+            .removeDuplicates { $0 == $1 }
+            .sink { [weak self] hovering, overControl in
                 guard let self else { return }
                 self.phaseWork?.cancel()
 
-                let target: NotchState.Phase = hovering ? .expanded : .collapsed
-                let delay = hovering ? self.openDelay : self.closeDelay
-                let work = DispatchWorkItem { [weak self] in
-                    self?.state.phase = target
+                if hovering && !overControl {
+                    let work = DispatchWorkItem { [weak self] in
+                        guard let self, self.state.isHovering, !self.state.isOverControl else { return }
+                        self.state.phase = .expanded
+                    }
+                    self.phaseWork = work
+                    DispatchQueue.main.asyncAfter(deadline: .now() + self.openDelay, execute: work)
+                } else if !hovering {
+                    let work = DispatchWorkItem { [weak self] in
+                        guard let self, !self.state.isHovering else { return }
+                        self.state.phase = .collapsed
+                    }
+                    self.phaseWork = work
+                    DispatchQueue.main.asyncAfter(deadline: .now() + self.closeDelay, execute: work)
                 }
-                self.phaseWork = work
-                DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: work)
+                // Hovering a control: keep the current phase (peek), open nothing.
             }
             .store(in: &cancellables)
     }
@@ -217,16 +244,29 @@ final class NotchWindowController {
             .store(in: &cancellables)
     }
 
-    /// Switching between attached and floating changes the resting size and
-    /// where the panel sits, so play the same fade-and-pop used for changing
-    /// screens.
+    /// The media wing widens the resting overlay too, so the hover region
+    /// follows it.
+    private func observeNowPlaying() {
+        state.$nowPlayingActive
+            .removeDuplicates()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.updateInteractiveRect()
+            }
+            .store(in: &cancellables)
+    }
+
+    /// Switching between attached and floating changes the shape, resting size,
+    /// and panel position all at once. Repositioning in a single step swaps them
+    /// together with no in-between frame, which reads cleaner than fading out the
+    /// old shouldered shape first.
     private func observeStyle() {
         settings.$overlayStyle
             .dropFirst()
             .removeDuplicates()
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in
-                self?.relocate()
+                self?.reposition()
             }
             .store(in: &cancellables)
     }

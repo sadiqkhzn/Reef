@@ -15,6 +15,17 @@ targets:
     platform: macOS
     sources:
       - path: Reef
+        excludes:
+          - "Vendor/**"
+      - path: Reef/Vendor/mediaremote-adapter/mediaremote-adapter.pl
+        buildPhase: resources
+      - path: Reef/Vendor/mediaremote-adapter/LICENSE
+        buildPhase: resources
+    dependencies:
+      - framework: Reef/Vendor/mediaremote-adapter/MediaRemoteAdapter.framework
+        embed: true
+        link: false
+        codeSign: true
     info:
       path: Reef/Info.plist
       properties:
