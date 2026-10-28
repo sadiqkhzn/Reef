@@ -17,9 +17,15 @@ final class NotchState: ObservableObject {
     /// True while the pointer is over the overlay.
     @Published var isHovering: Bool = false
 
+    /// True for the brief moment while the overlay is hopping to another screen,
+    /// used to fade and pop it across instead of teleporting.
+    @Published var isRelocating: Bool = false
+
     /// Resting size of the overlay for the current screen. The window
     /// controller sets this after measuring the active display.
-    @Published var collapsedSize: CGSize = ScreenMetrics.defaultPillSize
+    @Published var collapsedSize = CGSize(
+        width: ScreenMetrics.defaultPillWidth,
+        height: ScreenMetrics.fallbackPillHeight)
 
     /// Minimum width the overlay opens to, regardless of the collapsed size.
     static let expandedMinWidth: CGFloat = 380

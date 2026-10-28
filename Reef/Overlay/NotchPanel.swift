@@ -16,7 +16,10 @@ final class NotchPanel: NSPanel {
 
         isFloatingPanel = true
         level = .statusBar
-        collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
+        // Appear on every Space, but mark the panel transient so macOS hides it
+        // during Mission Control, App Expose, and Show Desktop instead of
+        // pinning it on top of them.
+        collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .transient]
 
         isMovable = false
         isMovableByWindowBackground = false
