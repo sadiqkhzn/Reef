@@ -16,12 +16,13 @@ struct OverlayRootView: View {
     @EnvironmentObject private var state: NotchState
     @EnvironmentObject private var settings: ReefSettings
     @EnvironmentObject private var battery: BatteryModel
+    @StateObject private var media = NowPlayingController()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// True while the mouse button is down on the resting island, which dips
     /// it slightly so a click feels physical.
     @State private var isPressed = false
 
-    private var style: OverlayStyle { settings.overlayStyle }
+    private var style: OverlayStyle { state.displayedStyle }
     private var isOpen: Bool { state.phase == .expanded }
 
     private var shape: NotchShape {
@@ -72,11 +73,26 @@ struct OverlayRootView: View {
                     y: isOpen ? 3 : 0)
 
             if isOpen {
-                IslandHomeView(
-                    battery: battery.snapshot,
-                    accent: settings.accent.color,
-                    headerHeight: state.collapsedSize.height,
-                    notchWidth: notchClearance)
+                if let nowPlaying = media.current {
+                    MediaView(nowPlaying: nowPlaying, media: media)
+                        .frame(width: state.visibleSize.width, height: state.visibleSize.height)
+                        .transition(.islandContent)
+                } else {
+                    IslandHomeView(
+                        battery: battery.snapshot,
+                        accent: settings.accent.color,
+                        headerHeight: state.collapsedSize.height,
+                        notchWidth: notchClearance)
+                        .frame(width: state.visibleSize.width, height: state.visibleSize.height)
+                        .transition(.islandContent)
+                }
+            } else if let nowPlaying = media.current {
+                MediaWingView(
+                    nowPlaying: nowPlaying,
+                    media: media,
+                    height: state.collapsedSize.height,
+                    animating: !state.isRelocating,
+                    onControlHover: { state.isOverControl = $0 })
                     .frame(width: state.visibleSize.width, height: state.visibleSize.height)
                     .transition(.islandContent)
             } else if let activity = state.liveActivity {
@@ -99,7 +115,14 @@ struct OverlayRootView: View {
         .simultaneousGesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { _ in isPressed = true }
-                .onEnded { _ in isPressed = false })
+                .onEnded { _ in
+                    isPressed = false
+                    // Click the bare island to open it at once. A control sets
+                    // isOverControl, so clicking a button never opens it.
+                    if state.phase == .collapsed && !state.isOverControl {
+                        state.phase = .expanded
+                    }
+                })
         .onHover { hovering in
             state.isHovering = hovering
         }
@@ -114,6 +137,16 @@ struct OverlayRootView: View {
             MotionStyle.animation(settings.motion.wings, reduceMotion: reduceMotion),
             value: state.isPeeking)
         .animation(sizeAnimation, value: style)
+        .animation(
+            MotionStyle.animation(settings.motion.wings, reduceMotion: reduceMotion),
+            value: media.current)
+        .animation(
+            MotionStyle.animation(settings.motion.wings, reduceMotion: reduceMotion),
+            value: state.nowPlayingActive)
+        .onReceive(media.$current) { current in
+            state.nowPlayingActive = current != nil
+            if current == nil { state.isOverControl = false }
+        }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         // Hopping to another screen: shrink and fade out, then pop back in on the
         // new screen rather than teleporting.

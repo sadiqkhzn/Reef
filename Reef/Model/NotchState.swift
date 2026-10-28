@@ -25,6 +25,19 @@ final class NotchState: ObservableObject {
     /// True when the overlay sits on a screen with a hardware notch.
     @Published var hasNotch: Bool = false
 
+    /// The style the overlay is drawn in right now. The window controller sets
+    /// this during a reposition, which runs while the overlay is hidden, so a
+    /// style change swaps the shape, size, and position together with no flash.
+    @Published var displayedStyle: OverlayStyle = .attached
+
+    /// True while the pointer is over an interactive control inside the island
+    /// (a button), so hovering a control does not open the island.
+    @Published var isOverControl: Bool = false
+
+    /// True while a track is playing or paused, so the resting overlay widens to
+    /// show the media wing (cover and equalizer).
+    @Published var nowPlayingActive: Bool = false
+
     /// The live activity shown in the wings while resting, if any.
     @Published var liveActivity: LiveActivity?
 
@@ -50,12 +63,20 @@ final class NotchState: ObservableObject {
     /// Height of the detail line the wings grow while peeking.
     static let peekRowHeight: CGFloat = 26
 
+    /// Resting width of the media wing on a screen without a notch: a compact
+    /// pill holding the cover and the equalizer.
+    static let mediaRestingWidth: CGFloat = 170
+    /// Width added to each side of the collapsed overlay for the media wing on a
+    /// notched screen, so the cover and equalizer sit beside the notch.
+    static let mediaWing: CGFloat = 66
+
     /// Extra height below the resting overlay that still counts as hovering it,
     /// so the pointer can reach it from just under the notch.
     static let hoverMargin: CGFloat = 12
     /// A little grow applied to the resting overlay while the pointer is over
-    /// it, before it opens fully. This is the quick acknowledgement of hover.
-    static let peekGrow = CGSize(width: 10, height: 5)
+    /// it. Mostly wider, only a touch taller so peek stays within the top strip
+    /// and does not reach into app windows.
+    static let peekGrow = CGSize(width: 16, height: 3)
 
     /// Size of the overlay when fully open for a given resting size.
     static func expandedSize(collapsed: CGSize) -> CGSize {
@@ -69,9 +90,15 @@ final class NotchState: ObservableObject {
         Self.expandedSize(collapsed: collapsedSize)
     }
 
-    /// Resting size including the wings while a live activity shows, and the
-    /// detail line while it peeks.
+    /// Resting size including the media wing while a track is on, the live
+    /// activity wings and their detail line otherwise. Media takes precedence.
     var restingSize: CGSize {
+        if nowPlayingActive {
+            let width = hasNotch
+                ? collapsedSize.width + Self.mediaWing * 2
+                : Self.mediaRestingWidth
+            return CGSize(width: width, height: collapsedSize.height)
+        }
         guard liveActivity != nil else { return collapsedSize }
         return CGSize(
             width: collapsedSize.width + Self.wingWidth * 2,
