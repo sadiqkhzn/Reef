@@ -1,0 +1,39 @@
+# Xcode
+build/
+build-release/
+DerivedData/
+*.xcuserstate
+*.xcuserdatad/
+xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+*.moved-aside
+
+# Generated project. project.yml is the source of truth; regenerate with:
+#   xcodegen generate
+*.xcodeproj/
+
+# Swift Package Manager
+.swiftpm/
+.build/
+Packages/
+Package.pins
+Package.resolved
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# IDE
+.idea/
+.vscode/
+
+# Secrets and signing
+*.p12
+*.mobileprovision
+*.cer
+
+# Coverage artifacts
+*.profraw

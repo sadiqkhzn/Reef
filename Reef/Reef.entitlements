@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Reef is not sandboxed. The overlay is a non-activating panel that
+         floats over other apps and joins every Space, which the sandbox does
+         not allow. Later features (media info, Bluetooth device battery) also
+         read system state that the sandbox blocks. This file is here so a
+         signed build can carry extra entitlements if a future feature needs
+         one. -->
+    <key>com.apple.security.app-sandbox</key>
+    <false/>
+</dict>
+</plist>

@@ -1,0 +1,51 @@
+name: Reef
+options:
+  bundleIdPrefix: dev.sadiqkhzn
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  Reef:
+    type: application
+    platform: macOS
+    sources:
+      - path: Reef
+    info:
+      path: Reef/Info.plist
+      properties:
+        CFBundleName: Reef
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
+        LSUIElement: true
+        NSHumanReadableCopyright: "Copyright © 2026 Sadiq Khan. MIT License."
+        NSPrincipalClass: NSApplication
+        NSSupportsAutomaticTermination: true
+        NSSupportsSuddenTermination: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.sadiqkhzn.Reef
+        PRODUCT_NAME: Reef
+        GENERATE_INFOPLIST_FILE: NO
+        ENABLE_HARDENED_RUNTIME: YES
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGN_ENTITLEMENTS: Reef/Reef.entitlements
+  ReefTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: Tests
+    dependencies:
+      - target: Reef
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.sadiqkhzn.ReefTests
+        GENERATE_INFOPLIST_FILE: YES
+        BUNDLE_LOADER: $(TEST_HOST)
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/Reef.app/Contents/MacOS/Reef

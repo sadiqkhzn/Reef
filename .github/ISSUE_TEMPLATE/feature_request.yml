@@ -1,0 +1,26 @@
+name: Feature request
+description: Suggest something Reef could show or do.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What would you like Reef to do?
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why does this matter?
+      description: What does it help you with day to day?
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Now Playing / media
+        - Battery and devices
+        - System stats
+        - Overlay behavior (hover, position, size)
+        - Settings
+        - Other
