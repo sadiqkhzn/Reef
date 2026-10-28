@@ -19,6 +19,10 @@ final class NotchWindowController {
     /// has a little breathing room rather than touching it.
     private let floatingBottomPadding: CGFloat = 2
 
+    /// How long the open and close animation runs. The panel waits this long
+    /// before it shrinks on close so the content is not clipped mid-animation.
+    private let phaseAnimationDuration: TimeInterval = 0.45
+
     init(state: NotchState) {
         self.state = state
 
@@ -36,7 +40,8 @@ final class NotchWindowController {
         panel.contentView = hostingView
 
         observeScreenChanges()
-        observeStateChanges()
+        observeHover()
+        observePhase()
         reposition()
     }
 
@@ -99,10 +104,39 @@ final class NotchWindowController {
             .store(in: &cancellables)
     }
 
-    private func observeStateChanges() {
+    /// Turn hover into an open or closed phase. A short settle time avoids the
+    /// overlay flickering open when the pointer only grazes the notch.
+    private func observeHover() {
+        state.$isHovering
+            .removeDuplicates()
+            .debounce(for: .milliseconds(90), scheduler: RunLoop.main)
+            .sink { [weak self] hovering in
+                guard let self else { return }
+                self.state.phase = hovering ? .expanded : .collapsed
+            }
+            .store(in: &cancellables)
+    }
+
+    /// Resize the panel around the phase change. Opening grows the panel at
+    /// once so the content has room to expand into. Closing keeps the panel
+    /// large until the animation finishes, then shrinks it back to the pill.
+    private func observePhase() {
         state.$phase
+            .removeDuplicates()
             .receive(on: RunLoop.main)
-            .sink { [weak self] _ in self?.reposition() }
+            .sink { [weak self] phase in
+                guard let self else { return }
+                switch phase {
+                case .expanded:
+                    self.reposition()
+                case .collapsed:
+                    DispatchQueue.main.asyncAfter(deadline: .now() + self.phaseAnimationDuration) {
+                        if self.state.phase == .collapsed {
+                            self.reposition()
+                        }
+                    }
+                }
+            }
             .store(in: &cancellables)
     }
 }
