@@ -4,7 +4,7 @@
 
 ![platform](https://img.shields.io/badge/platform-macOS%2014%2B-blue)
 ![license](https://img.shields.io/badge/license-MIT-green)
-![tests](https://img.shields.io/badge/tests-13%20passing-brightgreen)
+![tests](https://img.shields.io/badge/tests-53%20passing-brightgreen)
 
 Reef sits quietly along the top edge of the screen. On a MacBook with a notch
 it wraps around the notch; on any other Mac it shows a small rounded pill just
@@ -12,9 +12,24 @@ under the menu bar. It stays out of the way until there is something worth
 showing, like what is playing or how your devices are doing, and then it opens
 just enough to show it.
 
-This is early. The resting overlay and its placement are in place; the glanceable
-content is being built out release by release. See the roadmap below for where it
-is headed.
+This is early. The overlay, its glass materials, the battery live activities,
+and the settings window are in place; the rest of the glanceable content is being
+built out release by release. See the roadmap below for where it is headed.
+
+## Look and feel
+
+Reef is black where it meets the notch and glass where it grows past it. Pick
+the material in Settings, Appearance:
+
+- **Liquid Glass**: the system glass on macOS 26, tinted dark so text stays
+  readable on any wallpaper. Earlier systems use Frosted.
+- **Frosted**: a blurred view of the desktop with a soft rim of light.
+- **Midnight**: solid black, like the iPhone Dynamic Island.
+
+It can hug the top edge and flow out of the notch (Attached) or sit just below
+it as its own bubble (Floating), in one of six accent colors and three motion
+styles. Reduce Transparency, Increase Contrast, and Reduce Motion are honored
+throughout. The full design reference is in [docs/DESIGN.md](docs/DESIGN.md).
 
 ## Why another one of these
 
@@ -30,7 +45,8 @@ bright and a dark desktop.
 - It shows on every Space and stays put when you switch between them.
 - It follows the screen your pointer is on and repositions itself when you plug
   in or unplug a display, or close the lid.
-- It runs as a menu bar item with no Dock icon and no main window.
+- It runs as a menu bar item with no Dock icon and no main window. Settings open
+  from the menu bar item.
 
 ## Build from source
 
@@ -63,9 +79,11 @@ xcodebuild -project Reef.xcodeproj -scheme Reef -destination 'platform=macOS' te
 
 - [x] v0.1 groundwork: floating overlay, notch and non-notch placement, multi-screen handling.
 - [ ] Now Playing: track, artwork, and transport controls.
-- [ ] Hover to open, with a smooth expand and collapse.
-- [ ] Battery and nearby device status (AirPods and other Bluetooth devices).
-- [ ] A settings window for per-feature toggles.
+- [x] Hover to open, with a smooth expand and collapse.
+- [x] Glass island design system: materials, accents, and motion presets.
+- [x] Battery live activities: charging, fully charged, and low battery.
+- [x] A settings window with appearance and live activity controls.
+- [ ] Nearby device status (AirPods and other Bluetooth devices).
 - [ ] A notarized `.dmg` once a signing certificate is in place.
 
 ## License

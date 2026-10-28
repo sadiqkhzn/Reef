@@ -1,28 +1,85 @@
 import SwiftUI
 
-/// Placeholder settings pane.
+/// The settings window.
 ///
-/// A real settings window with per-feature toggles lands in a later version.
-/// For now this gives the Settings scene something to show so Cmd+comma and the
-/// menu bar item have a destination.
+/// A grouped, searchable list of pages on the left and the selected page on
+/// the right, laid out like System Settings so it feels at home on macOS.
 struct SettingsView: View {
+    @State private var selection: SettingsSection? = .appearance
+    @State private var query = ""
+
+    private var visibleSections: [SettingsSection] {
+        SettingsSection.allCases.filter { $0.matches(query) }
+    }
+
     var body: some View {
-        VStack(spacing: 10) {
-            Image(systemName: "water.waves")
-                .font(.system(size: 34, weight: .regular))
-                .foregroundStyle(.secondary)
-
-            Text("Reef")
-                .font(.title2.weight(.semibold))
-
-            Text("Settings are coming in a later version.")
-                .font(.callout)
-                .foregroundStyle(.secondary)
+        NavigationSplitView {
+            sidebar
+                .navigationSplitViewColumnWidth(min: 190, ideal: 210, max: 260)
+        } detail: {
+            detail
         }
-        .frame(width: 360, height: 200)
+        .frame(minWidth: 700, minHeight: 500)
+    }
+
+    private var sidebar: some View {
+        List(selection: $selection) {
+            ForEach(SettingsSection.Group.allCases, id: \.self) { group in
+                let sections = visibleSections.filter { $0.group == group }
+                if !sections.isEmpty {
+                    Section(group.rawValue) {
+                        ForEach(sections) { section in
+                            SidebarRow(section: section)
+                                .tag(section)
+                        }
+                    }
+                }
+            }
+        }
+        .searchable(text: $query, placement: .sidebar, prompt: "Search")
+        .overlay {
+            if visibleSections.isEmpty {
+                Text("No results")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var detail: some View {
+        switch selection {
+        case .general:
+            GeneralSettingsPage()
+        case .appearance:
+            AppearanceSettingsPage()
+        case .liveActivities:
+            LiveActivitySettingsPage()
+        case .about:
+            AboutSettingsPage()
+        case nil:
+            Text("Select a section")
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
     }
 }
 
-#Preview {
-    SettingsView()
+/// A sidebar entry with its icon on a colored rounded tile.
+private struct SidebarRow: View {
+    var section: SettingsSection
+
+    var body: some View {
+        Label {
+            Text(section.title)
+        } icon: {
+            Image(systemName: section.symbol)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 22, height: 22)
+                .background(
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .fill(section.tint.gradient))
+        }
+    }
 }
