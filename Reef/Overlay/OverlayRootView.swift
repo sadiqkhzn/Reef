@@ -72,39 +72,45 @@ struct OverlayRootView: View {
                     radius: isOpen ? 8 : 3,
                     y: isOpen ? 3 : 0)
 
-            if isOpen {
-                if let nowPlaying = media.current {
-                    MediaView(nowPlaying: nowPlaying, media: media)
+            Group {
+                if isOpen {
+                    if let nowPlaying = media.current {
+                        MediaView(nowPlaying: nowPlaying, media: media)
+                            .frame(width: state.visibleSize.width, height: state.visibleSize.height)
+                            .transition(.islandContent)
+                    } else {
+                        IslandHomeView(
+                            battery: battery.snapshot,
+                            accent: settings.accent.color,
+                            headerHeight: state.collapsedSize.height,
+                            notchWidth: notchClearance)
+                            .frame(width: state.visibleSize.width, height: state.visibleSize.height)
+                            .transition(.islandContent)
+                    }
+                } else if let nowPlaying = media.current {
+                    MediaWingView(
+                        nowPlaying: nowPlaying,
+                        media: media,
+                        height: state.collapsedSize.height,
+                        animating: !state.isRelocating,
+                        onControlHover: { state.isOverControl = $0 })
                         .frame(width: state.visibleSize.width, height: state.visibleSize.height)
                         .transition(.islandContent)
-                } else {
-                    IslandHomeView(
-                        battery: battery.snapshot,
-                        accent: settings.accent.color,
-                        headerHeight: state.collapsedSize.height,
-                        notchWidth: notchClearance)
-                        .frame(width: state.visibleSize.width, height: state.visibleSize.height)
+                } else if let activity = state.liveActivity {
+                    LiveActivityWings(
+                        activity: activity,
+                        centerWidth: state.collapsedSize.width,
+                        rowHeight: state.collapsedSize.height,
+                        showsLabel: notchClearance == 0,
+                        isPeeking: state.isPeeking)
+                        .frame(height: state.restingSize.height, alignment: .top)
                         .transition(.islandContent)
                 }
-            } else if let nowPlaying = media.current {
-                MediaWingView(
-                    nowPlaying: nowPlaying,
-                    media: media,
-                    height: state.collapsedSize.height,
-                    animating: !state.isRelocating,
-                    onControlHover: { state.isOverControl = $0 })
-                    .frame(width: state.visibleSize.width, height: state.visibleSize.height)
-                    .transition(.islandContent)
-            } else if let activity = state.liveActivity {
-                LiveActivityWings(
-                    activity: activity,
-                    centerWidth: state.collapsedSize.width,
-                    rowHeight: state.collapsedSize.height,
-                    showsLabel: notchClearance == 0,
-                    isPeeking: state.isPeeking)
-                    .frame(height: state.restingSize.height, alignment: .top)
-                    .transition(.islandContent)
             }
+            // Keep the content inside the island so it closes with it rather than
+            // lingering outside the shrinking silhouette.
+            .frame(width: state.visibleSize.width, height: state.visibleSize.height, alignment: .top)
+            .clipShape(shape)
         }
         .scaleEffect(isPressed && !isOpen ? 0.96 : 1, anchor: .top)
         .animation(
