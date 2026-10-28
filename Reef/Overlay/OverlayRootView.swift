@@ -3,10 +3,11 @@ import SwiftUI
 /// The SwiftUI root hosted inside the overlay panel.
 ///
 /// It draws the silhouette and lays the current phase's content on top. The
-/// pointer tracking here feeds `NotchState.isHovering`, which later versions use
-/// to open the overlay.
+/// pointer tracking here feeds `NotchState.isHovering`; the window controller
+/// turns that into an open or closed phase.
 struct OverlayRootView: View {
     @EnvironmentObject private var state: NotchState
+    @StateObject private var battery = BatteryModel()
 
     private var shape: NotchShape {
         NotchShape(
@@ -18,7 +19,7 @@ struct OverlayRootView: View {
         ZStack(alignment: .top) {
             OverlayBackground(shape: shape)
 
-            CollapsedPillView()
+            content
         }
         .frame(
             width: state.targetSize.width,
@@ -28,6 +29,17 @@ struct OverlayRootView: View {
         .onHover { hovering in
             state.isHovering = hovering
         }
-        .animation(.spring(response: 0.4, dampingFraction: 0.82), value: state.phase)
+        .animation(.spring(response: 0.42, dampingFraction: 0.82), value: state.phase)
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        switch state.phase {
+        case .expanded:
+            ExpandedView(battery: battery.snapshot)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+        case .collapsed:
+            CollapsedPillView()
+        }
     }
 }
