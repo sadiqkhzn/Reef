@@ -40,6 +40,13 @@ struct OverlayRootView: View {
     private var style: OverlayStyle { state.displayedStyle }
     private var isOpen: Bool { state.phase == .expanded }
 
+    /// The next event to show on the resting island, when the option is on and
+    /// nothing is playing. Nil otherwise.
+    private var restingEvent: CalendarEvent? {
+        guard settings.showsEventAtRest, shownTrack == nil else { return nil }
+        return EventSchedule.next(calendar.events, now: Date())
+    }
+
     /// Whether the open island is showing the home page rather than the player.
     /// Home when there is no track, or when the person flipped to it.
     private var showsHome: Bool { shownTrack == nil || openPage == .home }
@@ -87,6 +94,7 @@ struct OverlayRootView: View {
         let active = shownTrack != nil
         state.nowPlayingActive = active
         if !active { state.isOverControl = false }
+        state.eventRestingActive = restingEvent != nil
     }
 
     /// Turn a finished drag on the island into an open/close, a track skip, or a
@@ -261,6 +269,18 @@ struct OverlayRootView: View {
                         height: state.visibleSize.height,
                         alignment: .top)
                     .transition(.islandWing)
+                } else if let event = restingEvent {
+                    // Idle, with the next-event option on: show it in the wings.
+                    TimelineView(.periodic(from: .now, by: 30)) { timeline in
+                        RestingEventView(
+                            event: event,
+                            centerWidth: state.collapsedSize.width,
+                            rowHeight: state.collapsedSize.height,
+                            showsTitle: notchClearance == 0,
+                            now: timeline.date)
+                    }
+                    .frame(height: state.restingSize.height, alignment: .top)
+                    .transition(.islandWing)
                 }
             }
             // Keep the content inside the island so it closes with it rather than
@@ -301,9 +321,14 @@ struct OverlayRootView: View {
             MotionStyle.animation(settings.motion.wings, reduceMotion: reduceMotion),
             value: state.nowPlayingActive)
         .animation(
+            MotionStyle.animation(settings.motion.wings, reduceMotion: reduceMotion),
+            value: state.eventRestingActive)
+        .animation(
             MotionStyle.animation(settings.motion.peek, reduceMotion: reduceMotion),
             value: state.announcingTitle)
         .onReceive(media.$current) { _ in updateNowPlayingActive() }
+        .onReceive(calendar.$events) { _ in updateNowPlayingActive() }
+        .onChange(of: settings.showsEventAtRest) { _, _ in updateNowPlayingActive() }
         .onChange(of: isOpen) { _, open in if open { resetOpenPage() } }
         .onChange(of: settings.mediaSource) { _, _ in updateNowPlayingActive() }
         .onChange(of: settings.hidesMediaWhenSourceFrontmost) { _, _ in updateNowPlayingActive() }

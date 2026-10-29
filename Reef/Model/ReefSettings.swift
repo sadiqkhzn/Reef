@@ -27,6 +27,7 @@ final class ReefSettings: ObservableObject {
         static let audioOutputActivity = "liveActivity.audioOutput"
         static let calendarActivity = "liveActivity.calendar"
         static let calendarLeadMinutes = "calendar.leadMinutes"
+        static let eventAtRest = "calendar.eventAtRest"
     }
 
     static let defaultOverlayStyle: OverlayStyle = .floating
@@ -117,6 +118,11 @@ final class ReefSettings: ObservableObject {
         didSet { defaults.set(calendarLeadMinutes, forKey: Key.calendarLeadMinutes) }
     }
 
+    /// Show the next event on the resting island while nothing is playing.
+    @Published var showsEventAtRest: Bool {
+        didSet { defaults.set(showsEventAtRest, forKey: Key.eventAtRest) }
+    }
+
     private let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard) {
@@ -138,6 +144,7 @@ final class ReefSettings: ObservableObject {
         showsAudioOutputActivity = defaults.object(forKey: Key.audioOutputActivity) as? Bool ?? true
         showsCalendarActivity = defaults.object(forKey: Key.calendarActivity) as? Bool ?? true
         calendarLeadMinutes = defaults.object(forKey: Key.calendarLeadMinutes) as? Int ?? 10
+        showsEventAtRest = defaults.object(forKey: Key.eventAtRest) as? Bool ?? false
     }
 
     /// Put every value back to its default.
@@ -159,6 +166,7 @@ final class ReefSettings: ObservableObject {
         showsAudioOutputActivity = true
         showsCalendarActivity = true
         calendarLeadMinutes = 10
+        showsEventAtRest = false
     }
 
     private static func value<T: RawRepresentable>(_ defaults: UserDefaults, _ key: String) -> T?
