@@ -16,9 +16,15 @@ struct MediaWingView: View {
     /// Reports when the pointer is over the trailing control, so the island
     /// knows not to open while a button is hovered.
     var onControlHover: (Bool) -> Void = { _ in }
+    /// Called when the user resumes playback from the control, so the island can
+    /// announce the track.
+    var onResume: () -> Void = {}
 
-    @State private var tint: Color = .white
     @State private var controlHovered = false
+    @State private var controlPressed = false
+
+    /// Vivid color from the cover, computed once by the controller.
+    private var tint: Color { nowPlaying.tint ?? .white }
 
     private var coverSide: CGFloat { max(16, height - 7) }
     private var coverRadius: CGFloat { coverSide * 0.3 }
@@ -31,8 +37,6 @@ struct MediaWingView: View {
         }
         .padding(.horizontal, 10)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onAppear(perform: refreshTint)
-        .onChange(of: nowPlaying.artworkToken) { _ in refreshTint() }
     }
 
     // MARK: - Cover
@@ -65,6 +69,8 @@ struct MediaWingView: View {
                 Image(systemName: nowPlaying.isPlaying ? "pause.fill" : "play.fill")
                     .font(.system(size: 11, weight: .heavy))
                     .foregroundStyle(.white)
+                    .contentTransition(.symbolEffect(.replace))
+                    .scaleEffect(controlPressed ? 0.78 : 1)
                     .transition(.opacity)
             } else {
                 MediaEqualizer(tint: tint, active: animating && nowPlaying.isPlaying)
@@ -77,8 +83,17 @@ struct MediaWingView: View {
             controlHovered = hovering
             onControlHover(hovering)
         }
-        .onTapGesture { media.playPause() }
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in controlPressed = true }
+                .onEnded { _ in
+                    controlPressed = false
+                    let wasPaused = !nowPlaying.isPlaying
+                    media.playPause()
+                    if wasPaused { onResume() }
+                })
         .animation(.easeInOut(duration: 0.18), value: controlHovered)
+        .animation(.spring(response: 0.26, dampingFraction: 0.55), value: controlPressed)
     }
 
     private var revolvingGlow: some View {
@@ -99,9 +114,6 @@ struct MediaWingView: View {
         }
     }
 
-    private func refreshTint() {
-        tint = nowPlaying.artwork?.reefTint ?? .white
-    }
 }
 
 /// A row of bars that bounce independently, so it reads as music rather than a
@@ -125,7 +137,11 @@ struct MediaEqualizer: View {
         HStack(alignment: .center, spacing: 2.5) {
             ForEach(0..<barCount, id: \.self) { index in
                 Capsule()
-                    .fill(tint)
+                    .fill(
+                        LinearGradient(
+                            colors: [tint, tint.opacity(0.5)],
+                            startPoint: .top,
+                            endPoint: .bottom))
                     .frame(width: 3, height: quiet ? 3 : height(time: time, index: index))
             }
         }
@@ -144,55 +160,3 @@ struct MediaEqualizer: View {
     }
 }
 
-extension NSImage {
-    /// A vivid color drawn from the image, used to tint the equalizer. Averages
-    /// the pixels, then lifts saturation and brightness so it reads on the dark
-    /// island even when the art is muted.
-    var reefTint: Color? {
-        guard let tiff = tiffRepresentation,
-            let bitmap = NSBitmapImageRep(data: tiff),
-            let input = CIImage(bitmapImageRep: bitmap) else {
-            return nil
-        }
-
-        let extent = input.extent
-        guard let filter = CIFilter(
-            name: "CIAreaAverage",
-            parameters: [
-                kCIInputImageKey: input,
-                kCIInputExtentKey: CIVector(cgRect: extent),
-            ]),
-            let output = filter.outputImage else {
-            return nil
-        }
-
-        var pixel = [UInt8](repeating: 0, count: 4)
-        let context = CIContext(options: [.workingColorSpace: NSNull()])
-        context.render(
-            output,
-            toBitmap: &pixel,
-            rowBytes: 4,
-            bounds: CGRect(x: 0, y: 0, width: 1, height: 1),
-            format: .RGBA8,
-            colorSpace: CGColorSpaceCreateDeviceRGB())
-
-        let base = NSColor(
-            red: CGFloat(pixel[0]) / 255,
-            green: CGFloat(pixel[1]) / 255,
-            blue: CGFloat(pixel[2]) / 255,
-            alpha: 1)
-        guard let hsb = base.usingColorSpace(.deviceRGB) else { return nil }
-
-        var hue: CGFloat = 0
-        var saturation: CGFloat = 0
-        var brightness: CGFloat = 0
-        hsb.getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: nil)
-
-        let lifted = NSColor(
-            hue: hue,
-            saturation: max(0.55, saturation),
-            brightness: max(0.8, brightness),
-            alpha: 1)
-        return Color(nsColor: lifted)
-    }
-}

@@ -1,4 +1,5 @@
 import AppKit
+import SwiftUI
 
 /// A snapshot of what the system is currently playing, from any app.
 struct NowPlaying: Equatable {
@@ -18,6 +19,9 @@ struct NowPlaying: Equatable {
     /// A cheap identity for the artwork so equality does not compare image
     /// bytes. Derived from the encoded source.
     var artworkToken: Int?
+    /// A vivid color drawn from the cover, computed by the controller when the
+    /// artwork arrives. Tracks `artworkToken`, so it is left out of equality.
+    var tint: Color?
 
     /// Equality ignores the decoded image itself and uses the token instead, so
     /// comparing two snapshots never walks the image data.

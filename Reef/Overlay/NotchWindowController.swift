@@ -249,6 +249,8 @@ final class NotchWindowController {
     private func observeNowPlaying() {
         state.$nowPlayingActive
             .removeDuplicates()
+            .map { _ in () }
+            .merge(with: state.$announcingTitle.map { _ in () })
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in
                 self?.updateInteractiveRect()
@@ -257,16 +259,17 @@ final class NotchWindowController {
     }
 
     /// Switching between attached and floating changes the shape, resting size,
-    /// and panel position all at once. Repositioning in a single step swaps them
-    /// together with no in-between frame, which reads cleaner than fading out the
-    /// old shouldered shape first.
+    /// and panel position. Rather than morph the shape (the shoulders flashing),
+    /// fade the old island out, swap everything while it is hidden, and let the
+    /// new one fade in fresh. The drawn style changes inside `reposition`, which
+    /// runs at the hidden point, so nothing morphs.
     private func observeStyle() {
         settings.$overlayStyle
             .dropFirst()
             .removeDuplicates()
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in
-                self?.reposition()
+                self?.relocate()
             }
             .store(in: &cancellables)
     }

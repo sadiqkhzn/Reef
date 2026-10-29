@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import SwiftUI
 
 /// Reads system-wide now playing information and relays transport commands.
 ///
@@ -22,6 +23,7 @@ final class NowPlayingController: ObservableObject {
     private var lastPublished: NowPlaying?
     private var lastArtworkEncoded: String?
     private var lastArtworkImage: NSImage?
+    private var lastArtworkTint: Color?
 
     /// MediaRemote command ids used by the adapter's `send` command.
     private enum CommandID: Int {
@@ -96,6 +98,7 @@ final class NowPlayingController: ObservableObject {
             let encoded = NowPlayingStream.encodedArtwork(from: state)
             next?.artwork = artworkImage(for: encoded)
             next?.artworkToken = encoded?.hashValue
+            next?.tint = lastArtworkTint
         }
 
         guard next != lastPublished else { return }
@@ -116,6 +119,7 @@ final class NowPlayingController: ObservableObject {
         guard let encoded else {
             lastArtworkEncoded = nil
             lastArtworkImage = nil
+            lastArtworkTint = nil
             return nil
         }
         if encoded == lastArtworkEncoded {
@@ -124,6 +128,7 @@ final class NowPlayingController: ObservableObject {
         let image = Data(base64Encoded: encoded).flatMap { NSImage(data: $0) }
         lastArtworkEncoded = encoded
         lastArtworkImage = image
+        lastArtworkTint = image?.reefVibrantColor
         return image
     }
 
@@ -150,5 +155,74 @@ final class NowPlayingController: ObservableObject {
         process.standardOutput = FileHandle.nullDevice
         process.standardError = FileHandle.nullDevice
         try? process.run()
+    }
+}
+
+extension NSImage {
+    /// A vivid color that stands for the cover.
+    ///
+    /// The image is drawn small, then the pixels are averaged with a weight that
+    /// favors saturated, bright ones, so a muted background does not wash the
+    /// result out. The most vivid single pixel is the fallback. The result is
+    /// lifted in saturation and brightness so it reads on the dark island.
+    var reefVibrantColor: Color? {
+        guard let cg = cgImage(forProposedRect: nil, context: nil, hints: nil) else { return nil }
+
+        let side = 24
+        var pixels = [UInt8](repeating: 0, count: side * side * 4)
+        guard let ctx = CGContext(
+            data: &pixels,
+            width: side,
+            height: side,
+            bitsPerComponent: 8,
+            bytesPerRow: side * 4,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else {
+            return nil
+        }
+        ctx.draw(cg, in: CGRect(x: 0, y: 0, width: side, height: side))
+
+        var sumR = 0.0, sumG = 0.0, sumB = 0.0, weightSum = 0.0
+        var bestScore = -1.0, bestR = 1.0, bestG = 1.0, bestB = 1.0
+
+        for i in stride(from: 0, to: pixels.count, by: 4) {
+            let r = Double(pixels[i]) / 255
+            let g = Double(pixels[i + 1]) / 255
+            let b = Double(pixels[i + 2]) / 255
+            let maxC = max(r, g, b)
+            let minC = min(r, g, b)
+            let saturation = maxC <= 0 ? 0 : (maxC - minC) / maxC
+            let weight = saturation * saturation * maxC
+            sumR += r * weight
+            sumG += g * weight
+            sumB += b * weight
+            weightSum += weight
+
+            let score = saturation * maxC
+            if score > bestScore {
+                bestScore = score
+                bestR = r
+                bestG = g
+                bestB = b
+            }
+        }
+
+        var r = bestR, g = bestG, b = bestB
+        if weightSum > 0.0001 {
+            r = sumR / weightSum
+            g = sumG / weightSum
+            b = sumB / weightSum
+        }
+
+        let base = NSColor(red: r, green: g, blue: b, alpha: 1)
+        guard let device = base.usingColorSpace(.deviceRGB) else { return Color(nsColor: base) }
+        var hue: CGFloat = 0, saturation: CGFloat = 0, brightness: CGFloat = 0
+        device.getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: nil)
+        let lifted = NSColor(
+            hue: hue,
+            saturation: max(0.55, saturation),
+            brightness: max(0.82, brightness),
+            alpha: 1)
+        return Color(nsColor: lifted)
     }
 }
