@@ -102,4 +102,19 @@ extension AnyTransition {
             insertion: .islandContent,
             removal: AnyTransition.islandContent.animation(.easeOut(duration: 0.12)))
     }
+
+    /// For the resting wings (media and live activities). A plain blur-fade with
+    /// no animation of its own, so it inherits the island's own grow/shrink
+    /// spring: the contents resolve and leave in exact step with the silhouette,
+    /// in both directions, never arriving or lingering out of time with it.
+    static var islandWing: AnyTransition { .islandContent }
+
+    /// For the open island's content. A quick, smooth blur-fade both ways, so
+    /// opening feels as smooth as closing. The short timing keeps the tinted body
+    /// filling in fast rather than leaving a black island for long.
+    static var islandOpen: AnyTransition {
+        .asymmetric(
+            insertion: AnyTransition.islandContent.animation(.easeOut(duration: 0.22)),
+            removal: AnyTransition.islandContent.animation(.easeOut(duration: 0.12)))
+    }
 }

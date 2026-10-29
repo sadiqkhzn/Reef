@@ -37,3 +37,7 @@ Package.resolved
 
 # Coverage artifacts
 *.profraw
+
+# Internal design and feature notes: kept locally, never pushed.
+docs/
+*.design.md

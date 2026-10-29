@@ -30,6 +30,8 @@ final class NowPlayingController: ObservableObject {
         case togglePlayPause = 2
         case nextTrack = 4
         case previousTrack = 5
+        case cycleShuffle = 6
+        case cycleRepeat = 7
     }
 
     init() {
@@ -146,12 +148,26 @@ final class NowPlayingController: ObservableObject {
     func playPause() { send(.togglePlayPause) }
     func next() { send(.nextTrack) }
     func previous() { send(.previousTrack) }
+    func toggleShuffle() { send(.cycleShuffle) }
+    func cycleRepeat() { send(.cycleRepeat) }
+
+    /// Jump the current track to a position in seconds.
+    func seek(to seconds: TimeInterval) {
+        let micros = Int(max(0, seconds) * 1_000_000)
+        run(["seek", String(micros)])
+    }
 
     private func send(_ command: CommandID) {
+        run(["send", String(command.rawValue)])
+    }
+
+    /// Fire a one-shot adapter subcommand. Each call is its own short-lived
+    /// process, matching how the adapter's `send`/`seek` verbs are invoked.
+    private func run(_ arguments: [String]) {
         guard let scriptPath, let frameworkPath else { return }
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/perl")
-        process.arguments = [scriptPath, frameworkPath, "send", String(command.rawValue)]
+        process.arguments = [scriptPath, frameworkPath] + arguments
         process.standardOutput = FileHandle.nullDevice
         process.standardError = FileHandle.nullDevice
         try? process.run()

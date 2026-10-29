@@ -50,6 +50,10 @@ struct LiveActivityWings: View {
             return isCritical ? ReefTheme.Status.critical : ReefTheme.Status.warning
         case .deviceConnected:
             return ReefTheme.Status.charging
+        case .deviceDisconnected:
+            return ReefTheme.Ink.secondary
+        case .audioOutput:
+            return ReefTheme.Ink.primary
         }
     }
 
@@ -70,7 +74,15 @@ struct LiveActivityWings: View {
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(tint)
                 .symbolEffect(.pulse, options: .repeating, isActive: isCritical)
-        case .deviceConnected(_, let kind):
+        case .deviceConnected(_, let kind, _):
+            Image(systemName: kind.symbol)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(ReefTheme.Ink.primary)
+        case .deviceDisconnected(_, let kind):
+            Image(systemName: kind.symbol)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(ReefTheme.Ink.secondary)
+        case .audioOutput(_, let kind):
             Image(systemName: kind.symbol)
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(ReefTheme.Ink.primary)
@@ -99,8 +111,28 @@ struct LiveActivityWings: View {
                 .monospacedDigit()
                 .foregroundStyle(tint)
                 .contentTransition(.numericText())
-        case .fullyCharged, .deviceConnected:
+        case .deviceConnected(_, _, let battery):
+            if let battery {
+                Text("\(battery)%")
+                    .font(ReefTheme.Typography.wing)
+                    .monospacedDigit()
+                    .foregroundStyle(tint)
+                    .contentTransition(.numericText())
+            } else {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(tint)
+            }
+        case .fullyCharged:
             Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(tint)
+        case .deviceDisconnected:
+            Image(systemName: "xmark.circle.fill")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(tint)
+        case .audioOutput:
+            Image(systemName: "waveform")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(tint)
         }

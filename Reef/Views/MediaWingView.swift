@@ -11,6 +11,10 @@ struct MediaWingView: View {
     let nowPlaying: NowPlaying
     @ObservedObject var media: NowPlayingController
     var height: CGFloat
+    /// Width of the notch to leave clear in the center, so the cover and the
+    /// equalizer sit out in the two wings. Zero on Macs without a notch, where
+    /// the pill simply holds both ends.
+    var notchWidth: CGFloat = 0
     /// False while hopping screens, so the motion stops.
     var animating: Bool = true
     /// Reports when the pointer is over the trailing control, so the island
@@ -29,13 +33,21 @@ struct MediaWingView: View {
     private var coverSide: CGFloat { max(16, height - 7) }
     private var coverRadius: CGFloat { coverSide * 0.3 }
 
+    /// Margin from each end, a touch tighter than the old inset so the cover and
+    /// equalizer sit nearer the corners without crowding the rounded edge.
+    private let endInset: CGFloat = 7
+
     var body: some View {
         HStack(alignment: .center, spacing: 0) {
             cover
-            Spacer(minLength: 10)
+                .padding(.leading, endInset)
+            // The center holds at least the notch width and takes up any extra,
+            // so the cover and equalizer stay pinned to the two corners and the
+            // gap grows between them when the island peeks wider.
+            Spacer(minLength: max(10, notchWidth))
             control
+                .padding(.trailing, endInset)
         }
-        .padding(.horizontal, 10)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
@@ -77,7 +89,9 @@ struct MediaWingView: View {
                     .transition(.opacity)
             }
         }
-        .frame(width: 30, height: height)
+        // Hug the trailing edge so the equalizer's end margin matches the cover's,
+        // while the wider frame keeps an easy hover target.
+        .frame(width: 30, height: height, alignment: .trailing)
         .contentShape(Rectangle())
         .onHover { hovering in
             controlHovered = hovering

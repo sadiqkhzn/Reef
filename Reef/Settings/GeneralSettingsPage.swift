@@ -39,6 +39,20 @@ struct GeneralSettingsPage: View {
             }
 
             Section {
+                Toggle("Swipe the island", isOn: $settings.swipeGesturesEnabled)
+                if settings.swipeGesturesEnabled {
+                    Toggle("Natural swipe direction", isOn: $settings.naturalSwipeDirection)
+                }
+            } header: {
+                Text("Gestures")
+            } footer: {
+                Text("Swipe sideways on the island to skip tracks, and up or down to "
+                    + "close or open it. With natural direction on, swiping left moves to "
+                    + "the next track.")
+                    .foregroundStyle(.secondary)
+            }
+
+            Section {
                 Button("Restore Defaults", role: .destructive) {
                     settings.reset()
                 }
