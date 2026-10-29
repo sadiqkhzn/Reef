@@ -55,6 +55,12 @@ final class CalendarEventTests: XCTestCase {
         XCTAssertFalse(event("b", startsIn: -1).isWithinLead(now: now, leadTime: 10 * 60))
     }
 
+    func testShortCountdown() {
+        XCTAssertEqual(event("a", startsIn: 10).shortCountdownText(now: now), "10m")
+        XCTAssertEqual(event("a", startsIn: 90).shortCountdownText(now: now), "1h")
+        XCTAssertEqual(event("a", startsIn: -5, lasts: 30).shortCountdownText(now: now), "now")
+    }
+
     // MARK: - Next event
 
     func testNextPicksSoonestUnendedTimedEvent() {

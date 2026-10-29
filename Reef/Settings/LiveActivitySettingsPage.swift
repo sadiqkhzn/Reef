@@ -71,6 +71,8 @@ struct LiveActivitySettingsPage: View {
                         Text("30 minutes before").tag(30)
                     }
                 }
+
+                Toggle("Show next event on the island", isOn: $settings.showsEventAtRest)
             } header: {
                 Text("Activities")
             } footer: {

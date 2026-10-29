@@ -256,6 +256,7 @@ final class NotchWindowController {
             .removeDuplicates()
             .map { _ in () }
             .merge(with: state.$announcingTitle.map { _ in () })
+            .merge(with: state.$eventRestingActive.removeDuplicates().map { _ in () })
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in
                 self?.updateInteractiveRect()

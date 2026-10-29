@@ -117,9 +117,13 @@ final class NotchState: ObservableObject {
         hasNotch ? collapsedSize.width + Self.mediaWing * 2 : Self.mediaRestingWidth
     }
 
+    /// True while the resting island shows the next calendar event (when idle
+    /// and the option is on). Drives the resting size.
+    @Published var eventRestingActive: Bool = false
+
     /// Resting size: a live activity takes over the wings while it is present
-    /// (even over a playing track, briefly), then it falls back to the media
-    /// wing while a track is on, and the bare pill otherwise.
+    /// (even over a playing track, briefly), then the media wing while a track
+    /// is on, then the next-event wing when idle, and the bare pill otherwise.
     var restingSize: CGSize {
         if liveActivity != nil {
             return CGSize(
@@ -131,6 +135,11 @@ final class NotchState: ObservableObject {
                 ? collapsedSize.width + Self.mediaWing * 2
                 : Self.mediaRestingWidth
             return CGSize(width: width, height: collapsedSize.height)
+        }
+        if eventRestingActive {
+            return CGSize(
+                width: collapsedSize.width + Self.wingWidth * 2,
+                height: collapsedSize.height)
         }
         return collapsedSize
     }

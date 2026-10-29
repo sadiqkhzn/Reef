@@ -39,6 +39,15 @@ struct CalendarEvent: Equatable, Identifiable {
         let seconds = start.timeIntervalSince(now)
         return seconds > 0 && seconds <= leadTime
     }
+
+    /// A very compact countdown for the resting wing: "now", "10m", or "1h".
+    func shortCountdownText(now: Date) -> String {
+        if isOngoing(now: now) { return "now" }
+        let seconds = start.timeIntervalSince(now)
+        guard seconds > 0 else { return "now" }
+        let minutes = Int((seconds / 60).rounded(.up))
+        return minutes < 60 ? "\(minutes)m" : "\(minutes / 60)h"
+    }
 }
 
 /// Picks which event matters right now. Pure, so the rules are tested without a
