@@ -22,6 +22,10 @@ struct IslandHomeView: View {
     var canOpenPlayer: Bool = false
     /// Switch the open island to the player page.
     var onOpenPlayer: () -> Void = {}
+    /// Number of files on the shelf, for a badge; zero hides the shelf button.
+    var shelfCount: Int = 0
+    /// Switch the open island to the shelf page.
+    var onOpenShelf: () -> Void = {}
 
     private let inset = ReefTheme.Radius.islandInset
 
@@ -56,6 +60,20 @@ struct IslandHomeView: View {
                 .buttonStyle(.plain)
             } else {
                 pill(title: "Home", symbol: "house.fill")
+            }
+            if shelfCount > 0 {
+                Button(action: onOpenShelf) {
+                    HStack(spacing: 3) {
+                        Image(systemName: "tray.full")
+                        Text("\(shelfCount)")
+                    }
+                    .font(ReefTheme.Typography.caption)
+                    .foregroundStyle(ReefTheme.Ink.secondary)
+                    .padding(.leading, ReefTheme.Spacing.s)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .help("Open the shelf")
             }
             Spacer(minLength: notchWidth + ReefTheme.Spacing.l)
             if battery.isPresent {
