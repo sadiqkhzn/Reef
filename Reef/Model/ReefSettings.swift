@@ -19,6 +19,8 @@ final class ReefSettings: ObservableObject {
         static let hideMediaWhenSourceFrontmost = "media.hideWhenSourceFrontmost"
         static let swipeGestures = "gestures.swipe"
         static let naturalSwipe = "gestures.naturalDirection"
+        static let weather = "weather.enabled"
+        static let temperatureUnit = "weather.unit"
         static let chargingActivity = "liveActivity.charging"
         static let lowBatteryActivity = "liveActivity.lowBattery"
         static let deviceActivity = "liveActivity.devices"
@@ -75,6 +77,16 @@ final class ReefSettings: ObservableObject {
         didSet { defaults.set(naturalSwipeDirection, forKey: Key.naturalSwipe) }
     }
 
+    /// Show local weather in the island on days with no events.
+    @Published var showsWeather: Bool {
+        didSet { defaults.set(showsWeather, forKey: Key.weather) }
+    }
+
+    /// Unit the weather is shown in.
+    @Published var temperatureUnit: TemperatureUnit {
+        didSet { defaults.set(temperatureUnit.rawValue, forKey: Key.temperatureUnit) }
+    }
+
     /// Show the wings when power is connected or the battery finishes charging.
     @Published var showsChargingActivity: Bool {
         didSet { defaults.set(showsChargingActivity, forKey: Key.chargingActivity) }
@@ -118,6 +130,8 @@ final class ReefSettings: ObservableObject {
         hidesMediaWhenSourceFrontmost = defaults.object(forKey: Key.hideMediaWhenSourceFrontmost) as? Bool ?? false
         swipeGesturesEnabled = defaults.object(forKey: Key.swipeGestures) as? Bool ?? true
         naturalSwipeDirection = defaults.object(forKey: Key.naturalSwipe) as? Bool ?? true
+        showsWeather = defaults.object(forKey: Key.weather) as? Bool ?? true
+        temperatureUnit = Self.value(defaults, Key.temperatureUnit) ?? .celsius
         showsChargingActivity = defaults.object(forKey: Key.chargingActivity) as? Bool ?? true
         showsLowBatteryActivity = defaults.object(forKey: Key.lowBatteryActivity) as? Bool ?? true
         showsDeviceActivity = defaults.object(forKey: Key.deviceActivity) as? Bool ?? true
@@ -137,6 +151,8 @@ final class ReefSettings: ObservableObject {
         hidesMediaWhenSourceFrontmost = false
         swipeGesturesEnabled = true
         naturalSwipeDirection = true
+        showsWeather = true
+        temperatureUnit = .celsius
         showsChargingActivity = true
         showsLowBatteryActivity = true
         showsDeviceActivity = true

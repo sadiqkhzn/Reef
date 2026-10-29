@@ -39,6 +39,24 @@ struct GeneralSettingsPage: View {
             }
 
             Section {
+                Toggle("Show local weather", isOn: $settings.showsWeather)
+                if settings.showsWeather {
+                    Picker("Units", selection: $settings.temperatureUnit) {
+                        ForEach(TemperatureUnit.allCases) { unit in
+                            Text(unit.title).tag(unit)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
+            } header: {
+                Text("Weather")
+            } footer: {
+                Text("Shown on the open island's home page. Reef uses your approximate "
+                    + "location to fetch the forecast from Open-Meteo.")
+                    .foregroundStyle(.secondary)
+            }
+
+            Section {
                 Toggle("Swipe the island", isOn: $settings.swipeGesturesEnabled)
                 if settings.swipeGesturesEnabled {
                     Toggle("Natural swipe direction", isOn: $settings.naturalSwipeDirection)
