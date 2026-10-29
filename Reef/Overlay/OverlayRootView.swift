@@ -1,10 +1,12 @@
 import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// Which page the open island shows.
 enum OpenPage {
     case nowPlaying
     case home
+    case shelf
 }
 
 /// The SwiftUI root hosted inside the overlay panel.
@@ -25,7 +27,10 @@ struct OverlayRootView: View {
     @EnvironmentObject private var battery: BatteryModel
     @EnvironmentObject private var calendar: CalendarMonitor
     @EnvironmentObject private var weather: WeatherProvider
+    @EnvironmentObject private var shelf: ShelfModel
     @StateObject private var media = NowPlayingController()
+    /// True while a file drag is hovering the island, so it can open the shelf.
+    @State private var dropTargeted = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// True while the mouse button is down on the resting island, which dips
     /// it slightly so a click feels physical.
@@ -138,6 +143,24 @@ struct OverlayRootView: View {
         openPage = showsHome ? .nowPlaying : .home
     }
 
+    /// Take dropped files onto the shelf and open it to show them.
+    private func handleDrop(_ providers: [NSItemProvider]) -> Bool {
+        let fileProviders = providers.filter {
+            $0.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier)
+        }
+        guard !fileProviders.isEmpty else { return false }
+
+        for provider in fileProviders {
+            _ = provider.loadObject(ofClass: URL.self) { url, _ in
+                guard let url, url.isFileURL else { return }
+                Task { @MainActor in shelf.add([url]) }
+            }
+        }
+        state.phase = .expanded
+        openPage = .shelf
+        return true
+    }
+
     private var shape: NotchShape {
         switch style {
         case .attached:
@@ -202,7 +225,16 @@ struct OverlayRootView: View {
 
             Group {
                 if isOpen {
-                    if let nowPlaying = shownTrack, !showsHome {
+                    if openPage == .shelf {
+                        ShelfView(
+                            shelf: shelf,
+                            accent: settings.accent.color,
+                            headerHeight: state.collapsedSize.height,
+                            notchWidth: notchClearance,
+                            onClose: { openPage = shownTrack != nil ? .nowPlaying : .home })
+                            .frame(width: state.visibleSize.width, height: state.visibleSize.height)
+                            .transition(.islandOpen)
+                    } else if let nowPlaying = shownTrack, !showsHome {
                         MediaView(nowPlaying: nowPlaying, media: media, colorStyle: settings.playerTint)
                             .frame(width: state.visibleSize.width, height: state.visibleSize.height)
                             .overlay(alignment: .topTrailing) { pageSwitch }
@@ -216,7 +248,9 @@ struct OverlayRootView: View {
                             nextEvent: EventSchedule.next(calendar.events, now: Date()),
                             weather: settings.showsWeather ? weather.snapshot : nil,
                             canOpenPlayer: canSwitchPage,
-                            onOpenPlayer: { openPage = .nowPlaying })
+                            onOpenPlayer: { openPage = .nowPlaying },
+                            shelfCount: shelf.items.count,
+                            onOpenShelf: { openPage = .shelf })
                             .frame(width: state.visibleSize.width, height: state.visibleSize.height)
                             .transition(.islandOpen)
                     }
@@ -294,6 +328,16 @@ struct OverlayRootView: View {
             value: isPressed)
         .frame(width: state.hitSize.width, height: state.hitSize.height, alignment: .top)
         .contentShape(Rectangle())
+        .onDrop(of: [UTType.fileURL], isTargeted: $dropTargeted) { providers in
+            handleDrop(providers)
+        }
+        .onChange(of: dropTargeted) { _, targeted in
+            // Opening the shelf the moment a file hovers gives a place to drop.
+            if targeted {
+                state.phase = .expanded
+                openPage = .shelf
+            }
+        }
         .simultaneousGesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { _ in isPressed = true }
@@ -329,7 +373,7 @@ struct OverlayRootView: View {
         .onReceive(media.$current) { _ in updateNowPlayingActive() }
         .onReceive(calendar.$events) { _ in updateNowPlayingActive() }
         .onChange(of: settings.showsEventAtRest) { _, _ in updateNowPlayingActive() }
-        .onChange(of: isOpen) { _, open in if open { resetOpenPage() } }
+        .onChange(of: isOpen) { _, open in if !open { resetOpenPage() } }
         .onChange(of: settings.mediaSource) { _, _ in updateNowPlayingActive() }
         .onChange(of: settings.hidesMediaWhenSourceFrontmost) { _, _ in updateNowPlayingActive() }
         .onChange(of: frontmostBundleId) { _, _ in updateNowPlayingActive() }

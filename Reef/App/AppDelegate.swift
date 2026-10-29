@@ -17,6 +17,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var audioOutput: AudioOutputMonitor?
     private let calendar = CalendarMonitor()
     private let weather = WeatherProvider()
+    private let shelf = ShelfModel()
     private var controller: NotchWindowController?
     private var settingsWindow: SettingsWindowController?
     private var statusItem: NSStatusItem?
@@ -43,7 +44,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         startWeather()
 
         let controller = NotchWindowController(
-            state: state, settings: settings, battery: battery, calendar: calendar, weather: weather)
+            state: state, settings: settings, battery: battery,
+            calendar: calendar, weather: weather, shelf: shelf)
         controller.show()
         self.controller = controller
 
