@@ -14,6 +14,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var activities: LiveActivityCenter?
     private var bluetooth: BluetoothMonitor?
     private var audioOutput: AudioOutputMonitor?
+    private let calendar = CalendarMonitor()
     private var controller: NotchWindowController?
     private var settingsWindow: SettingsWindowController?
     private var statusItem: NSStatusItem?
@@ -28,21 +29,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.accessory)
 
         let battery = BatteryModel()
-        let activities = LiveActivityCenter(state: state, settings: settings, battery: battery)
+        let activities = LiveActivityCenter(
+            state: state, settings: settings, battery: battery, calendar: calendar)
         self.battery = battery
         self.activities = activities
 
         startBluetooth(activities: activities)
         startAudioOutput(activities: activities)
+        calendar.start()
 
-        let controller = NotchWindowController(state: state, settings: settings, battery: battery)
+        let controller = NotchWindowController(
+            state: state, settings: settings, battery: battery, calendar: calendar)
         controller.show()
         self.controller = controller
 
-        settingsWindow = SettingsWindowController { [settings] in
+        settingsWindow = SettingsWindowController { [settings, calendar] in
             SettingsView()
                 .environmentObject(settings)
                 .environmentObject(activities)
+                .environmentObject(calendar)
         }
 
         installMenuBarItem()

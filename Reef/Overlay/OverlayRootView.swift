@@ -1,6 +1,12 @@
 import AppKit
 import SwiftUI
 
+/// Which page the open island shows.
+enum OpenPage {
+    case nowPlaying
+    case home
+}
+
 /// The SwiftUI root hosted inside the overlay panel.
 ///
 /// The panel never changes size. This view draws the island at the size the
@@ -17,6 +23,7 @@ struct OverlayRootView: View {
     @EnvironmentObject private var state: NotchState
     @EnvironmentObject private var settings: ReefSettings
     @EnvironmentObject private var battery: BatteryModel
+    @EnvironmentObject private var calendar: CalendarMonitor
     @StateObject private var media = NowPlayingController()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// True while the mouse button is down on the resting island, which dips
@@ -25,9 +32,18 @@ struct OverlayRootView: View {
     /// Bundle id of the frontmost app, for the "hide while the source app is
     /// frontmost" option.
     @State private var frontmostBundleId: String?
+    /// Which page the open island shows when a track is playing: the player, or
+    /// the home page with the clock, battery, and next event.
+    @State private var openPage: OpenPage = .nowPlaying
 
     private var style: OverlayStyle { state.displayedStyle }
     private var isOpen: Bool { state.phase == .expanded }
+
+    /// Whether the open island is showing the home page rather than the player.
+    /// Home when there is no track, or when the person flipped to it.
+    private var showsHome: Bool { shownTrack == nil || openPage == .home }
+    /// A track exists, so the open island can flip between player and home.
+    private var canSwitchPage: Bool { shownTrack != nil }
 
     /// The track to actually show, after the source filter and the
     /// frontmost-app rule. Nil means the island shows no media right now.
@@ -37,6 +53,31 @@ struct OverlayRootView: View {
             source: settings.mediaSource,
             hideWhenSourceFrontmost: settings.hidesMediaWhenSourceFrontmost,
             frontmostBundleIdentifier: frontmostBundleId)
+    }
+
+    /// The small button on the open player that flips to the home page.
+    @ViewBuilder
+    private var pageSwitch: some View {
+        Button {
+            openPage = .home
+        } label: {
+            Image(systemName: "house.fill")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.75))
+                .frame(width: 22, height: 22)
+                .background(Circle().fill(.white.opacity(0.14)))
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .padding(.top, 8)
+        .padding(.trailing, 10)
+        .onHover { state.isOverControl = $0 }
+    }
+
+    /// Pick a sensible page each time the island opens: the player when a track
+    /// is on, the home page otherwise.
+    private func resetOpenPage() {
+        openPage = shownTrack != nil ? .nowPlaying : .home
     }
 
     /// Keep the shared now-playing flag in step with whether a track is actually
@@ -66,13 +107,26 @@ struct OverlayRootView: View {
             isOpen: isOpen,
             hasMedia: shownTrack != nil,
             naturalDirection: settings.naturalSwipeDirection) {
-        case .tap: tapOpen()
-        case .nextTrack: media.next()
-        case .previousTrack: media.previous()
-        case .open: state.phase = .expanded
-        case .close: state.phase = .collapsed
-        case .none: break
+        case .tap:
+            tapOpen()
+        // A sideways swipe flips the page while open, or skips tracks while resting.
+        case .nextTrack:
+            if isOpen { flipPage() } else { media.next() }
+        case .previousTrack:
+            if isOpen { flipPage() } else { media.previous() }
+        case .open:
+            state.phase = .expanded
+        case .close:
+            state.phase = .collapsed
+        case .none:
+            break
         }
+    }
+
+    /// Flip the open island between the player and the home page.
+    private func flipPage() {
+        guard canSwitchPage else { return }
+        openPage = showsHome ? .nowPlaying : .home
     }
 
     private var shape: NotchShape {
@@ -139,16 +193,20 @@ struct OverlayRootView: View {
 
             Group {
                 if isOpen {
-                    if let nowPlaying = shownTrack {
+                    if let nowPlaying = shownTrack, !showsHome {
                         MediaView(nowPlaying: nowPlaying, media: media, colorStyle: settings.playerTint)
                             .frame(width: state.visibleSize.width, height: state.visibleSize.height)
+                            .overlay(alignment: .topTrailing) { pageSwitch }
                             .transition(.islandOpen)
                     } else {
                         IslandHomeView(
                             battery: battery.snapshot,
                             accent: settings.accent.color,
                             headerHeight: state.collapsedSize.height,
-                            notchWidth: notchClearance)
+                            notchWidth: notchClearance,
+                            nextEvent: EventSchedule.next(calendar.events, now: Date()),
+                            canOpenPlayer: canSwitchPage,
+                            onOpenPlayer: { openPage = .nowPlaying })
                             .frame(width: state.visibleSize.width, height: state.visibleSize.height)
                             .transition(.islandOpen)
                     }
@@ -244,6 +302,7 @@ struct OverlayRootView: View {
             MotionStyle.animation(settings.motion.peek, reduceMotion: reduceMotion),
             value: state.announcingTitle)
         .onReceive(media.$current) { _ in updateNowPlayingActive() }
+        .onChange(of: isOpen) { _, open in if open { resetOpenPage() } }
         .onChange(of: settings.mediaSource) { _, _ in updateNowPlayingActive() }
         .onChange(of: settings.hidesMediaWhenSourceFrontmost) { _, _ in updateNowPlayingActive() }
         .onChange(of: frontmostBundleId) { _, _ in updateNowPlayingActive() }

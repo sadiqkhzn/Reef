@@ -54,6 +54,8 @@ struct LiveActivityWings: View {
             return ReefTheme.Ink.secondary
         case .audioOutput:
             return ReefTheme.Ink.primary
+        case .calendarEvent:
+            return ReefTheme.Ink.primary
         }
     }
 
@@ -85,6 +87,10 @@ struct LiveActivityWings: View {
         case .audioOutput(_, let kind):
             Image(systemName: kind.symbol)
                 .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(ReefTheme.Ink.primary)
+        case .calendarEvent:
+            Image(systemName: "calendar")
+                .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(ReefTheme.Ink.primary)
         }
     }
@@ -133,6 +139,10 @@ struct LiveActivityWings: View {
                 .foregroundStyle(tint)
         case .audioOutput:
             Image(systemName: "waveform")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(tint)
+        case .calendarEvent:
+            Image(systemName: "clock")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(tint)
         }
