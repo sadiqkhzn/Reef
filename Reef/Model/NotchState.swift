@@ -38,6 +38,26 @@ final class NotchState: ObservableObject {
     /// show the media wing (cover and equalizer).
     @Published var nowPlayingActive: Bool = false
 
+    /// A track title to announce briefly (on resume): it shows at peek size,
+    /// scrolling until seen, then clears on its own.
+    @Published var announcingTitle: String?
+    private var announceWork: DispatchWorkItem?
+
+    /// Briefly show a track title, then clear it. Held long enough to scroll
+    /// through plus a short pause.
+    func announce(_ title: String) {
+        announceWork?.cancel()
+        announcingTitle = title
+        // Fixed hold regardless of title length.
+        let work = DispatchWorkItem { [weak self] in self?.announcingTitle = nil }
+        announceWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0, execute: work)
+    }
+
+    /// Extra height added while announcing: equal to the resting height, so the
+    /// island becomes twice as tall, same width and curvature.
+    var announcementBannerHeight: CGFloat { collapsedSize.height }
+
     /// The live activity shown in the wings while resting, if any.
     @Published var liveActivity: LiveActivity?
 
@@ -105,17 +125,25 @@ final class NotchState: ObservableObject {
             height: collapsedSize.height + (isPeeking ? Self.peekRowHeight : 0))
     }
 
+    /// Resting size grown by the small peek amount.
+    var peekedSize: CGSize {
+        CGSize(
+            width: restingSize.width + Self.peekGrow.width,
+            height: restingSize.height + Self.peekGrow.height)
+    }
+
     /// The size the silhouette is drawn at right now. While resting it is the
-    /// resting size, growing a touch on hover; while open it is the open size.
+    /// resting size, growing to the peek size on hover or while announcing a
+    /// track; while open it is the open size.
     var visibleSize: CGSize {
         switch phase {
         case .expanded:
             return expandedSize
         case .collapsed:
-            guard isHovering else { return restingSize }
-            return CGSize(
-                width: restingSize.width + Self.peekGrow.width,
-                height: restingSize.height + Self.peekGrow.height)
+            let base = isHovering ? peekedSize : restingSize
+            guard announcingTitle != nil else { return base }
+            // Grow downward into one taller box for the announcement band.
+            return CGSize(width: base.width, height: base.height + announcementBannerHeight)
         }
     }
 
@@ -128,8 +156,8 @@ final class NotchState: ObservableObject {
             return expandedSize
         case .collapsed:
             return CGSize(
-                width: restingSize.width + Self.peekGrow.width,
-                height: restingSize.height + Self.hoverMargin)
+                width: max(restingSize.width + Self.peekGrow.width, visibleSize.width),
+                height: visibleSize.height + Self.hoverMargin)
         }
     }
 

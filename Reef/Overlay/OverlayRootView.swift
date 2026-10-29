@@ -33,9 +33,10 @@ struct OverlayRootView: View {
                 bottomCornerRadius: isOpen ? ReefTheme.Radius.island : 13,
                 shoulder: style.shoulder)
         case .floating:
-            // Equal radii give a uniformly rounded bubble. At rest it is a
-            // capsule; open it is a softly rounded panel.
-            let radius = isOpen ? ReefTheme.Radius.island : state.visibleSize.height / 2
+            // Equal radii give a uniformly rounded bubble. Use the resting
+            // height for the radius so the curvature stays the same even when the
+            // island grows taller for an announcement.
+            let radius = isOpen ? ReefTheme.Radius.island : state.restingSize.height / 2
             return NotchShape(topCornerRadius: radius, bottomCornerRadius: radius)
         }
     }
@@ -55,6 +56,20 @@ struct OverlayRootView: View {
         MotionStyle.animation(
             isOpen ? settings.motion.open : settings.motion.close,
             reduceMotion: reduceMotion)
+    }
+
+    /// The cover's vivid color, or the accent as a fallback.
+    private var mediaTint: Color {
+        media.current?.tint ?? settings.accent.color
+    }
+
+    /// A soft gradient of the media tint, shared by the equalizer and the
+    /// announcement band so they read as one look.
+    private var tintGradient: LinearGradient {
+        LinearGradient(
+            colors: [mediaTint.opacity(0.85), mediaTint.opacity(0.3)],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing)
     }
 
     var body: some View {
@@ -77,7 +92,7 @@ struct OverlayRootView: View {
                     if let nowPlaying = media.current {
                         MediaView(nowPlaying: nowPlaying, media: media)
                             .frame(width: state.visibleSize.width, height: state.visibleSize.height)
-                            .transition(.islandContent)
+                            .transition(.islandContentFast)
                     } else {
                         IslandHomeView(
                             battery: battery.snapshot,
@@ -85,17 +100,39 @@ struct OverlayRootView: View {
                             headerHeight: state.collapsedSize.height,
                             notchWidth: notchClearance)
                             .frame(width: state.visibleSize.width, height: state.visibleSize.height)
-                            .transition(.islandContent)
+                            .transition(.islandContentFast)
                     }
                 } else if let nowPlaying = media.current {
-                    MediaWingView(
-                        nowPlaying: nowPlaying,
-                        media: media,
-                        height: state.collapsedSize.height,
-                        animating: !state.isRelocating,
-                        onControlHover: { state.isOverControl = $0 })
-                        .frame(width: state.visibleSize.width, height: state.visibleSize.height)
-                        .transition(.islandContent)
+                    // One stable wing, so toggling play/pause never rebuilds it.
+                    // The announcement just grows a title band below it.
+                    ZStack(alignment: .top) {
+                        if state.announcingTitle != nil {
+                            LinearGradient(
+                                colors: [.clear, mediaTint.opacity(0.45)],
+                                startPoint: .center,
+                                endPoint: .bottom)
+                        }
+                        VStack(spacing: 0) {
+                            MediaWingView(
+                                nowPlaying: nowPlaying,
+                                media: media,
+                                height: state.collapsedSize.height,
+                                animating: !state.isRelocating,
+                                onControlHover: { state.isOverControl = $0 },
+                                onResume: { state.announce(nowPlaying.title) })
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            if state.announcingTitle != nil {
+                                MarqueeText(
+                                    text: state.announcingTitle ?? "",
+                                    color: .white.opacity(0.95),
+                                    font: .system(size: 11, weight: .semibold))
+                                    .padding(.horizontal, 18)
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            }
+                        }
+                    }
+                    .frame(width: state.visibleSize.width, height: state.visibleSize.height, alignment: .top)
+                    .transition(.islandContentFast)
                 } else if let activity = state.liveActivity {
                     LiveActivityWings(
                         activity: activity,
@@ -104,7 +141,7 @@ struct OverlayRootView: View {
                         showsLabel: notchClearance == 0,
                         isPeeking: state.isPeeking)
                         .frame(height: state.restingSize.height, alignment: .top)
-                        .transition(.islandContent)
+                        .transition(.islandContentFast)
                 }
             }
             // Keep the content inside the island so it closes with it rather than
@@ -112,7 +149,7 @@ struct OverlayRootView: View {
             .frame(width: state.visibleSize.width, height: state.visibleSize.height, alignment: .top)
             .clipShape(shape)
         }
-        .scaleEffect(isPressed && !isOpen ? 0.96 : 1, anchor: .top)
+        .scaleEffect(isPressed && !isOpen && !state.isOverControl ? 0.96 : 1, anchor: .top)
         .animation(
             MotionStyle.animation(MotionStyle.Spring(response: 0.3, dampingFraction: 0.7), reduceMotion: reduceMotion),
             value: isPressed)
@@ -142,13 +179,15 @@ struct OverlayRootView: View {
         .animation(
             MotionStyle.animation(settings.motion.wings, reduceMotion: reduceMotion),
             value: state.isPeeking)
-        .animation(sizeAnimation, value: style)
         .animation(
             MotionStyle.animation(settings.motion.wings, reduceMotion: reduceMotion),
             value: media.current)
         .animation(
             MotionStyle.animation(settings.motion.wings, reduceMotion: reduceMotion),
             value: state.nowPlayingActive)
+        .animation(
+            MotionStyle.animation(settings.motion.peek, reduceMotion: reduceMotion),
+            value: state.announcingTitle)
         .onReceive(media.$current) { current in
             state.nowPlayingActive = current != nil
             if current == nil { state.isOverControl = false }

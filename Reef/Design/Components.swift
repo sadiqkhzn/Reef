@@ -94,4 +94,12 @@ extension AnyTransition {
             active: BlurFade(radius: 8, opacity: 0, scale: 0.96),
             identity: BlurFade(radius: 0, opacity: 1, scale: 1))
     }
+
+    /// Like `islandContent`, but it leaves quickly so open content is gone before
+    /// the island finishes shrinking on close, rather than lingering past it.
+    static var islandContentFast: AnyTransition {
+        .asymmetric(
+            insertion: .islandContent,
+            removal: AnyTransition.islandContent.animation(.easeOut(duration: 0.12)))
+    }
 }
