@@ -19,11 +19,15 @@ enum LiveActivity: Equatable {
     case deviceDisconnected(name: String, kind: DeviceKind)
     /// System audio switched to a different output (wired, HDMI, USB, AirPlay).
     case audioOutput(name: String, kind: AudioOutputKind)
+    /// An event is coming up soon. Countdown is a ready-made phrase like
+    /// "in 10 min".
+    case calendarEvent(title: String, countdown: String)
 
     /// Higher wins when two activities compete for the wings.
     var priority: Int {
         switch self {
         case .lowBattery(_, let isCritical): return isCritical ? 30 : 20
+        case .calendarEvent: return 18
         case .deviceConnected: return 15
         case .deviceDisconnected: return 14
         case .audioOutput: return 12
@@ -38,6 +42,7 @@ enum LiveActivity: Equatable {
         case .charging, .fullyCharged: return 4
         case .deviceConnected, .deviceDisconnected: return 3.5
         case .audioOutput: return 3
+        case .calendarEvent: return 5
         case .lowBattery: return 6
         }
     }
@@ -56,6 +61,7 @@ enum LiveActivity: Equatable {
         case .deviceConnected: return "Connected"
         case .deviceDisconnected: return "Disconnected"
         case .audioOutput(_, let kind): return kind.title
+        case .calendarEvent: return "Up next"
         }
     }
 
@@ -71,6 +77,7 @@ enum LiveActivity: Equatable {
             return "\(name) · Connected"
         case .deviceDisconnected(let name, _): return "\(name) · Disconnected"
         case .audioOutput(let name, _): return "Audio · \(name)"
+        case .calendarEvent(let title, let countdown): return "\(title) · \(countdown)"
         }
     }
 
@@ -85,6 +92,7 @@ enum LiveActivity: Equatable {
             return "\(name) connected"
         case .deviceDisconnected(let name, _): return "\(name) disconnected"
         case .audioOutput(let name, _): return "Audio output, \(name)"
+        case .calendarEvent(let title, let countdown): return "Up next, \(title), \(countdown)"
         }
     }
 }

@@ -13,6 +13,8 @@ struct IslandHomeView: View {
     var headerHeight: CGFloat
     /// Space left clear in the middle of the header for the hardware notch.
     var notchWidth: CGFloat
+    /// The next calendar event to glance at, when there is one.
+    var nextEvent: CalendarEvent? = nil
 
     private let inset = ReefTheme.Radius.islandInset
 
@@ -72,10 +74,31 @@ struct IslandHomeView: View {
                 Text(context.date, format: .dateTime.weekday(.wide).day().month(.wide))
                     .font(ReefTheme.Typography.caption)
                     .foregroundStyle(ReefTheme.Ink.secondary)
+                if let event = nextEvent {
+                    eventLine(event, now: context.date)
+                        .padding(.top, 3)
+                }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
         }
         .islandCard(padding: ReefTheme.Spacing.l)
+    }
+
+    /// A one-line glance at the next event: a dot in its calendar color, the
+    /// title, and a live countdown.
+    private func eventLine(_ event: CalendarEvent, now: Date) -> some View {
+        HStack(spacing: 5) {
+            Circle()
+                .fill(event.colorHex.flatMap(Color.init(hex:)) ?? accent)
+                .frame(width: 6, height: 6)
+            Text(event.title)
+                .foregroundStyle(ReefTheme.Ink.primary)
+                .lineLimit(1)
+            Text(event.countdownText(now: now))
+                .foregroundStyle(ReefTheme.Ink.secondary)
+                .lineLimit(1)
+        }
+        .font(ReefTheme.Typography.caption)
     }
 
     private var batteryTint: Color {

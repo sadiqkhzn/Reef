@@ -51,6 +51,26 @@ struct LiveActivitySettingsPage: View {
                 ) {
                     activities.present(.audioOutput(name: "External Headphones", kind: .headphones))
                 }
+
+                ActivityRow(
+                    title: "Calendar",
+                    detail: "A heads-up \(settings.calendarLeadMinutes) minutes before an event starts.",
+                    symbol: "calendar",
+                    tint: .white,
+                    isOn: $settings.showsCalendarActivity
+                ) {
+                    activities.present(.calendarEvent(title: "Design Review", countdown: "in 10 min"))
+                }
+
+                if settings.showsCalendarActivity {
+                    Picker("Remind me", selection: $settings.calendarLeadMinutes) {
+                        Text("1 minute before").tag(1)
+                        Text("5 minutes before").tag(5)
+                        Text("10 minutes before").tag(10)
+                        Text("15 minutes before").tag(15)
+                        Text("30 minutes before").tag(30)
+                    }
+                }
             } header: {
                 Text("Activities")
             } footer: {

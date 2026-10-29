@@ -17,6 +17,7 @@ struct OverlayRootView: View {
     @EnvironmentObject private var state: NotchState
     @EnvironmentObject private var settings: ReefSettings
     @EnvironmentObject private var battery: BatteryModel
+    @EnvironmentObject private var calendar: CalendarMonitor
     @StateObject private var media = NowPlayingController()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// True while the mouse button is down on the resting island, which dips
@@ -148,7 +149,8 @@ struct OverlayRootView: View {
                             battery: battery.snapshot,
                             accent: settings.accent.color,
                             headerHeight: state.collapsedSize.height,
-                            notchWidth: notchClearance)
+                            notchWidth: notchClearance,
+                            nextEvent: EventSchedule.next(calendar.events, now: Date()))
                             .frame(width: state.visibleSize.width, height: state.visibleSize.height)
                             .transition(.islandOpen)
                     }
