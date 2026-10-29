@@ -15,6 +15,11 @@ struct IslandHomeView: View {
     var notchWidth: CGFloat
     /// The next calendar event to glance at, when there is one.
     var nextEvent: CalendarEvent? = nil
+    /// True when a track is playing, so the home page can offer a way back to
+    /// the player.
+    var canOpenPlayer: Bool = false
+    /// Switch the open island to the player page.
+    var onOpenPlayer: () -> Void = {}
 
     private let inset = ReefTheme.Radius.islandInset
 
@@ -40,7 +45,16 @@ struct IslandHomeView: View {
 
     private var header: some View {
         HStack(spacing: 0) {
-            pagePill
+            if canOpenPlayer {
+                // A track is playing: offer a tap back to the player page.
+                Button(action: onOpenPlayer) {
+                    pill(title: "Now Playing", symbol: "music.note")
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+            } else {
+                pill(title: "Home", symbol: "house.fill")
+            }
             Spacer(minLength: notchWidth + ReefTheme.Spacing.l)
             if battery.isPresent {
                 BatteryBadge(snapshot: battery)
@@ -49,10 +63,10 @@ struct IslandHomeView: View {
         .padding(.horizontal, ReefTheme.Spacing.l)
     }
 
-    /// The selected page. Becomes the tab strip once there is more than one
-    /// page to choose from.
-    private var pagePill: some View {
-        Label("Home", systemImage: "house.fill")
+    /// The page pill. Shows the current page, and on the home page becomes a
+    /// button to the player while a track is on.
+    private func pill(title: String, symbol: String) -> some View {
+        Label(title, systemImage: symbol)
             .labelStyle(.titleAndIcon)
             .font(ReefTheme.Typography.caption)
             .foregroundStyle(accent)
