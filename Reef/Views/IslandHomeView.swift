@@ -15,6 +15,8 @@ struct IslandHomeView: View {
     var notchWidth: CGFloat
     /// The next calendar event to glance at, when there is one.
     var nextEvent: CalendarEvent? = nil
+    /// Local weather, shown when there is no event to show instead.
+    var weather: WeatherSnapshot? = nil
     /// True when a track is playing, so the home page can offer a way back to
     /// the player.
     var canOpenPlayer: Bool = false
@@ -92,6 +94,10 @@ struct IslandHomeView: View {
                     eventLine(event, now: context.date)
                         .padding(.top, 3)
                 }
+                if let weather {
+                    weatherLine(weather)
+                        .padding(.top, 3)
+                }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
         }
@@ -109,6 +115,22 @@ struct IslandHomeView: View {
                 .foregroundStyle(ReefTheme.Ink.primary)
                 .lineLimit(1)
             Text(event.countdownText(now: now))
+                .foregroundStyle(ReefTheme.Ink.secondary)
+                .lineLimit(1)
+        }
+        .font(ReefTheme.Typography.caption)
+    }
+
+    /// A one-line glance at the weather: the condition symbol, the temperature,
+    /// and the condition name.
+    private func weatherLine(_ weather: WeatherSnapshot) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: weather.condition.symbol)
+                .font(.system(size: 11))
+                .foregroundStyle(accent)
+            Text(weather.temperatureText)
+                .foregroundStyle(ReefTheme.Ink.primary)
+            Text(weather.condition.label)
                 .foregroundStyle(ReefTheme.Ink.secondary)
                 .lineLimit(1)
         }

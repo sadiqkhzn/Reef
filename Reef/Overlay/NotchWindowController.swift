@@ -36,7 +36,10 @@ final class NotchWindowController {
     private var lastScreenFrame: CGRect?
     private var screenFollowTimer: Timer?
 
-    init(state: NotchState, settings: ReefSettings, battery: BatteryModel, calendar: CalendarMonitor) {
+    init(
+        state: NotchState, settings: ReefSettings, battery: BatteryModel,
+        calendar: CalendarMonitor, weather: WeatherProvider
+    ) {
         self.state = state
         self.settings = settings
 
@@ -52,7 +55,8 @@ final class NotchWindowController {
                     .environmentObject(state)
                     .environmentObject(settings)
                     .environmentObject(battery)
-                    .environmentObject(calendar)))
+                    .environmentObject(calendar)
+                    .environmentObject(weather)))
         host.frame = container.bounds
         host.autoresizingMask = [.width, .height]
         container.addSubview(host)

@@ -38,6 +38,8 @@ targets:
         NSPrincipalClass: NSApplication
         NSBluetoothAlwaysUsageDescription: "Reef shows a live activity when AirPods, headphones, or other Bluetooth devices connect."
         NSCalendarsFullAccessUsageDescription: "Reef shows your next event in the island and a reminder before it starts."
+        NSLocationUsageDescription: "Reef uses your approximate location to show local weather in the island."
+        NSLocationWhenInUseUsageDescription: "Reef uses your approximate location to show local weather in the island."
         NSSupportsAutomaticTermination: true
         NSSupportsSuddenTermination: true
     settings:

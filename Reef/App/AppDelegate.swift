@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import SwiftUI
 
 /// Sets the app up at launch.
@@ -15,9 +16,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var bluetooth: BluetoothMonitor?
     private var audioOutput: AudioOutputMonitor?
     private let calendar = CalendarMonitor()
+    private let weather = WeatherProvider()
     private var controller: NotchWindowController?
     private var settingsWindow: SettingsWindowController?
     private var statusItem: NSStatusItem?
+    private var cancellables: Set<AnyCancellable> = []
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // During unit tests the app is only a host for the test bundle. Skip the
@@ -37,17 +40,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         startBluetooth(activities: activities)
         startAudioOutput(activities: activities)
         calendar.start()
+        startWeather()
 
         let controller = NotchWindowController(
-            state: state, settings: settings, battery: battery, calendar: calendar)
+            state: state, settings: settings, battery: battery, calendar: calendar, weather: weather)
         controller.show()
         self.controller = controller
 
-        settingsWindow = SettingsWindowController { [settings, calendar] in
+        settingsWindow = SettingsWindowController { [settings, calendar, weather] in
             SettingsView()
                 .environmentObject(settings)
                 .environmentObject(activities)
                 .environmentObject(calendar)
+                .environmentObject(weather)
         }
 
         installMenuBarItem()
@@ -75,6 +80,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             bluetooth.start()
             self?.bluetooth = bluetooth
         }
+    }
+
+    /// Start local weather, and keep it in step with the unit and the on/off
+    /// setting. Skipped while hosting tests so nothing asks for location.
+    private func startWeather() {
+        guard !isHostingTests else { return }
+        weather.unit = settings.temperatureUnit
+        if settings.showsWeather { weather.start() }
+
+        settings.$temperatureUnit
+            .dropFirst()
+            .sink { [weak self] unit in self?.weather.unit = unit }
+            .store(in: &cancellables)
+
+        settings.$showsWeather
+            .dropFirst()
+            .removeDuplicates()
+            .sink { [weak self] enabled in
+                if enabled { self?.weather.start() } else { self?.weather.stop() }
+            }
+            .store(in: &cancellables)
     }
 
     /// Watch for the system audio output route changing (wired headphones, HDMI,
