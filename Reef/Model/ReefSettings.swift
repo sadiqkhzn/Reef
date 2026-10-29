@@ -28,6 +28,9 @@ final class ReefSettings: ObservableObject {
         static let calendarActivity = "liveActivity.calendar"
         static let calendarLeadMinutes = "calendar.leadMinutes"
         static let eventAtRest = "calendar.eventAtRest"
+        static let opensOnHover = "open.onHover"
+        static let hoverOpenSeconds = "open.hoverSeconds"
+        static let quickPeek = "open.quickPeek"
     }
 
     static let defaultOverlayStyle: OverlayStyle = .floating
@@ -123,6 +126,21 @@ final class ReefSettings: ObservableObject {
         didSet { defaults.set(showsEventAtRest, forKey: Key.eventAtRest) }
     }
 
+    /// Open the island by hovering it, not only by clicking.
+    @Published var opensOnHover: Bool {
+        didSet { defaults.set(opensOnHover, forKey: Key.opensOnHover) }
+    }
+
+    /// How long to dwell before a hover opens the island.
+    @Published var hoverOpenSeconds: Double {
+        didSet { defaults.set(hoverOpenSeconds, forKey: Key.hoverOpenSeconds) }
+    }
+
+    /// Grow the island a touch the moment the pointer arrives.
+    @Published var quickPeek: Bool {
+        didSet { defaults.set(quickPeek, forKey: Key.quickPeek) }
+    }
+
     private let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard) {
@@ -145,6 +163,9 @@ final class ReefSettings: ObservableObject {
         showsCalendarActivity = defaults.object(forKey: Key.calendarActivity) as? Bool ?? true
         calendarLeadMinutes = defaults.object(forKey: Key.calendarLeadMinutes) as? Int ?? 10
         showsEventAtRest = defaults.object(forKey: Key.eventAtRest) as? Bool ?? false
+        opensOnHover = defaults.object(forKey: Key.opensOnHover) as? Bool ?? true
+        hoverOpenSeconds = defaults.object(forKey: Key.hoverOpenSeconds) as? Double ?? 3.0
+        quickPeek = defaults.object(forKey: Key.quickPeek) as? Bool ?? true
     }
 
     /// Put every value back to its default.
@@ -167,6 +188,9 @@ final class ReefSettings: ObservableObject {
         showsCalendarActivity = true
         calendarLeadMinutes = 10
         showsEventAtRest = false
+        opensOnHover = true
+        hoverOpenSeconds = 3.0
+        quickPeek = true
     }
 
     private static func value<T: RawRepresentable>(_ defaults: UserDefaults, _ key: String) -> T?

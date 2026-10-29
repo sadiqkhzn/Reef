@@ -386,8 +386,10 @@ struct OverlayRootView: View {
         }
         .onAppear {
             frontmostBundleId = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+            state.peekOnHover = settings.quickPeek
             updateNowPlayingActive()
         }
+        .onChange(of: settings.quickPeek) { _, peek in state.peekOnHover = peek }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         // Hopping to another screen: shrink and fade out, then pop back in on the
         // new screen rather than teleporting.

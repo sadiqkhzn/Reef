@@ -39,6 +39,26 @@ struct GeneralSettingsPage: View {
             }
 
             Section {
+                Toggle("Open on hover", isOn: $settings.opensOnHover)
+                if settings.opensOnHover {
+                    Picker("After", selection: $settings.hoverOpenSeconds) {
+                        Text("0.5 seconds").tag(0.5)
+                        Text("1 second").tag(1.0)
+                        Text("2 seconds").tag(2.0)
+                        Text("3 seconds").tag(3.0)
+                    }
+                }
+                Toggle("Quick peek on hover", isOn: $settings.quickPeek)
+            } header: {
+                Text("Opening")
+            } footer: {
+                Text("A click always opens the island at once. Open on hover also opens it "
+                    + "after the pointer dwells. Quick peek grows it a touch the moment the "
+                    + "pointer arrives.")
+                    .foregroundStyle(.secondary)
+            }
+
+            Section {
                 Toggle("Show local weather", isOn: $settings.showsWeather)
                 if settings.showsWeather {
                     Picker("Units", selection: $settings.temperatureUnit) {
