@@ -22,10 +22,6 @@ final class NotchWindowController {
     private let panelSidePadding: CGFloat = 48
     private let panelBottomPadding: CGFloat = 20
 
-    /// Dwell on the bare island before it opens on its own. Hovering only peeks;
-    /// a click opens it at once, so this is a long fallback rather than the main
-    /// way in.
-    private let openDelay: TimeInterval = 3.0
     /// Short grace period before it closes, so crossing an inner edge does not
     /// make it flicker shut.
     private let closeDelay: TimeInterval = 0.2
@@ -203,13 +199,14 @@ final class NotchWindowController {
                 guard let self else { return }
                 self.phaseWork?.cancel()
 
-                if hovering && !overControl {
+                if hovering && !overControl && self.settings.opensOnHover {
                     let work = DispatchWorkItem { [weak self] in
                         guard let self, self.state.isHovering, !self.state.isOverControl else { return }
                         self.state.phase = .expanded
                     }
                     self.phaseWork = work
-                    DispatchQueue.main.asyncAfter(deadline: .now() + self.openDelay, execute: work)
+                    let delay = max(0.1, self.settings.hoverOpenSeconds)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: work)
                 } else if !hovering {
                     let work = DispatchWorkItem { [weak self] in
                         guard let self, !self.state.isHovering else { return }

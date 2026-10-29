@@ -121,6 +121,10 @@ final class NotchState: ObservableObject {
     /// and the option is on). Drives the resting size.
     @Published var eventRestingActive: Bool = false
 
+    /// Whether hovering grows the island a touch (the quick peek). Set from the
+    /// person's setting.
+    @Published var peekOnHover: Bool = true
+
     /// Resting size: a live activity takes over the wings while it is present
     /// (even over a playing track, briefly), then the media wing while a track
     /// is on, then the next-event wing when idle, and the bare pill otherwise.
@@ -159,7 +163,7 @@ final class NotchState: ObservableObject {
         case .expanded:
             return expandedSize
         case .collapsed:
-            let base = isHovering ? peekedSize : restingSize
+            let base = (isHovering && peekOnHover) ? peekedSize : restingSize
             guard announcingTitle != nil else { return base }
             // Grow downward into one taller box for the announcement band.
             return CGSize(width: base.width, height: base.height + announcementBannerHeight)
