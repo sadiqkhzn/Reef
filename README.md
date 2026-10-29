@@ -29,7 +29,7 @@ the material in Settings, Appearance:
 It can hug the top edge and flow out of the notch (Attached) or sit just below
 it as its own bubble (Floating), in one of six accent colors and three motion
 styles. Reduce Transparency, Increase Contrast, and Reduce Motion are honored
-throughout. The full design reference is in [docs/DESIGN.md](docs/DESIGN.md).
+throughout.
 
 ## Why another one of these
 

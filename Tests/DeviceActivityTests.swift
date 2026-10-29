@@ -26,7 +26,7 @@ final class DeviceActivityTests: XCTestCase {
     }
 
     func testDeviceRanksBetweenChargingAndLowBattery() {
-        let device = LiveActivity.deviceConnected(name: "AirPods Pro", kind: .airpodsPro)
+        let device = LiveActivity.deviceConnected(name: "AirPods Pro", kind: .airpodsPro, battery: nil)
 
         XCTAssertGreaterThan(device.priority, LiveActivity.charging(percent: 50).priority)
         XCTAssertLessThan(
@@ -34,17 +34,37 @@ final class DeviceActivityTests: XCTestCase {
     }
 
     func testPeekDetailNamesTheDevice() {
-        let device = LiveActivity.deviceConnected(name: "AirPods Pro", kind: .airpodsPro)
+        let device = LiveActivity.deviceConnected(name: "AirPods Pro", kind: .airpodsPro, battery: nil)
 
         XCTAssertEqual(device.detail, "AirPods Pro · Connected")
         XCTAssertEqual(device.accessibilityLabel, "AirPods Pro connected")
+    }
+
+    func testBatteryShowsInDetailAndLabel() {
+        let device = LiveActivity.deviceConnected(name: "AirPods Pro", kind: .airpodsPro, battery: 82)
+
+        XCTAssertEqual(device.detail, "AirPods Pro · 82%")
+        XCTAssertEqual(device.accessibilityLabel, "AirPods Pro connected, 82 percent battery")
+    }
+
+    func testDisconnectActivity() {
+        let device = LiveActivity.deviceDisconnected(name: "AirPods Pro", kind: .airpodsPro)
+
+        XCTAssertEqual(device.label, "Disconnected")
+        XCTAssertEqual(device.detail, "AirPods Pro · Disconnected")
+        XCTAssertEqual(device.accessibilityLabel, "AirPods Pro disconnected")
+        // Disconnect ranks just below connect, so a fresh connect would win.
+        XCTAssertLessThan(
+            device.priority,
+            LiveActivity.deviceConnected(name: "x", kind: .other, battery: nil).priority)
     }
 
     func testPeekNeverOutlastsTheActivity() {
         let all: [LiveActivity] = [
             .charging(percent: 10), .fullyCharged,
             .lowBattery(percent: 10, isCritical: true),
-            .deviceConnected(name: "AirPods", kind: .airpods),
+            .deviceConnected(name: "AirPods", kind: .airpods, battery: 90),
+            .deviceDisconnected(name: "AirPods", kind: .airpods),
         ]
         for activity in all {
             XCTAssertLessThanOrEqual(LiveActivity.peekDuration, activity.duration)

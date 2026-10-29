@@ -38,7 +38,18 @@ struct LiveActivitySettingsPage: View {
                     tint: .white,
                     isOn: $settings.showsDeviceActivity
                 ) {
-                    activities.present(.deviceConnected(name: "AirPods Pro", kind: .airpodsPro))
+                    activities.present(
+                        .deviceConnected(name: "AirPods Pro", kind: .airpodsPro, battery: 82))
+                }
+
+                ActivityRow(
+                    title: "Audio output",
+                    detail: "When sound switches to wired headphones, HDMI, USB, or AirPlay.",
+                    symbol: "headphones",
+                    tint: .white,
+                    isOn: $settings.showsAudioOutputActivity
+                ) {
+                    activities.present(.audioOutput(name: "External Headphones", kind: .headphones))
                 }
             } header: {
                 Text("Activities")

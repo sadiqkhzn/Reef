@@ -24,6 +24,64 @@ final class NowPlayingTests: XCTestCase {
         XCTAssertEqual(track?.bundleIdentifier, "com.apple.Music")
     }
 
+    func testParsesProgressShuffleAndRepeat() {
+        let state: [String: Any] = [
+            "title": "Track",
+            "playing": true,
+            "durationMicros": 240_000_000,       // 240s
+            "elapsedTimeMicros": 30_000_000,     // 30s
+            "timestampEpochMicros": 1_000_000_000,
+            "playbackRate": 1.0,
+            "shuffleMode": 3,                    // tracks -> on
+            "repeatMode": 2,                     // this track -> .one
+        ]
+        let track = NowPlayingStream.nowPlaying(from: state)
+
+        XCTAssertEqual(track?.duration, 240)
+        XCTAssertEqual(track?.elapsed, 30)
+        XCTAssertEqual(track?.positionTimestamp, 1000)
+        XCTAssertEqual(track?.playbackRate, 1.0)
+        XCTAssertEqual(track?.shuffleOn, true)
+        XCTAssertEqual(track?.repeatMode, .one)
+    }
+
+    func testShuffleOffAndRepeatQueue() {
+        let track = NowPlayingStream.nowPlaying(from: [
+            "title": "Track", "shuffleMode": 1, "repeatMode": 3,
+        ])
+        XCTAssertEqual(track?.shuffleOn, false)
+        XCTAssertEqual(track?.repeatMode, .all)
+    }
+
+    func testProgressDefaultsAbsentWhenNotReported() {
+        let track = NowPlayingStream.nowPlaying(from: ["title": "Track"])
+        XCTAssertNil(track?.duration)
+        XCTAssertNil(track?.elapsed)
+        XCTAssertNil(track?.positionTimestamp)
+        XCTAssertEqual(track?.shuffleOn, false)
+        XCTAssertEqual(track?.repeatMode, .off)
+    }
+
+    func testLivePositionAdvancesWhilePlaying() {
+        var track = NowPlayingStream.nowPlaying(from: [
+            "title": "Track", "playing": true,
+            "durationMicros": 200_000_000,
+            "elapsedTimeMicros": 20_000_000,
+            "timestampEpochMicros": 1_000_000_000,
+            "playbackRate": 1.0,
+        ])!
+        // 5 seconds after the sample, the position has advanced 5 seconds.
+        XCTAssertEqual(track.position(at: 1005)!, 25, accuracy: 0.001)
+
+        // Clamped to the track length.
+        XCTAssertEqual(track.position(at: 9999)!, 200, accuracy: 0.001)
+
+        // Paused: the position holds at the sampled value.
+        track.playbackRate = 0
+        track.isPlaying = false
+        XCTAssertEqual(track.position(at: 1005)!, 20, accuracy: 0.001)
+    }
+
     func testNoTitleMeansNothingPlaying() {
         XCTAssertNil(NowPlayingStream.nowPlaying(from: [:]))
         XCTAssertNil(NowPlayingStream.nowPlaying(from: ["playing": true, "artist": "x"]))

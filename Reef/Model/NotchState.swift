@@ -110,19 +110,29 @@ final class NotchState: ObservableObject {
         Self.expandedSize(collapsed: collapsedSize)
     }
 
-    /// Resting size including the media wing while a track is on, the live
-    /// activity wings and their detail line otherwise. Media takes precedence.
+    /// The media wing's own resting width, independent of whatever is currently
+    /// showing. Used to hold the media content at a steady width so it fades in
+    /// place rather than sliding when a live activity swaps in or out over it.
+    var mediaWingWidth: CGFloat {
+        hasNotch ? collapsedSize.width + Self.mediaWing * 2 : Self.mediaRestingWidth
+    }
+
+    /// Resting size: a live activity takes over the wings while it is present
+    /// (even over a playing track, briefly), then it falls back to the media
+    /// wing while a track is on, and the bare pill otherwise.
     var restingSize: CGSize {
+        if liveActivity != nil {
+            return CGSize(
+                width: collapsedSize.width + Self.wingWidth * 2,
+                height: collapsedSize.height + (isPeeking ? Self.peekRowHeight : 0))
+        }
         if nowPlayingActive {
             let width = hasNotch
                 ? collapsedSize.width + Self.mediaWing * 2
                 : Self.mediaRestingWidth
             return CGSize(width: width, height: collapsedSize.height)
         }
-        guard liveActivity != nil else { return collapsedSize }
-        return CGSize(
-            width: collapsedSize.width + Self.wingWidth * 2,
-            height: collapsedSize.height + (isPeeking ? Self.peekRowHeight : 0))
+        return collapsedSize
     }
 
     /// Resting size grown by the small peek amount.

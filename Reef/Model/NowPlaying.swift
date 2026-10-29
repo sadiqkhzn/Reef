@@ -23,6 +23,30 @@ struct NowPlaying: Equatable {
     /// artwork arrives. Tracks `artworkToken`, so it is left out of equality.
     var tint: Color?
 
+    /// Track length in seconds, when the source reports it.
+    var duration: TimeInterval?
+    /// Playback position in seconds at the moment the source last reported it.
+    /// Pair this with `positionTimestamp` to work out the live position.
+    var elapsed: TimeInterval?
+    /// When `elapsed` was sampled (seconds since the reference date). Used to
+    /// advance the position on screen without the source sending every tick.
+    var positionTimestamp: TimeInterval?
+    /// Rate playback runs at: 1 while playing, 0 while paused. Lets the view
+    /// freeze the position when the source pauses between updates.
+    var playbackRate: Double?
+
+    /// True when the queue is shuffled.
+    var shuffleOn: Bool = false
+    /// Repeat setting: off, this track, or the whole queue.
+    var repeatMode: RepeatMode = .off
+
+    /// How the current queue repeats.
+    enum RepeatMode: Int {
+        case off
+        case one
+        case all
+    }
+
     /// Equality ignores the decoded image itself and uses the token instead, so
     /// comparing two snapshots never walks the image data.
     static func == (lhs: NowPlaying, rhs: NowPlaying) -> Bool {
@@ -33,6 +57,27 @@ struct NowPlaying: Equatable {
             && lhs.bundleIdentifier == rhs.bundleIdentifier
             && lhs.appName == rhs.appName
             && lhs.artworkToken == rhs.artworkToken
+            && lhs.duration == rhs.duration
+            && lhs.elapsed == rhs.elapsed
+            && lhs.positionTimestamp == rhs.positionTimestamp
+            && lhs.playbackRate == rhs.playbackRate
+            && lhs.shuffleOn == rhs.shuffleOn
+            && lhs.repeatMode == rhs.repeatMode
+    }
+
+    /// The position to show right now, advancing `elapsed` by the time passed
+    /// since it was sampled when playing. Clamped to the track length.
+    func position(at now: TimeInterval) -> TimeInterval? {
+        guard let elapsed else { return nil }
+        let rate = playbackRate ?? (isPlaying ? 1 : 0)
+        let base: TimeInterval
+        if let positionTimestamp, rate != 0 {
+            base = elapsed + (now - positionTimestamp) * rate
+        } else {
+            base = elapsed
+        }
+        guard let duration, duration > 0 else { return max(0, base) }
+        return min(max(0, base), duration)
     }
 }
 
@@ -72,7 +117,12 @@ enum NowPlayingStream {
             return nil
         }
 
-        return NowPlaying(
+        func seconds(_ key: String) -> TimeInterval? {
+            guard let micros = (state[key] as? NSNumber)?.doubleValue else { return nil }
+            return micros / 1_000_000
+        }
+
+        var track = NowPlaying(
             title: title,
             artist: (state["artist"] as? String) ?? "",
             album: (state["album"] as? String) ?? "",
@@ -81,6 +131,24 @@ enum NowPlayingStream {
             appName: nil,
             artwork: nil,
             artworkToken: nil)
+
+        track.duration = seconds("durationMicros")
+        track.elapsed = seconds("elapsedTimeMicros")
+        track.positionTimestamp = seconds("timestampEpochMicros")
+        track.playbackRate = (state["playbackRate"] as? NSNumber)?.doubleValue
+
+        // The adapter reports shuffle as 1 off / 2 albums / 3 tracks, and repeat
+        // as 1 off / 2 this track / 3 the whole queue.
+        if let shuffle = (state["shuffleMode"] as? NSNumber)?.intValue {
+            track.shuffleOn = shuffle >= 2
+        }
+        switch (state["repeatMode"] as? NSNumber)?.intValue {
+        case 2: track.repeatMode = .one
+        case 3: track.repeatMode = .all
+        default: track.repeatMode = .off
+        }
+
+        return track
     }
 
     /// The base64 artwork string in the state, if any.

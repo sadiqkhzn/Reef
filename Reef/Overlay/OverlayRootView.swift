@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// The SwiftUI root hosted inside the overlay panel.
@@ -21,9 +22,58 @@ struct OverlayRootView: View {
     /// True while the mouse button is down on the resting island, which dips
     /// it slightly so a click feels physical.
     @State private var isPressed = false
+    /// Bundle id of the frontmost app, for the "hide while the source app is
+    /// frontmost" option.
+    @State private var frontmostBundleId: String?
 
     private var style: OverlayStyle { state.displayedStyle }
     private var isOpen: Bool { state.phase == .expanded }
+
+    /// The track to actually show, after the source filter and the
+    /// frontmost-app rule. Nil means the island shows no media right now.
+    private var shownTrack: NowPlaying? {
+        MediaGate.shownTrack(
+            media.current,
+            source: settings.mediaSource,
+            hideWhenSourceFrontmost: settings.hidesMediaWhenSourceFrontmost,
+            frontmostBundleIdentifier: frontmostBundleId)
+    }
+
+    /// Keep the shared now-playing flag in step with whether a track is actually
+    /// being shown, so the window's hover region and sizing follow the gate.
+    private func updateNowPlayingActive() {
+        let active = shownTrack != nil
+        state.nowPlayingActive = active
+        if !active { state.isOverControl = false }
+    }
+
+    /// Turn a finished drag on the island into an open/close, a track skip, or a
+    /// plain tap-to-open. A tap over a control never opens the island.
+    private func handleDrag(_ translation: CGSize) {
+        func tapOpen() {
+            if state.phase == .collapsed && !state.isOverControl {
+                state.phase = .expanded
+            }
+        }
+
+        guard settings.swipeGesturesEnabled else {
+            tapOpen()
+            return
+        }
+
+        switch SwipeGesture.action(
+            translation: translation,
+            isOpen: isOpen,
+            hasMedia: shownTrack != nil,
+            naturalDirection: settings.naturalSwipeDirection) {
+        case .tap: tapOpen()
+        case .nextTrack: media.next()
+        case .previousTrack: media.previous()
+        case .open: state.phase = .expanded
+        case .close: state.phase = .collapsed
+        case .none: break
+        }
+    }
 
     private var shape: NotchShape {
         switch style {
@@ -89,10 +139,10 @@ struct OverlayRootView: View {
 
             Group {
                 if isOpen {
-                    if let nowPlaying = media.current {
-                        MediaView(nowPlaying: nowPlaying, media: media)
+                    if let nowPlaying = shownTrack {
+                        MediaView(nowPlaying: nowPlaying, media: media, colorStyle: settings.playerTint)
                             .frame(width: state.visibleSize.width, height: state.visibleSize.height)
-                            .transition(.islandContentFast)
+                            .transition(.islandOpen)
                     } else {
                         IslandHomeView(
                             battery: battery.snapshot,
@@ -100,9 +150,20 @@ struct OverlayRootView: View {
                             headerHeight: state.collapsedSize.height,
                             notchWidth: notchClearance)
                             .frame(width: state.visibleSize.width, height: state.visibleSize.height)
-                            .transition(.islandContentFast)
+                            .transition(.islandOpen)
                     }
-                } else if let nowPlaying = media.current {
+                } else if let activity = state.liveActivity {
+                    // A live activity briefly takes over the wings, even while a
+                    // track is resting, then the media wing returns when it ends.
+                    LiveActivityWings(
+                        activity: activity,
+                        centerWidth: state.collapsedSize.width,
+                        rowHeight: state.collapsedSize.height,
+                        showsLabel: notchClearance == 0,
+                        isPeeking: state.isPeeking)
+                        .frame(height: state.restingSize.height, alignment: .top)
+                        .transition(.islandWing)
+                } else if let nowPlaying = shownTrack {
                     // One stable wing, so toggling play/pause never rebuilds it.
                     // The announcement just grows a title band below it.
                     ZStack(alignment: .top) {
@@ -117,6 +178,7 @@ struct OverlayRootView: View {
                                 nowPlaying: nowPlaying,
                                 media: media,
                                 height: state.collapsedSize.height,
+                                notchWidth: notchClearance,
                                 animating: !state.isRelocating,
                                 onControlHover: { state.isOverControl = $0 },
                                 onResume: { state.announce(nowPlaying.title) })
@@ -131,17 +193,14 @@ struct OverlayRootView: View {
                             }
                         }
                     }
-                    .frame(width: state.visibleSize.width, height: state.visibleSize.height, alignment: .top)
-                    .transition(.islandContentFast)
-                } else if let activity = state.liveActivity {
-                    LiveActivityWings(
-                        activity: activity,
-                        centerWidth: state.collapsedSize.width,
-                        rowHeight: state.collapsedSize.height,
-                        showsLabel: notchClearance == 0,
-                        isPeeking: state.isPeeking)
-                        .frame(height: state.restingSize.height, alignment: .top)
-                        .transition(.islandContentFast)
+                    // Follow the small peek grow on hover (so the corners stretch
+                    // out), but stay off the live-activity width: that keeps the
+                    // equalizer from sliding across when an activity swaps in.
+                    .frame(
+                        width: state.mediaWingWidth + (state.isHovering ? NotchState.peekGrow.width : 0),
+                        height: state.visibleSize.height,
+                        alignment: .top)
+                    .transition(.islandWing)
                 }
             }
             // Keep the content inside the island so it closes with it rather than
@@ -158,13 +217,9 @@ struct OverlayRootView: View {
         .simultaneousGesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { _ in isPressed = true }
-                .onEnded { _ in
+                .onEnded { value in
                     isPressed = false
-                    // Click the bare island to open it at once. A control sets
-                    // isOverControl, so clicking a button never opens it.
-                    if state.phase == .collapsed && !state.isOverControl {
-                        state.phase = .expanded
-                    }
+                    handleDrag(value.translation)
                 })
         .onHover { hovering in
             state.isHovering = hovering
@@ -188,9 +243,20 @@ struct OverlayRootView: View {
         .animation(
             MotionStyle.animation(settings.motion.peek, reduceMotion: reduceMotion),
             value: state.announcingTitle)
-        .onReceive(media.$current) { current in
-            state.nowPlayingActive = current != nil
-            if current == nil { state.isOverControl = false }
+        .onReceive(media.$current) { _ in updateNowPlayingActive() }
+        .onChange(of: settings.mediaSource) { _, _ in updateNowPlayingActive() }
+        .onChange(of: settings.hidesMediaWhenSourceFrontmost) { _, _ in updateNowPlayingActive() }
+        .onChange(of: frontmostBundleId) { _, _ in updateNowPlayingActive() }
+        .onReceive(
+            NSWorkspace.shared.notificationCenter
+                .publisher(for: NSWorkspace.didActivateApplicationNotification)
+        ) { note in
+            frontmostBundleId = (note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication)?
+                .bundleIdentifier
+        }
+        .onAppear {
+            frontmostBundleId = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+            updateNowPlayingActive()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         // Hopping to another screen: shrink and fade out, then pop back in on the

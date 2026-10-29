@@ -59,6 +59,29 @@ struct AppearanceSettingsPage: View {
                     + "With Reduce Motion turned on in System Settings, Reef uses short fades instead.")
                     .foregroundStyle(.secondary)
             }
+
+            Section {
+                Picker("Player color", selection: $settings.playerTint) {
+                    ForEach(PlayerTint.allCases) { tint in
+                        Text(tint.title).tag(tint)
+                    }
+                }
+                .pickerStyle(.segmented)
+
+                Picker("Source", selection: $settings.mediaSource) {
+                    ForEach(MediaSource.allCases) { source in
+                        Text(source.title).tag(source)
+                    }
+                }
+
+                Toggle("Hide while its app is frontmost", isOn: $settings.hidesMediaWhenSourceFrontmost)
+            } header: {
+                Text("Now Playing")
+            } footer: {
+                Text(settings.playerTint.summary
+                    + " Source picks which player the island follows.")
+                    .foregroundStyle(.secondary)
+            }
         }
         .formStyle(.grouped)
         .navigationTitle("Appearance")

@@ -13,6 +13,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var battery: BatteryModel?
     private var activities: LiveActivityCenter?
     private var bluetooth: BluetoothMonitor?
+    private var audioOutput: AudioOutputMonitor?
     private var controller: NotchWindowController?
     private var settingsWindow: SettingsWindowController?
     private var statusItem: NSStatusItem?
@@ -32,6 +33,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.activities = activities
 
         startBluetooth(activities: activities)
+        startAudioOutput(activities: activities)
 
         let controller = NotchWindowController(state: state, settings: settings, battery: battery)
         controller.show()
@@ -62,9 +64,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             bluetooth.onConnect = { name in
                 activities?.deviceConnected(named: name)
             }
+            bluetooth.onDisconnect = { name in
+                activities?.deviceDisconnected(named: name)
+            }
             bluetooth.start()
             self?.bluetooth = bluetooth
         }
+    }
+
+    /// Watch for the system audio output route changing (wired headphones, HDMI,
+    /// USB, AirPlay). Skipped while hosting tests.
+    private func startAudioOutput(activities: LiveActivityCenter) {
+        guard !isHostingTests else { return }
+        let monitor = AudioOutputMonitor()
+        monitor.onChange = { [weak activities] output in
+            activities?.audioOutputChanged(output)
+        }
+        monitor.start()
+        audioOutput = monitor
     }
 
     private func installMenuBarItem() {

@@ -76,6 +76,38 @@ enum AccentChoice: String, CaseIterable, Identifiable {
     }
 }
 
+/// How the open now-playing panel is colored behind the track details.
+enum PlayerTint: String, CaseIterable, Identifiable {
+    /// A soft, blurred bloom of the cover art filling the panel.
+    case bloom
+    /// A flat wash of the vivid color drawn from the cover.
+    case solid
+    /// A diagonal gradient built from the cover color.
+    case gradient
+    /// No color behind the panel; just the island's own glass.
+    case minimal
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .bloom: return "Artwork Bloom"
+        case .solid: return "Solid Tint"
+        case .gradient: return "Gradient"
+        case .minimal: return "Minimal"
+        }
+    }
+
+    var summary: String {
+        switch self {
+        case .bloom: return "A blurred glow of the cover fills the panel."
+        case .solid: return "A flat wash of the cover's color."
+        case .gradient: return "A diagonal gradient from the cover's color."
+        case .minimal: return "Plain glass, no color wash."
+        }
+    }
+}
+
 /// How the island moves between states.
 enum MotionStyle: String, CaseIterable, Identifiable {
     /// Critically damped: settles without overshoot.

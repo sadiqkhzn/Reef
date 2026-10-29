@@ -14,15 +14,23 @@ final class ReefSettings: ObservableObject {
         static let material = "islandMaterial"
         static let accent = "accent"
         static let motion = "motionStyle"
+        static let playerTint = "playerTint"
+        static let mediaSource = "mediaSource"
+        static let hideMediaWhenSourceFrontmost = "media.hideWhenSourceFrontmost"
+        static let swipeGestures = "gestures.swipe"
+        static let naturalSwipe = "gestures.naturalDirection"
         static let chargingActivity = "liveActivity.charging"
         static let lowBatteryActivity = "liveActivity.lowBattery"
         static let deviceActivity = "liveActivity.devices"
+        static let audioOutputActivity = "liveActivity.audioOutput"
     }
 
     static let defaultOverlayStyle: OverlayStyle = .floating
     static let defaultMaterial: IslandMaterial = .liquid
     static let defaultAccent: AccentChoice = .lagoon
     static let defaultMotion: MotionStyle = .smooth
+    static let defaultPlayerTint: PlayerTint = .bloom
+    static let defaultMediaSource: MediaSource = .automatic
 
     @Published var overlayStyle: OverlayStyle {
         didSet { defaults.set(overlayStyle.rawValue, forKey: Key.overlayStyle) }
@@ -40,6 +48,31 @@ final class ReefSettings: ObservableObject {
         didSet { defaults.set(motion.rawValue, forKey: Key.motion) }
     }
 
+    /// How the open now-playing panel is colored.
+    @Published var playerTint: PlayerTint {
+        didSet { defaults.set(playerTint.rawValue, forKey: Key.playerTint) }
+    }
+
+    /// Which player the island follows.
+    @Published var mediaSource: MediaSource {
+        didSet { defaults.set(mediaSource.rawValue, forKey: Key.mediaSource) }
+    }
+
+    /// Hide the island's media while its source app is the frontmost window.
+    @Published var hidesMediaWhenSourceFrontmost: Bool {
+        didSet { defaults.set(hidesMediaWhenSourceFrontmost, forKey: Key.hideMediaWhenSourceFrontmost) }
+    }
+
+    /// Swipe the island to skip tracks and to open or close it.
+    @Published var swipeGesturesEnabled: Bool {
+        didSet { defaults.set(swipeGesturesEnabled, forKey: Key.swipeGestures) }
+    }
+
+    /// With natural direction on, swiping left moves to the next track.
+    @Published var naturalSwipeDirection: Bool {
+        didSet { defaults.set(naturalSwipeDirection, forKey: Key.naturalSwipe) }
+    }
+
     /// Show the wings when power is connected or the battery finishes charging.
     @Published var showsChargingActivity: Bool {
         didSet { defaults.set(showsChargingActivity, forKey: Key.chargingActivity) }
@@ -55,6 +88,11 @@ final class ReefSettings: ObservableObject {
         didSet { defaults.set(showsDeviceActivity, forKey: Key.deviceActivity) }
     }
 
+    /// Show the wings when system audio switches to a different output.
+    @Published var showsAudioOutputActivity: Bool {
+        didSet { defaults.set(showsAudioOutputActivity, forKey: Key.audioOutputActivity) }
+    }
+
     private let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard) {
@@ -63,9 +101,15 @@ final class ReefSettings: ObservableObject {
         material = Self.value(defaults, Key.material) ?? Self.defaultMaterial
         accent = Self.value(defaults, Key.accent) ?? Self.defaultAccent
         motion = Self.value(defaults, Key.motion) ?? Self.defaultMotion
+        playerTint = Self.value(defaults, Key.playerTint) ?? Self.defaultPlayerTint
+        mediaSource = Self.value(defaults, Key.mediaSource) ?? Self.defaultMediaSource
+        hidesMediaWhenSourceFrontmost = defaults.object(forKey: Key.hideMediaWhenSourceFrontmost) as? Bool ?? false
+        swipeGesturesEnabled = defaults.object(forKey: Key.swipeGestures) as? Bool ?? true
+        naturalSwipeDirection = defaults.object(forKey: Key.naturalSwipe) as? Bool ?? true
         showsChargingActivity = defaults.object(forKey: Key.chargingActivity) as? Bool ?? true
         showsLowBatteryActivity = defaults.object(forKey: Key.lowBatteryActivity) as? Bool ?? true
         showsDeviceActivity = defaults.object(forKey: Key.deviceActivity) as? Bool ?? true
+        showsAudioOutputActivity = defaults.object(forKey: Key.audioOutputActivity) as? Bool ?? true
     }
 
     /// Put every value back to its default.
@@ -74,9 +118,15 @@ final class ReefSettings: ObservableObject {
         material = Self.defaultMaterial
         accent = Self.defaultAccent
         motion = Self.defaultMotion
+        playerTint = Self.defaultPlayerTint
+        mediaSource = Self.defaultMediaSource
+        hidesMediaWhenSourceFrontmost = false
+        swipeGesturesEnabled = true
+        naturalSwipeDirection = true
         showsChargingActivity = true
         showsLowBatteryActivity = true
         showsDeviceActivity = true
+        showsAudioOutputActivity = true
     }
 
     private static func value<T: RawRepresentable>(_ defaults: UserDefaults, _ key: String) -> T?

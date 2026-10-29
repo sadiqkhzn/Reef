@@ -12,14 +12,21 @@ enum LiveActivity: Equatable {
     case fullyCharged
     /// The battery crossed a low threshold while on battery power.
     case lowBattery(percent: Int, isCritical: Bool)
-    /// A Bluetooth device such as AirPods just connected.
-    case deviceConnected(name: String, kind: DeviceKind)
+    /// A Bluetooth device such as AirPods just connected. Battery is the
+    /// combined level, when the device reports one.
+    case deviceConnected(name: String, kind: DeviceKind, battery: Int?)
+    /// A Bluetooth device just disconnected.
+    case deviceDisconnected(name: String, kind: DeviceKind)
+    /// System audio switched to a different output (wired, HDMI, USB, AirPlay).
+    case audioOutput(name: String, kind: AudioOutputKind)
 
     /// Higher wins when two activities compete for the wings.
     var priority: Int {
         switch self {
         case .lowBattery(_, let isCritical): return isCritical ? 30 : 20
         case .deviceConnected: return 15
+        case .deviceDisconnected: return 14
+        case .audioOutput: return 12
         case .charging: return 10
         case .fullyCharged: return 5
         }
@@ -29,7 +36,8 @@ enum LiveActivity: Equatable {
     var duration: TimeInterval {
         switch self {
         case .charging, .fullyCharged: return 4
-        case .deviceConnected: return 3.5
+        case .deviceConnected, .deviceDisconnected: return 3.5
+        case .audioOutput: return 3
         case .lowBattery: return 6
         }
     }
@@ -46,6 +54,8 @@ enum LiveActivity: Equatable {
         case .fullyCharged: return "Fully charged"
         case .lowBattery(_, let isCritical): return isCritical ? "Battery critical" : "Low battery"
         case .deviceConnected: return "Connected"
+        case .deviceDisconnected: return "Disconnected"
+        case .audioOutput(_, let kind): return kind.title
         }
     }
 
@@ -56,7 +66,11 @@ enum LiveActivity: Equatable {
         case .fullyCharged: return "Battery fully charged"
         case .lowBattery(let percent, let isCritical):
             return isCritical ? "Battery critical · Plug in soon" : "Low battery · \(percent)% left"
-        case .deviceConnected(let name, _): return "\(name) · Connected"
+        case .deviceConnected(let name, _, let battery):
+            if let battery { return "\(name) · \(battery)%" }
+            return "\(name) · Connected"
+        case .deviceDisconnected(let name, _): return "\(name) · Disconnected"
+        case .audioOutput(let name, _): return "Audio · \(name)"
         }
     }
 
@@ -66,7 +80,11 @@ enum LiveActivity: Equatable {
         case .charging(let percent): return "Charging, \(percent) percent"
         case .fullyCharged: return "Battery fully charged"
         case .lowBattery(let percent, _): return "\(label), \(percent) percent"
-        case .deviceConnected(let name, _): return "\(name) connected"
+        case .deviceConnected(let name, _, let battery):
+            if let battery { return "\(name) connected, \(battery) percent battery" }
+            return "\(name) connected"
+        case .deviceDisconnected(let name, _): return "\(name) disconnected"
+        case .audioOutput(let name, _): return "Audio output, \(name)"
         }
     }
 }
