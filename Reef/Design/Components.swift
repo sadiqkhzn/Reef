@@ -117,4 +117,29 @@ extension AnyTransition {
             insertion: AnyTransition.islandContent.animation(.easeOut(duration: 0.22)),
             removal: AnyTransition.islandContent.animation(.easeOut(duration: 0.12)))
     }
+
+    /// For cover art when the track changes: the old art flips away and the new
+    /// one flips in, fading as it turns so the swap reads as a card turning over.
+    static var artworkFlip: AnyTransition {
+        .asymmetric(
+            insertion: .modifier(
+                active: ArtworkFlip(angle: -90, opacity: 0),
+                identity: ArtworkFlip(angle: 0, opacity: 1)),
+            removal: .modifier(
+                active: ArtworkFlip(angle: 90, opacity: 0),
+                identity: ArtworkFlip(angle: 0, opacity: 1)))
+    }
+}
+
+/// Rotates content around its vertical axis with a little perspective, fading as
+/// it turns, for the artwork flip.
+private struct ArtworkFlip: ViewModifier {
+    var angle: Double
+    var opacity: Double
+
+    func body(content: Content) -> some View {
+        content
+            .rotation3DEffect(.degrees(angle), axis: (x: 0, y: 1, z: 0), perspective: 0.4)
+            .opacity(opacity)
+    }
 }
