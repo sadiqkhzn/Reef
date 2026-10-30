@@ -11,6 +11,8 @@ struct CalendarEvent: Equatable, Identifiable {
     /// The calendar's color as a hex string, resolved to a real color in the
     /// view. Optional, since not every calendar reports one.
     var colorHex: String?
+    /// Identifier of the calendar the event belongs to, for filtering.
+    var calendarID: String? = nil
 
     /// True while the event is happening now.
     func isOngoing(now: Date) -> Bool {
@@ -48,6 +50,13 @@ struct CalendarEvent: Equatable, Identifiable {
         let minutes = Int((seconds / 60).rounded(.up))
         return minutes < 60 ? "\(minutes)m" : "\(minutes / 60)h"
     }
+}
+
+/// A calendar the person can choose to show or hide.
+struct CalendarInfo: Identifiable, Equatable {
+    var id: String
+    var title: String
+    var colorHex: String?
 }
 
 /// Picks which event matters right now. Pure, so the rules are tested without a

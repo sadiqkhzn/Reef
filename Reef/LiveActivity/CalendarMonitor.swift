@@ -11,6 +11,14 @@ import Foundation
 final class CalendarMonitor: ObservableObject {
     @Published private(set) var events: [CalendarEvent] = []
     @Published private(set) var accessGranted = false
+    /// The calendars available to show, for the settings list.
+    @Published private(set) var calendars: [CalendarInfo] = []
+
+    /// Identifiers of calendars to leave out. Set from the person's choice; a
+    /// change re-filters the events.
+    var hiddenCalendarIDs: Set<String> = [] {
+        didSet { if oldValue != hiddenCalendarIDs { refresh() } }
+    }
 
     private let store = EKEventStore()
     private var timer: Timer?
@@ -63,15 +71,22 @@ final class CalendarMonitor: ObservableObject {
             end: now.addingTimeInterval(window),
             calendars: nil)
 
-        let mapped = store.events(matching: predicate).map { event in
-            CalendarEvent(
-                id: event.eventIdentifier ?? UUID().uuidString,
-                title: event.title ?? "Event",
-                start: event.startDate,
-                end: event.endDate,
-                isAllDay: event.isAllDay,
-                colorHex: Self.hex(event.calendar?.cgColor))
-        }
+        calendars = store.calendars(for: .event)
+            .map { CalendarInfo(id: $0.calendarIdentifier, title: $0.title, colorHex: Self.hex($0.cgColor)) }
+            .sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+
+        let mapped = store.events(matching: predicate)
+            .filter { !hiddenCalendarIDs.contains($0.calendar?.calendarIdentifier ?? "") }
+            .map { event in
+                CalendarEvent(
+                    id: event.eventIdentifier ?? UUID().uuidString,
+                    title: event.title ?? "Event",
+                    start: event.startDate,
+                    end: event.endDate,
+                    isAllDay: event.isAllDay,
+                    colorHex: Self.hex(event.calendar?.cgColor),
+                    calendarID: event.calendar?.calendarIdentifier)
+            }
         events = mapped.sorted { $0.start < $1.start }
     }
 
