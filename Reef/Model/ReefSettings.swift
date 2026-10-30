@@ -28,6 +28,8 @@ final class ReefSettings: ObservableObject {
         static let calendarActivity = "liveActivity.calendar"
         static let calendarLeadMinutes = "calendar.leadMinutes"
         static let eventAtRest = "calendar.eventAtRest"
+        static let lowBatteryThreshold = "battery.lowThreshold"
+        static let lowPowerModeActivity = "liveActivity.lowPowerMode"
         static let opensOnHover = "open.onHover"
         static let hoverOpenSeconds = "open.hoverSeconds"
         static let quickPeek = "open.quickPeek"
@@ -103,6 +105,16 @@ final class ReefSettings: ObservableObject {
     /// Show the wings when the battery runs low.
     @Published var showsLowBatteryActivity: Bool {
         didSet { defaults.set(showsLowBatteryActivity, forKey: Key.lowBatteryActivity) }
+    }
+
+    /// Percent at which the low-battery warning shows.
+    @Published var lowBatteryThreshold: Int {
+        didSet { defaults.set(lowBatteryThreshold, forKey: Key.lowBatteryThreshold) }
+    }
+
+    /// Show the wings when Low Power Mode turns on.
+    @Published var showsLowPowerModeActivity: Bool {
+        didSet { defaults.set(showsLowPowerModeActivity, forKey: Key.lowPowerModeActivity) }
     }
 
     /// Show the wings when headphones or another Bluetooth device connects.
@@ -182,6 +194,8 @@ final class ReefSettings: ObservableObject {
         temperatureUnit = Self.value(defaults, Key.temperatureUnit) ?? .celsius
         showsChargingActivity = defaults.object(forKey: Key.chargingActivity) as? Bool ?? true
         showsLowBatteryActivity = defaults.object(forKey: Key.lowBatteryActivity) as? Bool ?? true
+        lowBatteryThreshold = defaults.object(forKey: Key.lowBatteryThreshold) as? Int ?? 20
+        showsLowPowerModeActivity = defaults.object(forKey: Key.lowPowerModeActivity) as? Bool ?? true
         showsDeviceActivity = defaults.object(forKey: Key.deviceActivity) as? Bool ?? true
         showsAudioOutputActivity = defaults.object(forKey: Key.audioOutputActivity) as? Bool ?? true
         showsCalendarActivity = defaults.object(forKey: Key.calendarActivity) as? Bool ?? true
@@ -211,6 +225,8 @@ final class ReefSettings: ObservableObject {
         temperatureUnit = .celsius
         showsChargingActivity = true
         showsLowBatteryActivity = true
+        lowBatteryThreshold = 20
+        showsLowPowerModeActivity = true
         showsDeviceActivity = true
         showsAudioOutputActivity = true
         showsCalendarActivity = true

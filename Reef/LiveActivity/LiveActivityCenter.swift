@@ -34,6 +34,22 @@ final class LiveActivityCenter: ObservableObject {
                 self?.calendarChanged(events)
             }
             .store(in: &cancellables)
+
+        lastLowPowerMode = ProcessInfo.processInfo.isLowPowerModeEnabled
+        NotificationCenter.default
+            .publisher(for: .NSProcessInfoPowerStateDidChange)
+            .sink { [weak self] _ in self?.powerStateChanged() }
+            .store(in: &cancellables)
+    }
+
+    private var lastLowPowerMode = false
+
+    /// Announce Low Power Mode when it turns on.
+    private func powerStateChanged() {
+        let now = ProcessInfo.processInfo.isLowPowerModeEnabled
+        defer { lastLowPowerMode = now }
+        guard now, !lastLowPowerMode, settings.showsLowPowerModeActivity else { return }
+        present(.lowPowerMode)
     }
 
     /// Show `activity` in the wings unless a more important one is already
@@ -123,7 +139,8 @@ final class LiveActivityCenter: ObservableObject {
 
     private func batteryChanged(to next: BatterySnapshot) {
         defer { lastBattery = next }
-        guard let activity = BatteryActivityPolicy.activity(from: lastBattery, to: next),
+        guard let activity = BatteryActivityPolicy.activity(
+                from: lastBattery, to: next, lowThreshold: settings.lowBatteryThreshold),
               isEnabled(activity) else {
             return
         }
@@ -137,6 +154,7 @@ final class LiveActivityCenter: ObservableObject {
         case .deviceConnected, .deviceDisconnected: return settings.showsDeviceActivity
         case .audioOutput: return settings.showsAudioOutputActivity
         case .calendarEvent: return settings.showsCalendarActivity
+        case .lowPowerMode: return settings.showsLowPowerModeActivity
         }
     }
 }

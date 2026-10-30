@@ -56,6 +56,8 @@ struct LiveActivityWings: View {
             return ReefTheme.Ink.primary
         case .calendarEvent:
             return ReefTheme.Ink.primary
+        case .lowPowerMode:
+            return ReefTheme.Status.warning
         }
     }
 
@@ -92,6 +94,10 @@ struct LiveActivityWings: View {
             Image(systemName: "calendar")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(ReefTheme.Ink.primary)
+        case .lowPowerMode:
+            Image(systemName: "bolt.fill")
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(tint)
         }
     }
 
@@ -144,6 +150,10 @@ struct LiveActivityWings: View {
         case .calendarEvent:
             Image(systemName: "clock")
                 .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(tint)
+        case .lowPowerMode:
+            Image(systemName: "leaf.fill")
+                .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(tint)
         }
     }
