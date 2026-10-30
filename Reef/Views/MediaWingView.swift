@@ -40,6 +40,9 @@ struct MediaWingView: View {
     var body: some View {
         HStack(alignment: .center, spacing: 0) {
             cover
+                .id(nowPlaying.artworkToken ?? 0)
+                .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                .animation(.easeInOut(duration: 0.3), value: nowPlaying.artworkToken)
                 .padding(.leading, endInset)
             // The center holds at least the notch width and takes up any extra,
             // so the cover and equalizer stay pinned to the two corners and the

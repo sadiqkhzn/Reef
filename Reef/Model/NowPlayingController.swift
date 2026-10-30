@@ -21,6 +21,8 @@ final class NowPlayingController: ObservableObject {
     private var state: [String: Any] = [:]
     private var buffer = Data()
     private var lastPublished: NowPlaying?
+    /// Pending clear of the now playing during a track gap.
+    private var clearWork: DispatchWorkItem?
     private var lastArtworkEncoded: String?
     private var lastArtworkImage: NSImage?
     private var lastArtworkTint: Color?
@@ -103,13 +105,45 @@ final class NowPlayingController: ObservableObject {
             next?.tint = lastArtworkTint
         }
 
-        guard next != lastPublished else { return }
-        lastPublished = next
+        if next == nil {
+            // A track change briefly clears the title between songs. Hold the
+            // last track for a short window rather than blinking to empty; a new
+            // track within the window cancels the clear, and a real stop lets it
+            // through.
+            guard lastPublished != nil else { return }
+            scheduleClear()
+            return
+        }
 
-        let bundleIdentifier = next?.bundleIdentifier
+        clearWork?.cancel()
+        clearWork = nil
+        publish(next)
+    }
+
+    /// Runs on `queue`. Clear the now playing after a short grace, unless a
+    /// track has resumed by then.
+    private func scheduleClear() {
+        clearWork?.cancel()
+        let work = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            if NowPlayingStream.nowPlaying(from: self.state) == nil {
+                self.publish(nil)
+            }
+        }
+        clearWork = work
+        queue.asyncAfter(deadline: .now() + 0.6, execute: work)
+    }
+
+    /// Runs on `queue`. Publish a track to the main thread only when it differs
+    /// from the last one.
+    private func publish(_ track: NowPlaying?) {
+        guard track != lastPublished else { return }
+        lastPublished = track
+
+        let bundleIdentifier = track?.bundleIdentifier
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
-            var enriched = next
+            var enriched = track
             enriched?.appName = Self.appName(for: bundleIdentifier)
             self.current = enriched
         }

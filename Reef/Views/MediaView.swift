@@ -15,6 +15,9 @@ struct MediaView: View {
     var body: some View {
         HStack(spacing: 14) {
             artwork
+                .id(nowPlaying.artworkToken ?? 0)
+                .transition(.artworkFlip)
+                .animation(.easeInOut(duration: 0.4), value: nowPlaying.artworkToken)
 
             VStack(alignment: .leading, spacing: 4) {
                 if let appName = nowPlaying.appName {
