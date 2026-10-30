@@ -22,12 +22,15 @@ enum LiveActivity: Equatable {
     /// An event is coming up soon. Countdown is a ready-made phrase like
     /// "in 10 min".
     case calendarEvent(title: String, countdown: String)
+    /// Low Power Mode was just turned on.
+    case lowPowerMode
 
     /// Higher wins when two activities compete for the wings.
     var priority: Int {
         switch self {
         case .lowBattery(_, let isCritical): return isCritical ? 30 : 20
         case .calendarEvent: return 18
+        case .lowPowerMode: return 16
         case .deviceConnected: return 15
         case .deviceDisconnected: return 14
         case .audioOutput: return 12
@@ -43,6 +46,7 @@ enum LiveActivity: Equatable {
         case .deviceConnected, .deviceDisconnected: return 3.5
         case .audioOutput: return 3
         case .calendarEvent: return 5
+        case .lowPowerMode: return 4
         case .lowBattery: return 6
         }
     }
@@ -62,6 +66,7 @@ enum LiveActivity: Equatable {
         case .deviceDisconnected: return "Disconnected"
         case .audioOutput(_, let kind): return kind.title
         case .calendarEvent: return "Up next"
+        case .lowPowerMode: return "Low Power"
         }
     }
 
@@ -78,6 +83,7 @@ enum LiveActivity: Equatable {
         case .deviceDisconnected(let name, _): return "\(name) · Disconnected"
         case .audioOutput(let name, _): return "Audio · \(name)"
         case .calendarEvent(let title, let countdown): return "\(title) · \(countdown)"
+        case .lowPowerMode: return "Low Power Mode on"
         }
     }
 
@@ -93,6 +99,7 @@ enum LiveActivity: Equatable {
         case .deviceDisconnected(let name, _): return "\(name) disconnected"
         case .audioOutput(let name, _): return "Audio output, \(name)"
         case .calendarEvent(let title, let countdown): return "Up next, \(title), \(countdown)"
+        case .lowPowerMode: return "Low Power Mode on"
         }
     }
 }
@@ -155,7 +162,11 @@ enum BatteryActivityPolicy {
     /// At or below this, the warning escalates to critical.
     static let criticalThreshold = 10
 
-    static func activity(from old: BatterySnapshot, to new: BatterySnapshot) -> LiveActivity? {
+    static func activity(
+        from old: BatterySnapshot,
+        to new: BatterySnapshot,
+        lowThreshold: Int = Self.lowThreshold
+    ) -> LiveActivity? {
         guard new.isPresent else { return nil }
 
         // Plugging in.
@@ -174,11 +185,13 @@ enum BatteryActivityPolicy {
             return nil
         }
 
-        // Draining on battery: warn once per threshold, on the way down.
+        // Draining on battery: warn once per threshold, on the way down. The low
+        // threshold never drops below the critical one.
+        let low = max(criticalThreshold, lowThreshold)
         if old.percent > criticalThreshold && new.percent <= criticalThreshold {
             return .lowBattery(percent: new.percent, isCritical: true)
         }
-        if old.percent > lowThreshold && new.percent <= lowThreshold {
+        if old.percent > low && new.percent <= low {
             return .lowBattery(percent: new.percent, isCritical: false)
         }
         return nil

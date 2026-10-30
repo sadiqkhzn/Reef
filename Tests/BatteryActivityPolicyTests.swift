@@ -17,6 +17,22 @@ final class BatteryActivityPolicyTests: XCTestCase {
         XCTAssertEqual(activity, .charging(percent: 54))
     }
 
+    func testCustomLowThreshold() {
+        // With a 30% threshold, crossing 30 warns.
+        XCTAssertEqual(
+            BatteryActivityPolicy.activity(from: snapshot(32), to: snapshot(29), lowThreshold: 30),
+            .lowBattery(percent: 29, isCritical: false))
+        // The same drop does not warn at the default 20% threshold.
+        XCTAssertNil(
+            BatteryActivityPolicy.activity(from: snapshot(32), to: snapshot(29), lowThreshold: 20))
+    }
+
+    func testLowThresholdNeverBelowCritical() {
+        // A threshold under the critical level still only warns at critical.
+        XCTAssertNil(
+            BatteryActivityPolicy.activity(from: snapshot(12), to: snapshot(11), lowThreshold: 5))
+    }
+
     func testPluggingInWhenFullShowsFullyCharged() {
         let activity = BatteryActivityPolicy.activity(
             from: snapshot(100), to: snapshot(100, plugged: true))

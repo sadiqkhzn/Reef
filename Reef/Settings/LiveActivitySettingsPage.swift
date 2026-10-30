@@ -21,14 +21,33 @@ struct LiveActivitySettingsPage: View {
 
                 ActivityRow(
                     title: "Low battery",
-                    detail: "At \(BatteryActivityPolicy.lowThreshold)% and again at "
+                    detail: "At the chosen level and again at "
                         + "\(BatteryActivityPolicy.criticalThreshold)% while on battery.",
                     symbol: "battery.25percent",
                     tint: ReefTheme.Status.warning,
                     isOn: $settings.showsLowBatteryActivity
                 ) {
                     activities.present(
-                        .lowBattery(percent: BatteryActivityPolicy.lowThreshold, isCritical: false))
+                        .lowBattery(percent: settings.lowBatteryThreshold, isCritical: false))
+                }
+
+                if settings.showsLowBatteryActivity {
+                    Picker("Warn at", selection: $settings.lowBatteryThreshold) {
+                        Text("15%").tag(15)
+                        Text("20%").tag(20)
+                        Text("25%").tag(25)
+                        Text("30%").tag(30)
+                    }
+                }
+
+                ActivityRow(
+                    title: "Low Power Mode",
+                    detail: "When Low Power Mode turns on.",
+                    symbol: "leaf.fill",
+                    tint: ReefTheme.Status.warning,
+                    isOn: $settings.showsLowPowerModeActivity
+                ) {
+                    activities.present(.lowPowerMode)
                 }
 
                 ActivityRow(
