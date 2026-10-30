@@ -7,6 +7,7 @@ enum OpenPage {
     case nowPlaying
     case home
     case shelf
+    case calendar
 }
 
 /// The SwiftUI root hosted inside the overlay panel.
@@ -235,6 +236,15 @@ struct OverlayRootView: View {
                             onClose: { openPage = shownTrack != nil ? .nowPlaying : .home })
                             .frame(width: state.visibleSize.width, height: state.visibleSize.height)
                             .transition(.islandOpen)
+                    } else if openPage == .calendar {
+                        AgendaView(
+                            events: calendar.events,
+                            accent: settings.accent.color,
+                            headerHeight: state.collapsedSize.height,
+                            notchWidth: notchClearance,
+                            onClose: { openPage = shownTrack != nil ? .nowPlaying : .home })
+                            .frame(width: state.visibleSize.width, height: state.visibleSize.height)
+                            .transition(.islandOpen)
                     } else if let nowPlaying = shownTrack, !showsHome {
                         MediaView(nowPlaying: nowPlaying, media: media, colorStyle: settings.playerTint)
                             .frame(width: state.visibleSize.width, height: state.visibleSize.height)
@@ -251,7 +261,8 @@ struct OverlayRootView: View {
                             canOpenPlayer: canSwitchPage,
                             onOpenPlayer: { openPage = .nowPlaying },
                             shelfCount: shelf.items.count,
-                            onOpenShelf: { openPage = .shelf })
+                            onOpenShelf: { openPage = .shelf },
+                            onOpenCalendar: { openPage = .calendar })
                             .frame(width: state.visibleSize.width, height: state.visibleSize.height)
                             .transition(.islandOpen)
                     }

@@ -25,7 +25,7 @@ final class CalendarMonitor: ObservableObject {
     private var observer: NSObjectProtocol?
 
     /// How far ahead to pull events for.
-    private let window: TimeInterval = 18 * 3600
+    private let window: TimeInterval = 3 * 24 * 3600
 
     func start() {
         store.requestFullAccessToEvents { [weak self] granted, _ in
