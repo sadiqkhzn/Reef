@@ -37,6 +37,8 @@ final class ReefSettings: ObservableObject {
         static let simulatedNotch = "notch.simulated"
         static let simulatedNotchWidth = "notch.simulatedWidth"
         static let simulatedNotchHeight = "notch.simulatedHeight"
+        static let contrastOutline = "appearance.contrastOutline"
+        static let haptics = "appearance.haptics"
     }
 
     static let defaultOverlayStyle: OverlayStyle = .floating
@@ -60,6 +62,16 @@ final class ReefSettings: ObservableObject {
 
     @Published var motion: MotionStyle {
         didSet { defaults.set(motion.rawValue, forKey: Key.motion) }
+    }
+
+    /// Draw a clear outline around the island for legibility.
+    @Published var contrastOutline: Bool {
+        didSet { defaults.set(contrastOutline, forKey: Key.contrastOutline) }
+    }
+
+    /// Give a small haptic tap on the trackpad when the island opens or closes.
+    @Published var haptics: Bool {
+        didSet { defaults.set(haptics, forKey: Key.haptics) }
     }
 
     /// How the open now-playing panel is colored.
@@ -185,6 +197,8 @@ final class ReefSettings: ObservableObject {
         material = Self.value(defaults, Key.material) ?? Self.defaultMaterial
         accent = Self.value(defaults, Key.accent) ?? Self.defaultAccent
         motion = Self.value(defaults, Key.motion) ?? Self.defaultMotion
+        contrastOutline = defaults.object(forKey: Key.contrastOutline) as? Bool ?? false
+        haptics = defaults.object(forKey: Key.haptics) as? Bool ?? false
         playerTint = Self.value(defaults, Key.playerTint) ?? Self.defaultPlayerTint
         mediaSource = Self.value(defaults, Key.mediaSource) ?? Self.defaultMediaSource
         hidesMediaWhenSourceFrontmost = defaults.object(forKey: Key.hideMediaWhenSourceFrontmost) as? Bool ?? false
@@ -216,6 +230,8 @@ final class ReefSettings: ObservableObject {
         material = Self.defaultMaterial
         accent = Self.defaultAccent
         motion = Self.defaultMotion
+        contrastOutline = false
+        haptics = false
         playerTint = Self.defaultPlayerTint
         mediaSource = Self.defaultMediaSource
         hidesMediaWhenSourceFrontmost = false

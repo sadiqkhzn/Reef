@@ -61,6 +61,17 @@ struct AppearanceSettingsPage: View {
             }
 
             Section {
+                Toggle("Contrast outline", isOn: $settings.contrastOutline)
+                Toggle("Haptic feedback", isOn: $settings.haptics)
+            } header: {
+                Text("Detail")
+            } footer: {
+                Text("Contrast outline draws a clear edge around the island. Haptic "
+                    + "feedback gives a small tap on the trackpad when it opens or closes.")
+                    .foregroundStyle(.secondary)
+            }
+
+            Section {
                 Picker("Player color", selection: $settings.playerTint) {
                     ForEach(PlayerTint.allCases) { tint in
                         Text(tint.title).tag(tint)
