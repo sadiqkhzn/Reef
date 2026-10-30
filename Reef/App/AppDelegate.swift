@@ -1,5 +1,6 @@
 import AppKit
 import Combine
+import IOKit
 import SwiftUI
 
 /// Sets the app up at launch.
@@ -139,6 +140,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         menu.addItem(.separator())
 
+        let copyUUID = menu.addItem(
+            withTitle: "Copy Hardware UUID",
+            action: #selector(copyHardwareUUID),
+            keyEquivalent: "")
+        copyUUID.target = self
+
+        let feedback = menu.addItem(
+            withTitle: "Send Feedback…",
+            action: #selector(sendFeedback),
+            keyEquivalent: "")
+        feedback.target = self
+
+        menu.addItem(.separator())
+
         let quit = menu.addItem(
             withTitle: "Quit Reef",
             action: #selector(NSApplication.terminate(_:)),
@@ -156,5 +171,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func openAbout() {
         NSApp.activate(ignoringOtherApps: true)
         NSApp.orderFrontStandardAboutPanel(nil)
+    }
+
+    /// Copy the Mac's hardware UUID, handy when reporting an issue.
+    @objc private func copyHardwareUUID() {
+        guard let uuid = Self.hardwareUUID() else { return }
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(uuid, forType: .string)
+    }
+
+    @objc private func sendFeedback() {
+        if let url = URL(string: "https://github.com/sadiqkhzn/Reef/issues") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
+    /// The Mac's hardware UUID from the IO registry.
+    private static func hardwareUUID() -> String? {
+        let service = IOServiceGetMatchingService(
+            kIOMainPortDefault, IOServiceMatching("IOPlatformExpertDevice"))
+        guard service != 0 else { return nil }
+        defer { IOObjectRelease(service) }
+
+        return IORegistryEntryCreateCFProperty(
+            service, "IOPlatformUUID" as CFString, kCFAllocatorDefault, 0)?
+            .takeRetainedValue() as? String
     }
 }
