@@ -27,7 +27,9 @@ struct IslandHomeView: View {
     /// Switch the open island to the shelf page.
     var onOpenShelf: () -> Void = {}
 
-    private let inset = ReefTheme.Radius.islandInset
+    /// Inset from the island's rounded edge for the cards, wide enough that they
+    /// do not crowd the corners.
+    private let inset: CGFloat = 10
 
     var body: some View {
         VStack(spacing: 0) {
@@ -38,11 +40,11 @@ struct IslandHomeView: View {
                 clockCard
                 if battery.isPresent {
                     batteryCard
-                        .frame(width: 168)
+                        .frame(width: 160)
                 }
             }
             .padding(.horizontal, inset)
-            .padding(.top, 6)
+            .padding(.top, 4)
             .padding(.bottom, inset)
         }
     }
