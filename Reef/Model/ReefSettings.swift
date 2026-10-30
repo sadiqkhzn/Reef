@@ -32,6 +32,9 @@ final class ReefSettings: ObservableObject {
         static let hoverOpenSeconds = "open.hoverSeconds"
         static let quickPeek = "open.quickPeek"
         static let displayTarget = "displayTarget"
+        static let simulatedNotch = "notch.simulated"
+        static let simulatedNotchWidth = "notch.simulatedWidth"
+        static let simulatedNotchHeight = "notch.simulatedHeight"
     }
 
     static let defaultOverlayStyle: OverlayStyle = .floating
@@ -147,6 +150,21 @@ final class ReefSettings: ObservableObject {
         didSet { defaults.set(displayTarget.rawValue, forKey: Key.displayTarget) }
     }
 
+    /// Draw a simulated notch on Macs that have none, in the attached style.
+    @Published var simulatedNotch: Bool {
+        didSet { defaults.set(simulatedNotch, forKey: Key.simulatedNotch) }
+    }
+
+    /// Width of the simulated notch.
+    @Published var simulatedNotchWidth: Double {
+        didSet { defaults.set(simulatedNotchWidth, forKey: Key.simulatedNotchWidth) }
+    }
+
+    /// Height of the simulated notch.
+    @Published var simulatedNotchHeight: Double {
+        didSet { defaults.set(simulatedNotchHeight, forKey: Key.simulatedNotchHeight) }
+    }
+
     private let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard) {
@@ -173,6 +191,9 @@ final class ReefSettings: ObservableObject {
         hoverOpenSeconds = defaults.object(forKey: Key.hoverOpenSeconds) as? Double ?? 3.0
         quickPeek = defaults.object(forKey: Key.quickPeek) as? Bool ?? true
         displayTarget = Self.value(defaults, Key.displayTarget) ?? .followPointer
+        simulatedNotch = defaults.object(forKey: Key.simulatedNotch) as? Bool ?? false
+        simulatedNotchWidth = defaults.object(forKey: Key.simulatedNotchWidth) as? Double ?? 200
+        simulatedNotchHeight = defaults.object(forKey: Key.simulatedNotchHeight) as? Double ?? 32
     }
 
     /// Put every value back to its default.
@@ -199,6 +220,9 @@ final class ReefSettings: ObservableObject {
         hoverOpenSeconds = 3.0
         quickPeek = true
         displayTarget = .followPointer
+        simulatedNotch = false
+        simulatedNotchWidth = 200
+        simulatedNotchHeight = 32
     }
 
     private static func value<T: RawRepresentable>(_ defaults: UserDefaults, _ key: String) -> T?

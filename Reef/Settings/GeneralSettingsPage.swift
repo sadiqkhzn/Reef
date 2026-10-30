@@ -22,12 +22,27 @@ struct GeneralSettingsPage: View {
                         Text(target.title).tag(target)
                     }
                 }
+
+                Toggle("Simulated notch", isOn: $settings.simulatedNotch)
+                    .disabled(settings.overlayStyle != .attached)
+                    .tint(settings.overlayStyle == .attached ? Color.accentColor : Color.gray)
+                if settings.simulatedNotch && settings.overlayStyle == .attached {
+                    LabeledContent("Width") {
+                        Slider(value: $settings.simulatedNotchWidth, in: 120...340, step: 2)
+                            .frame(width: 160)
+                    }
+                    LabeledContent("Height") {
+                        Slider(value: $settings.simulatedNotchHeight, in: 18...40, step: 1)
+                            .frame(width: 160)
+                    }
+                }
             } header: {
                 Text("Island")
             } footer: {
                 Text("Attached hugs the top edge and flows out of the notch. "
                     + "Floating sits just below the top edge as its own rounded bubble. "
-                    + "Display picks which screen the island stays on.")
+                    + "Display picks which screen the island stays on. Simulated notch "
+                    + "draws a notch in the attached style on Macs that have none.")
                     .foregroundStyle(.secondary)
             }
 
@@ -105,6 +120,11 @@ struct GeneralSettingsPage: View {
         }
         .formStyle(.grouped)
         .navigationTitle("General")
+        .onChange(of: settings.overlayStyle) { _, style in
+            // The simulated notch only applies in the attached style, so switch
+            // it off when leaving it rather than leaving a dead toggle on.
+            if style != .attached { settings.simulatedNotch = false }
+        }
     }
 
     private func setLaunchAtLogin(_ enabled: Bool) {
