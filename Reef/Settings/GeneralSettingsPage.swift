@@ -16,11 +16,18 @@ struct GeneralSettingsPage: View {
                     }
                 }
                 .pickerStyle(.segmented)
+
+                Picker("Display", selection: $settings.displayTarget) {
+                    ForEach(DisplayTarget.allCases) { target in
+                        Text(target.title).tag(target)
+                    }
+                }
             } header: {
                 Text("Island")
             } footer: {
                 Text("Attached hugs the top edge and flows out of the notch. "
-                    + "Floating sits just below the top edge as its own rounded bubble.")
+                    + "Floating sits just below the top edge as its own rounded bubble. "
+                    + "Display picks which screen the island stays on.")
                     .foregroundStyle(.secondary)
             }
 

@@ -31,6 +31,7 @@ final class ReefSettings: ObservableObject {
         static let opensOnHover = "open.onHover"
         static let hoverOpenSeconds = "open.hoverSeconds"
         static let quickPeek = "open.quickPeek"
+        static let displayTarget = "displayTarget"
     }
 
     static let defaultOverlayStyle: OverlayStyle = .floating
@@ -141,6 +142,11 @@ final class ReefSettings: ObservableObject {
         didSet { defaults.set(quickPeek, forKey: Key.quickPeek) }
     }
 
+    /// Which display the island appears on.
+    @Published var displayTarget: DisplayTarget {
+        didSet { defaults.set(displayTarget.rawValue, forKey: Key.displayTarget) }
+    }
+
     private let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard) {
@@ -166,6 +172,7 @@ final class ReefSettings: ObservableObject {
         opensOnHover = defaults.object(forKey: Key.opensOnHover) as? Bool ?? true
         hoverOpenSeconds = defaults.object(forKey: Key.hoverOpenSeconds) as? Double ?? 3.0
         quickPeek = defaults.object(forKey: Key.quickPeek) as? Bool ?? true
+        displayTarget = Self.value(defaults, Key.displayTarget) ?? .followPointer
     }
 
     /// Put every value back to its default.
@@ -191,6 +198,7 @@ final class ReefSettings: ObservableObject {
         opensOnHover = true
         hoverOpenSeconds = 3.0
         quickPeek = true
+        displayTarget = .followPointer
     }
 
     private static func value<T: RawRepresentable>(_ defaults: UserDefaults, _ key: String) -> T?
