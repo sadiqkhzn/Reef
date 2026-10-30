@@ -108,6 +108,26 @@ enum PlayerTint: String, CaseIterable, Identifiable {
     }
 }
 
+/// Which display the island appears on.
+enum DisplayTarget: String, CaseIterable, Identifiable {
+    /// Jump to whichever screen the pointer is on (the default).
+    case followPointer
+    /// Stay on the Mac's built-in display.
+    case builtIn
+    /// Stay on the main screen (the one with the menu bar).
+    case mainScreen
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .followPointer: return "Follow the pointer"
+        case .builtIn: return "Built-in display"
+        case .mainScreen: return "Main screen"
+        }
+    }
+}
+
 /// How the island moves between states.
 enum MotionStyle: String, CaseIterable, Identifiable {
     /// Critically damped: settles without overshoot.

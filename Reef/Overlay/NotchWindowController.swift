@@ -76,13 +76,31 @@ final class NotchWindowController {
 
     // MARK: - Screen selection
 
-    /// The screen the overlay should appear on: the one under the pointer, then
-    /// the main screen, then the first attached screen. When the lid is closed
-    /// the main screen is the external display, which is what we want.
-    static func activeScreen() -> NSScreen? {
-        let mouse = NSEvent.mouseLocation
-        let underPointer = NSScreen.screens.first { NSMouseInRect(mouse, $0.frame, false) }
-        return underPointer ?? NSScreen.main ?? NSScreen.screens.first
+    /// The screen the overlay should appear on, for the chosen target. Each mode
+    /// falls back to the main screen, then the first attached screen, so there is
+    /// always somewhere to draw.
+    static func activeScreen(for target: DisplayTarget) -> NSScreen? {
+        switch target {
+        case .followPointer:
+            let mouse = NSEvent.mouseLocation
+            let underPointer = NSScreen.screens.first { NSMouseInRect(mouse, $0.frame, false) }
+            return underPointer ?? NSScreen.main ?? NSScreen.screens.first
+        case .builtIn:
+            return builtInScreen() ?? NSScreen.main ?? NSScreen.screens.first
+        case .mainScreen:
+            return NSScreen.main ?? NSScreen.screens.first
+        }
+    }
+
+    /// The Mac's built-in display, if one is attached and awake.
+    private static func builtInScreen() -> NSScreen? {
+        NSScreen.screens.first { screen in
+            guard let number = screen.deviceDescription[
+                NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber else {
+                return false
+            }
+            return CGDisplayIsBuiltin(CGDirectDisplayID(number.uint32Value)) != 0
+        }
     }
 
     private func notch(for screen: NSScreen) -> ScreenMetrics.Notch {
@@ -113,7 +131,7 @@ final class NotchWindowController {
     // MARK: - Positioning
 
     private func reposition() {
-        guard let screen = NotchWindowController.activeScreen() else { return }
+        guard let screen = NotchWindowController.activeScreen(for: settings.displayTarget) else { return }
 
         let style = settings.overlayStyle
         let notch = notch(for: screen)
@@ -271,19 +289,25 @@ final class NotchWindowController {
         settings.$overlayStyle
             .dropFirst()
             .removeDuplicates()
+            .map { _ in () }
+            .merge(with: settings.$displayTarget.dropFirst().removeDuplicates().map { _ in () })
             .receive(on: RunLoop.main)
-            .sink { [weak self] _ in
+            .sink { [weak self] in
                 self?.relocate()
             }
             .store(in: &cancellables)
     }
 
-    /// Follow the pointer to whichever screen it is on, like the menu bar does.
-    /// Polling the pointer location is simple and dependable across apps that do
-    /// or do not themselves track the mouse.
+    /// Keep the overlay on the chosen screen. When following the pointer this
+    /// hops as the mouse moves between displays; for a fixed target it only moves
+    /// when that display's frame changes. Polling is simple and dependable across
+    /// apps that do or do not themselves track the mouse.
     private func followActiveScreen() {
         let timer = Timer(timeInterval: 0.25, repeats: true) { [weak self] _ in
-            guard let self, let screen = NotchWindowController.activeScreen() else { return }
+            guard let self,
+                let screen = NotchWindowController.activeScreen(for: self.settings.displayTarget) else {
+                return
+            }
             guard screen.frame != self.lastScreenFrame else { return }
 
             // Claim the new screen right away so the timer does not fire again
