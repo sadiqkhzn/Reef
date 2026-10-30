@@ -103,6 +103,19 @@ final class NotchWindowController {
         }
     }
 
+    /// The notch to hug: the real one, or a simulated one on a Mac without a
+    /// notch when the person has turned it on. The simulated height is kept
+    /// within the menu bar strip so the band sits in it.
+    private func effectiveNotch(for screen: NSScreen) -> ScreenMetrics.Notch {
+        let real = notch(for: screen)
+        guard !real.exists, settings.simulatedNotch else { return real }
+
+        let height = min(max(18, settings.simulatedNotchHeight), menuBarHeight(for: screen))
+        return ScreenMetrics.Notch(
+            exists: true,
+            size: CGSize(width: settings.simulatedNotchWidth, height: height))
+    }
+
     private func notch(for screen: NSScreen) -> ScreenMetrics.Notch {
         ScreenMetrics.notch(
             safeAreaTop: screen.safeAreaInsets.top,
@@ -134,7 +147,9 @@ final class NotchWindowController {
         guard let screen = NotchWindowController.activeScreen(for: settings.displayTarget) else { return }
 
         let style = settings.overlayStyle
-        let notch = notch(for: screen)
+        // A simulated notch applies only in the attached style, where the notch
+        // band is drawn.
+        let notch = style == .attached ? effectiveNotch(for: screen) : notch(for: screen)
         state.hasNotch = notch.exists
         // Update the drawn style here, while the overlay is hidden during a
         // style change, so the shape changes together with the size and position.
@@ -291,9 +306,22 @@ final class NotchWindowController {
             .removeDuplicates()
             .map { _ in () }
             .merge(with: settings.$displayTarget.dropFirst().removeDuplicates().map { _ in () })
+            .merge(with: settings.$simulatedNotch.dropFirst().removeDuplicates().map { _ in () })
             .receive(on: RunLoop.main)
             .sink { [weak self] in
                 self?.relocate()
+            }
+            .store(in: &cancellables)
+
+        // Live size tweaks reposition at once, so dragging a slider does not
+        // fade the island in and out on every step.
+        settings.$simulatedNotchWidth
+            .dropFirst()
+            .map { _ in () }
+            .merge(with: settings.$simulatedNotchHeight.dropFirst().map { _ in () })
+            .receive(on: RunLoop.main)
+            .sink { [weak self] in
+                self?.reposition()
             }
             .store(in: &cancellables)
     }
