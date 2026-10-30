@@ -5,6 +5,7 @@ import SwiftUI
 struct LiveActivitySettingsPage: View {
     @EnvironmentObject private var settings: ReefSettings
     @EnvironmentObject private var activities: LiveActivityCenter
+    @EnvironmentObject private var calendar: CalendarMonitor
 
     var body: some View {
         Form {
@@ -100,9 +101,43 @@ struct LiveActivitySettingsPage: View {
                     + "Media, timers, downloads, and more join this list as they arrive.")
                     .foregroundStyle(.secondary)
             }
+
+            if !calendar.calendars.isEmpty {
+                Section {
+                    ForEach(calendar.calendars) { cal in
+                        Toggle(isOn: calendarBinding(cal.id)) {
+                            Label {
+                                Text(cal.title)
+                            } icon: {
+                                Circle()
+                                    .fill(cal.colorHex.flatMap(Color.init(hex:)) ?? .secondary)
+                                    .frame(width: 10, height: 10)
+                            }
+                        }
+                    }
+                } header: {
+                    Text("Calendars")
+                } footer: {
+                    Text("Only events from the calendars turned on here show in the island.")
+                        .foregroundStyle(.secondary)
+                }
+            }
         }
         .formStyle(.grouped)
         .navigationTitle("Live Activities")
+    }
+
+    /// A toggle bound to whether a calendar is shown (on) or hidden (off).
+    private func calendarBinding(_ id: String) -> Binding<Bool> {
+        Binding(
+            get: { !settings.hiddenCalendarIDs.contains(id) },
+            set: { shown in
+                if shown {
+                    settings.hiddenCalendarIDs.remove(id)
+                } else {
+                    settings.hiddenCalendarIDs.insert(id)
+                }
+            })
     }
 }
 

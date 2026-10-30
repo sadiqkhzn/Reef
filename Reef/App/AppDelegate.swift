@@ -72,7 +72,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Start the services that request Calendar, Location, and Bluetooth access.
     private func startPermissionedServices() {
         if let activities { startBluetooth(activities: activities) }
+        calendar.hiddenCalendarIDs = settings.hiddenCalendarIDs
         calendar.start()
+        settings.$hiddenCalendarIDs
+            .dropFirst()
+            .sink { [weak self] hidden in self?.calendar.hiddenCalendarIDs = hidden }
+            .store(in: &cancellables)
         startWeather()
     }
 

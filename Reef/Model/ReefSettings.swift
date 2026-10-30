@@ -28,6 +28,7 @@ final class ReefSettings: ObservableObject {
         static let calendarActivity = "liveActivity.calendar"
         static let calendarLeadMinutes = "calendar.leadMinutes"
         static let eventAtRest = "calendar.eventAtRest"
+        static let hiddenCalendars = "calendar.hidden"
         static let lowBatteryThreshold = "battery.lowThreshold"
         static let lowPowerModeActivity = "liveActivity.lowPowerMode"
         static let opensOnHover = "open.onHover"
@@ -154,6 +155,11 @@ final class ReefSettings: ObservableObject {
         didSet { defaults.set(showsEventAtRest, forKey: Key.eventAtRest) }
     }
 
+    /// Identifiers of calendars to leave out. Empty shows them all.
+    @Published var hiddenCalendarIDs: Set<String> {
+        didSet { defaults.set(Array(hiddenCalendarIDs), forKey: Key.hiddenCalendars) }
+    }
+
     /// Open the island by hovering it, not only by clicking.
     @Published var opensOnHover: Bool {
         didSet { defaults.set(opensOnHover, forKey: Key.opensOnHover) }
@@ -215,6 +221,7 @@ final class ReefSettings: ObservableObject {
         showsCalendarActivity = defaults.object(forKey: Key.calendarActivity) as? Bool ?? true
         calendarLeadMinutes = defaults.object(forKey: Key.calendarLeadMinutes) as? Int ?? 10
         showsEventAtRest = defaults.object(forKey: Key.eventAtRest) as? Bool ?? false
+        hiddenCalendarIDs = Set(defaults.stringArray(forKey: Key.hiddenCalendars) ?? [])
         opensOnHover = defaults.object(forKey: Key.opensOnHover) as? Bool ?? true
         hoverOpenSeconds = defaults.object(forKey: Key.hoverOpenSeconds) as? Double ?? 3.0
         quickPeek = defaults.object(forKey: Key.quickPeek) as? Bool ?? true
@@ -248,6 +255,7 @@ final class ReefSettings: ObservableObject {
         showsCalendarActivity = true
         calendarLeadMinutes = 10
         showsEventAtRest = false
+        hiddenCalendarIDs = []
         opensOnHover = true
         hoverOpenSeconds = 3.0
         quickPeek = true
