@@ -19,6 +19,9 @@ struct IslandSurface: View {
     var notchBand: CGFloat = 0
     /// Brightens the rim while the pointer is over the island.
     var isHighlighted: Bool = false
+    /// Draws a clear, solid edge for legibility, as the system Increase Contrast
+    /// setting does, but on request.
+    var contrastOutline: Bool = false
 
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
@@ -78,7 +81,7 @@ struct IslandSurface: View {
 
     @ViewBuilder
     private var rim: some View {
-        if contrast == .increased {
+        if contrast == .increased || contrastOutline {
             shape.stroke(Color.white.opacity(0.6), lineWidth: 1)
         } else {
             switch resolved {

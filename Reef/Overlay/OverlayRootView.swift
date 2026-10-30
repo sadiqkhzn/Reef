@@ -214,7 +214,8 @@ struct OverlayRootView: View {
                 shape: shape,
                 material: settings.material,
                 notchBand: notchBand,
-                isHighlighted: state.isHovering)
+                isHighlighted: state.isHovering,
+                contrastOutline: settings.contrastOutline)
                 .frame(
                     width: state.visibleSize.width + style.shoulder * 2,
                     height: state.visibleSize.height)
@@ -373,7 +374,12 @@ struct OverlayRootView: View {
         .onReceive(media.$current) { _ in updateNowPlayingActive() }
         .onReceive(calendar.$events) { _ in updateNowPlayingActive() }
         .onChange(of: settings.showsEventAtRest) { _, _ in updateNowPlayingActive() }
-        .onChange(of: isOpen) { _, open in if !open { resetOpenPage() } }
+        .onChange(of: isOpen) { _, open in
+            if !open { resetOpenPage() }
+            if settings.haptics {
+                NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)
+            }
+        }
         .onChange(of: settings.mediaSource) { _, _ in updateNowPlayingActive() }
         .onChange(of: settings.hidesMediaWhenSourceFrontmost) { _, _ in updateNowPlayingActive() }
         .onChange(of: frontmostBundleId) { _, _ in updateNowPlayingActive() }
