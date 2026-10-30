@@ -19,6 +19,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let calendar = CalendarMonitor()
     private let weather = WeatherProvider()
     private let shelf = ShelfModel()
+    private let onboarding = OnboardingWindowController()
     private var controller: NotchWindowController?
     private var settingsWindow: SettingsWindowController?
     private var statusItem: NSStatusItem?
@@ -39,10 +40,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.battery = battery
         self.activities = activities
 
-        startBluetooth(activities: activities)
         startAudioOutput(activities: activities)
-        calendar.start()
-        startWeather()
 
         let controller = NotchWindowController(
             state: state, settings: settings, battery: battery,
@@ -59,6 +57,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         installMenuBarItem()
+
+        // The calendar and weather ask for permission, so on first launch they
+        // wait until the person has been through onboarding and granted access
+        // there, rather than firing system prompts behind the welcome window.
+        if OnboardingWindowController.hasOnboarded {
+            startPermissionedServices()
+        } else {
+            onboarding.onFinish = { [weak self] in self?.startPermissionedServices() }
+            DispatchQueue.main.async { [weak self] in self?.onboarding.show() }
+        }
+    }
+
+    /// Start the services that request Calendar, Location, and Bluetooth access.
+    private func startPermissionedServices() {
+        if let activities { startBluetooth(activities: activities) }
+        calendar.start()
+        startWeather()
     }
 
     /// True when the app is only hosting the unit tests.
@@ -138,6 +153,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             keyEquivalent: "")
         about.target = self
 
+        let welcome = menu.addItem(
+            withTitle: "Welcome to Reef…",
+            action: #selector(openOnboarding),
+            keyEquivalent: "")
+        welcome.target = self
+
         menu.addItem(.separator())
 
         let copyUUID = menu.addItem(
@@ -171,6 +192,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func openAbout() {
         NSApp.activate(ignoringOtherApps: true)
         NSApp.orderFrontStandardAboutPanel(nil)
+    }
+
+    @objc private func openOnboarding() {
+        onboarding.show()
     }
 
     /// Copy the Mac's hardware UUID, handy when reporting an issue.
