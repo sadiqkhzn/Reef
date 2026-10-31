@@ -61,6 +61,16 @@ struct GeneralSettingsPage: View {
             }
 
             Section {
+                Toggle("Hide from screen capture", isOn: $settings.hideFromScreenCapture)
+            } header: {
+                Text("Privacy")
+            } footer: {
+                Text("Keeps the island out of screenshots and screen recordings, so it "
+                    + "does not show up when you share your screen.")
+                    .foregroundStyle(.secondary)
+            }
+
+            Section {
                 Toggle("Open on hover", isOn: $settings.opensOnHover)
                 if settings.opensOnHover {
                     Picker("After", selection: $settings.hoverOpenSeconds) {
