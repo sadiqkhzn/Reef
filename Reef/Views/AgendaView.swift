@@ -7,8 +7,13 @@ struct AgendaView: View {
     var accent: Color
     var headerHeight: CGFloat
     var notchWidth: CGFloat
+    /// Days in the current month with events, for the month grid.
+    var eventDays: Set<Date> = []
     /// Leave the open island (back to home).
     var onClose: () -> Void
+
+    private enum Mode { case list, month }
+    @State private var mode: Mode = .list
 
     private var upcoming: [CalendarEvent] {
         let now = Date()
@@ -20,7 +25,9 @@ struct AgendaView: View {
             header
                 .frame(height: headerHeight)
 
-            if upcoming.isEmpty {
+            if mode == .month {
+                MonthGridView(eventDays: eventDays, accent: accent)
+            } else if upcoming.isEmpty {
                 empty
             } else {
                 ScrollView(showsIndicators: false) {
@@ -50,8 +57,24 @@ struct AgendaView: View {
             }
             .buttonStyle(.plain)
             Spacer(minLength: notchWidth + ReefTheme.Spacing.l)
+            modeToggle
         }
         .padding(.horizontal, ReefTheme.Spacing.l)
+    }
+
+    /// Switches the page between the agenda list and the month grid.
+    private var modeToggle: some View {
+        Button {
+            mode = mode == .list ? .month : .list
+        } label: {
+            Image(systemName: mode == .list ? "calendar" : "list.bullet")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(accent)
+                .frame(width: 22, height: 20)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(mode == .list ? "Month view" : "List view")
     }
 
     private var empty: some View {

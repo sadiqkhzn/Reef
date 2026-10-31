@@ -81,6 +81,15 @@ struct IslandHomeView: View {
                 .buttonStyle(.plain)
                 .help("Open the shelf")
             }
+            Button(action: onOpenCalendar) {
+                Image(systemName: "calendar")
+                    .font(ReefTheme.Typography.caption)
+                    .foregroundStyle(ReefTheme.Ink.secondary)
+                    .padding(.leading, ReefTheme.Spacing.s)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help("Open the calendar")
             Spacer(minLength: notchWidth + ReefTheme.Spacing.l)
             if battery.isPresent {
                 BatteryBadge(snapshot: battery, showsPercentage: !hidesBatteryPercentage)
