@@ -32,6 +32,8 @@ struct IslandHomeView: View {
     var onOpenTimer: () -> Void = {}
     /// Open the weather forecast page. The weather line taps through to it.
     var onOpenWeather: () -> Void = {}
+    /// Open the battery detail page. The battery badge taps through to it.
+    var onOpenBattery: () -> Void = {}
     /// Hide the battery number, showing only the glyph and ring.
     var hidesBatteryPercentage: Bool = false
 
@@ -105,7 +107,12 @@ struct IslandHomeView: View {
             .help("Open the timer")
             Spacer(minLength: notchWidth + ReefTheme.Spacing.l)
             if battery.isPresent {
-                BatteryBadge(snapshot: battery, showsPercentage: !hidesBatteryPercentage)
+                Button(action: onOpenBattery) {
+                    BatteryBadge(snapshot: battery, showsPercentage: !hidesBatteryPercentage)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .help("Battery details")
             }
         }
         .padding(.horizontal, ReefTheme.Spacing.l)

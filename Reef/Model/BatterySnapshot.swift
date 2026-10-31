@@ -10,6 +10,12 @@ struct BatterySnapshot: Equatable {
     var isCharging: Bool
     /// True while running on wall power, whether or not it is charging.
     var isPluggedIn: Bool
+    /// Minutes until empty on battery, when the system has an estimate. Nil while
+    /// it is still calculating or on wall power.
+    var minutesToEmpty: Int? = nil
+    /// Minutes until full while charging, when the system has an estimate. Nil
+    /// while it is still calculating or not charging.
+    var minutesToFull: Int? = nil
 
     /// A reading for a machine with no battery.
     static let absent = BatterySnapshot(
@@ -33,11 +39,39 @@ struct BatterySnapshot: Equatable {
         let raw = Double(current) / Double(max) * 100
         let percent = Swift.min(100, Swift.max(0, Int(raw.rounded())))
 
+        // The system reports -1 (and sometimes a very large placeholder) while it
+        // is still working out an estimate; treat those as "no estimate yet".
+        func minutes(_ key: String) -> Int? {
+            guard let value = description[key] as? Int, value > 0, value < 60 * 48 else {
+                return nil
+            }
+            return value
+        }
+
         return BatterySnapshot(
             isPresent: true,
             percent: percent,
             isCharging: charging,
-            isPluggedIn: state == "AC Power")
+            isPluggedIn: state == "AC Power",
+            minutesToEmpty: minutes("Time to Empty"),
+            minutesToFull: minutes("Time to Full Charge"))
+    }
+
+    /// A short "time left" phrase for the current state, or nil when there is no
+    /// estimate (fully charged, holding charge, or still calculating).
+    var timeEstimateText: String? {
+        let minutes: Int?
+        switch status {
+        case .charging: minutes = minutesToFull
+        case .onBattery: minutes = minutesToEmpty
+        case .fullyCharged, .notCharging: minutes = nil
+        }
+        guard let minutes else { return nil }
+        let h = minutes / 60
+        let m = minutes % 60
+        if h > 0 && m > 0 { return "\(h)h \(m)m" }
+        if h > 0 { return "\(h)h" }
+        return "\(m)m"
     }
 }
 
