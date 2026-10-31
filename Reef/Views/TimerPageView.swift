@@ -7,11 +7,15 @@ import SwiftUI
 /// resume, add a minute, or cancel.
 struct TimerPageView: View {
     @ObservedObject var timer: TimerController
+    @ObservedObject var stopwatch: StopwatchController
     var accent: Color
     var headerHeight: CGFloat
     var notchWidth: CGFloat
     /// Leave the open island (back to home).
     var onClose: () -> Void
+
+    private enum Mode { case timer, stopwatch }
+    @State private var mode: Mode = .timer
 
     /// Preset lengths in minutes.
     private let presets: [Int] = [1, 3, 5, 10, 15, 25]
@@ -21,19 +25,28 @@ struct TimerPageView: View {
             header
                 .frame(height: headerHeight)
 
-            if timer.isActive {
+            if mode == .stopwatch {
+                stopwatchView
+            } else if timer.isActive {
                 running
             } else {
                 presetGrid
             }
         }
+        .onAppear {
+            // Land on whichever is already going, favoring a running timer.
+            if timer.isActive {
+                mode = .timer
+            } else if stopwatch.isActive {
+                mode = .stopwatch
+            }
+        }
     }
 
     private var header: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: ReefTheme.Spacing.s) {
             Button(action: onClose) {
-                Label("Timer", systemImage: "chevron.left")
-                    .labelStyle(.titleAndIcon)
+                Image(systemName: "chevron.left")
                     .font(ReefTheme.Typography.caption)
                     .foregroundStyle(accent)
                     .padding(.horizontal, ReefTheme.Spacing.s)
@@ -42,9 +55,33 @@ struct TimerPageView: View {
                     .contentShape(Capsule())
             }
             .buttonStyle(.plain)
-            Spacer(minLength: notchWidth + ReefTheme.Spacing.l)
+            modeToggle
+            Spacer(minLength: notchWidth + ReefTheme.Spacing.s)
         }
         .padding(.horizontal, ReefTheme.Spacing.l)
+    }
+
+    /// A small segmented control to switch between the timer and the stopwatch.
+    private var modeToggle: some View {
+        HStack(spacing: 2) {
+            segment("Timer", on: mode == .timer) { mode = .timer }
+            segment("Stopwatch", on: mode == .stopwatch) { mode = .stopwatch }
+        }
+        .padding(2)
+        .background(Capsule().fill(accent.opacity(0.1)))
+    }
+
+    private func segment(_ title: String, on: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(on ? .white : ReefTheme.Ink.secondary)
+                .padding(.horizontal, 7)
+                .padding(.vertical, 2)
+                .background(Capsule().fill(on ? accent : .clear))
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Presets
@@ -159,5 +196,30 @@ struct TimerPageView: View {
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)
+    }
+
+    // MARK: - Stopwatch
+
+    private var stopwatchView: some View {
+        HStack(spacing: ReefTheme.Spacing.l) {
+            TimelineView(.animation(minimumInterval: 0.05, paused: !stopwatch.isRunning)) { _ in
+                Text(StopwatchController.label(stopwatch.elapsed))
+                    .font(.system(size: 24, weight: .semibold))
+                    .monospacedDigit()
+                    .foregroundStyle(ReefTheme.Ink.primary)
+            }
+            Spacer(minLength: 0)
+            HStack(spacing: 8) {
+                if stopwatch.isRunning {
+                    iconButton("pause.fill") { stopwatch.pause() }
+                } else {
+                    iconButton("play.fill") { stopwatch.start() }
+                }
+                iconButton("arrow.counterclockwise") { stopwatch.reset() }
+            }
+        }
+        .padding(.horizontal, ReefTheme.Spacing.l)
+        .padding(.vertical, 8)
+        .frame(maxHeight: .infinity)
     }
 }
