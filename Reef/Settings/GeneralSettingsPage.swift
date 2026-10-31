@@ -61,12 +61,13 @@ struct GeneralSettingsPage: View {
             }
 
             Section {
+                Toggle("Keep awake", isOn: $settings.keepAwake)
                 Toggle("Hide from screen capture", isOn: $settings.hideFromScreenCapture)
             } header: {
                 Text("Privacy")
             } footer: {
-                Text("Keeps the island out of screenshots and screen recordings, so it "
-                    + "does not show up when you share your screen.")
+                Text("Keep awake stops the Mac and its display from sleeping. Hide from "
+                    + "screen capture keeps the island out of screenshots and recordings.")
                     .foregroundStyle(.secondary)
             }
 

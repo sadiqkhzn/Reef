@@ -39,6 +39,7 @@ final class ReefSettings: ObservableObject {
         static let simulatedNotchWidth = "notch.simulatedWidth"
         static let simulatedNotchHeight = "notch.simulatedHeight"
         static let hideFromCapture = "privacy.hideFromCapture"
+        static let keepAwake = "power.keepAwake"
         static let contrastOutline = "appearance.contrastOutline"
         static let haptics = "appearance.haptics"
     }
@@ -79,6 +80,11 @@ final class ReefSettings: ObservableObject {
     /// Keep the island out of screenshots and screen recordings.
     @Published var hideFromScreenCapture: Bool {
         didSet { defaults.set(hideFromScreenCapture, forKey: Key.hideFromCapture) }
+    }
+
+    /// Keep the Mac and its display from sleeping.
+    @Published var keepAwake: Bool {
+        didSet { defaults.set(keepAwake, forKey: Key.keepAwake) }
     }
 
     /// How the open now-playing panel is colored.
@@ -212,6 +218,7 @@ final class ReefSettings: ObservableObject {
         contrastOutline = defaults.object(forKey: Key.contrastOutline) as? Bool ?? false
         haptics = defaults.object(forKey: Key.haptics) as? Bool ?? false
         hideFromScreenCapture = defaults.object(forKey: Key.hideFromCapture) as? Bool ?? false
+        keepAwake = defaults.object(forKey: Key.keepAwake) as? Bool ?? false
         playerTint = Self.value(defaults, Key.playerTint) ?? Self.defaultPlayerTint
         mediaSource = Self.value(defaults, Key.mediaSource) ?? Self.defaultMediaSource
         hidesMediaWhenSourceFrontmost = defaults.object(forKey: Key.hideMediaWhenSourceFrontmost) as? Bool ?? false
@@ -247,6 +254,7 @@ final class ReefSettings: ObservableObject {
         contrastOutline = false
         haptics = false
         hideFromScreenCapture = false
+        keepAwake = false
         playerTint = Self.defaultPlayerTint
         mediaSource = Self.defaultMediaSource
         hidesMediaWhenSourceFrontmost = false
