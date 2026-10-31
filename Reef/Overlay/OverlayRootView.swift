@@ -242,6 +242,7 @@ struct OverlayRootView: View {
                             accent: settings.accent.color,
                             headerHeight: state.collapsedSize.height,
                             notchWidth: notchClearance,
+                            eventDays: calendar.monthEventDays,
                             onClose: { openPage = shownTrack != nil ? .nowPlaying : .home })
                             .frame(width: state.visibleSize.width, height: state.visibleSize.height)
                             .transition(.islandOpen)

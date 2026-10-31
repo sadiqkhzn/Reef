@@ -13,6 +13,9 @@ final class CalendarMonitor: ObservableObject {
     @Published private(set) var accessGranted = false
     /// The calendars available to show, for the settings list.
     @Published private(set) var calendars: [CalendarInfo] = []
+    /// Start-of-day dates in the current month that have at least one event, for
+    /// the month view's dots.
+    @Published private(set) var monthEventDays: Set<Date> = []
 
     /// Identifiers of calendars to leave out. Set from the person's choice; a
     /// change re-filters the events.
@@ -88,6 +91,25 @@ final class CalendarMonitor: ObservableObject {
                     calendarID: event.calendar?.calendarIdentifier)
             }
         events = mapped.sorted { $0.start < $1.start }
+        refreshMonth(now: now)
+    }
+
+    /// Collect the days of the current month that have an event, for the grid.
+    private func refreshMonth(now: Date) {
+        let calendar = Calendar.current
+        guard let monthRange = calendar.dateInterval(of: .month, for: now) else {
+            monthEventDays = []
+            return
+        }
+        let predicate = store.predicateForEvents(
+            withStart: monthRange.start, end: monthRange.end, calendars: nil)
+
+        var days: Set<Date> = []
+        for event in store.events(matching: predicate)
+        where !hiddenCalendarIDs.contains(event.calendar?.calendarIdentifier ?? "") {
+            days.insert(calendar.startOfDay(for: event.startDate))
+        }
+        monthEventDays = days
     }
 
     /// A `#RRGGBB` string for a calendar color, or nil when it has none.
