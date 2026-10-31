@@ -30,6 +30,8 @@ struct IslandHomeView: View {
     var onOpenCalendar: () -> Void = {}
     /// Open the timer page.
     var onOpenTimer: () -> Void = {}
+    /// Open the weather forecast page. The weather line taps through to it.
+    var onOpenWeather: () -> Void = {}
     /// Hide the battery number, showing only the glyph and ring.
     var hidesBatteryPercentage: Bool = false
 
@@ -170,19 +172,23 @@ struct IslandHomeView: View {
     }
 
     /// A one-line glance at the weather: the condition symbol, the temperature,
-    /// and the condition name.
+    /// and the condition name. Taps through to the forecast page.
     private func weatherLine(_ weather: WeatherSnapshot) -> some View {
-        HStack(spacing: 5) {
-            Image(systemName: weather.condition.symbol)
-                .font(.system(size: 11))
-                .foregroundStyle(accent)
-            Text(weather.temperatureText)
-                .foregroundStyle(ReefTheme.Ink.primary)
-            Text(weather.condition.label)
-                .foregroundStyle(ReefTheme.Ink.secondary)
-                .lineLimit(1)
+        Button(action: onOpenWeather) {
+            HStack(spacing: 5) {
+                Image(systemName: weather.condition.symbol)
+                    .font(.system(size: 11))
+                    .foregroundStyle(accent)
+                Text(weather.temperatureText)
+                    .foregroundStyle(ReefTheme.Ink.primary)
+                Text(weather.condition.label)
+                    .foregroundStyle(ReefTheme.Ink.secondary)
+                    .lineLimit(1)
+            }
+            .font(ReefTheme.Typography.caption)
+            .contentShape(Rectangle())
         }
-        .font(ReefTheme.Typography.caption)
+        .buttonStyle(.plain)
     }
 
     private var batteryTint: Color {
