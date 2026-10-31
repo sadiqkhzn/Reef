@@ -34,6 +34,8 @@ struct OverlayRootView: View {
     @StateObject private var media = NowPlayingController()
     /// The island's countdown timer, started from the timer page.
     @StateObject private var timer = TimerController()
+    /// The island's stopwatch, run from the timer page.
+    @StateObject private var stopwatch = StopwatchController()
     /// True while a file drag is hovering the island, so it can open the shelf.
     @State private var dropTargeted = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -105,9 +107,12 @@ struct OverlayRootView: View {
         state.nowPlayingActive = active
         if !active { state.isOverControl = false }
         // The timer's wing shows only when nothing is playing, so it widens the
-        // resting island just under a track.
+        // resting island just under a track. The stopwatch sits just under the
+        // timer in the same way.
         state.timerRestingActive = timer.isActive && !active
-        state.eventRestingActive = restingEvent != nil && !state.timerRestingActive
+        state.stopwatchRestingActive = stopwatch.isActive && !active && !timer.isActive
+        state.eventRestingActive =
+            restingEvent != nil && !state.timerRestingActive && !state.stopwatchRestingActive
     }
 
     /// Turn a finished drag on the island into an open/close, a track skip, or a
@@ -256,6 +261,7 @@ struct OverlayRootView: View {
                     } else if openPage == .timer {
                         TimerPageView(
                             timer: timer,
+                            stopwatch: stopwatch,
                             accent: settings.accent.color,
                             headerHeight: state.collapsedSize.height,
                             notchWidth: notchClearance,
@@ -357,6 +363,16 @@ struct OverlayRootView: View {
                     }
                     .frame(height: state.restingSize.height, alignment: .top)
                     .transition(.islandWing)
+                } else if stopwatch.isActive {
+                    // A stopwatch is running (and nothing else): show it resting.
+                    StopwatchWingView(
+                        stopwatch: stopwatch,
+                        accent: settings.accent.color,
+                        centerWidth: state.collapsedSize.width,
+                        rowHeight: state.collapsedSize.height,
+                        showsLabel: notchClearance == 0)
+                        .frame(height: state.restingSize.height, alignment: .top)
+                        .transition(.islandWing)
                 } else if let event = restingEvent {
                     // Idle, with the next-event option on: show it in the wings.
                     TimelineView(.periodic(from: .now, by: 30)) { timeline in
@@ -425,10 +441,14 @@ struct OverlayRootView: View {
             MotionStyle.animation(settings.motion.wings, reduceMotion: reduceMotion),
             value: state.timerRestingActive)
         .animation(
+            MotionStyle.animation(settings.motion.wings, reduceMotion: reduceMotion),
+            value: state.stopwatchRestingActive)
+        .animation(
             MotionStyle.animation(settings.motion.peek, reduceMotion: reduceMotion),
             value: state.announcingTitle)
         .onReceive(media.$current) { _ in updateNowPlayingActive() }
         .onReceive(timer.$total) { _ in updateNowPlayingActive() }
+        .onReceive(stopwatch.$isRunning) { _ in updateNowPlayingActive() }
         .onReceive(calendar.$events) { _ in updateNowPlayingActive() }
         .onChange(of: settings.showsEventAtRest) { _, _ in updateNowPlayingActive() }
         .onChange(of: isOpen) { _, open in

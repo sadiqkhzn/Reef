@@ -125,6 +125,10 @@ final class NotchState: ObservableObject {
     /// size, just under a playing track.
     @Published var timerRestingActive: Bool = false
 
+    /// True while a stopwatch is running and shown in the wings. Drives the
+    /// resting size, just under the timer.
+    @Published var stopwatchRestingActive: Bool = false
+
     /// Whether hovering grows the island a touch (the quick peek). Set from the
     /// person's setting.
     @Published var peekOnHover: Bool = true
@@ -144,7 +148,7 @@ final class NotchState: ObservableObject {
                 : Self.mediaRestingWidth
             return CGSize(width: width, height: collapsedSize.height)
         }
-        if timerRestingActive {
+        if timerRestingActive || stopwatchRestingActive {
             return CGSize(
                 width: collapsedSize.width + Self.wingWidth * 2,
                 height: collapsedSize.height)
