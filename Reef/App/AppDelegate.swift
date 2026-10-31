@@ -20,6 +20,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let weather = WeatherProvider()
     private let shelf = ShelfModel()
     private let onboarding = OnboardingWindowController()
+    private let keepAwake = KeepAwakeManager()
+    private var keepAwakeItem: NSMenuItem?
     private var controller: NotchWindowController?
     private var settingsWindow: SettingsWindowController?
     private var statusItem: NSStatusItem?
@@ -57,6 +59,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         installMenuBarItem()
+
+        // Keep awake, restored from the saved choice and kept in step with it.
+        keepAwake.setActive(settings.keepAwake)
+        keepAwakeItem?.state = settings.keepAwake ? .on : .off
+        settings.$keepAwake
+            .sink { [weak self] on in
+                self?.keepAwake.setActive(on)
+                self?.keepAwakeItem?.state = on ? .on : .off
+            }
+            .store(in: &cancellables)
 
         // The calendar and weather ask for permission, so on first launch they
         // wait until the person has been through onboarding and granted access
@@ -152,6 +164,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             keyEquivalent: ",")
         settingsItem.target = self
 
+        let keepAwakeItem = menu.addItem(
+            withTitle: "Keep Awake",
+            action: #selector(toggleKeepAwake),
+            keyEquivalent: "")
+        keepAwakeItem.target = self
+        keepAwakeItem.state = settings.keepAwake ? .on : .off
+        self.keepAwakeItem = keepAwakeItem
+
+        menu.addItem(.separator())
+
         let about = menu.addItem(
             withTitle: "About Reef",
             action: #selector(openAbout),
@@ -201,6 +223,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func openOnboarding() {
         onboarding.show()
+    }
+
+    @objc private func toggleKeepAwake() {
+        settings.keepAwake.toggle()
     }
 
     /// Copy the Mac's hardware UUID, handy when reporting an issue.
