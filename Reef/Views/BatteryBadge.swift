@@ -4,6 +4,8 @@ import SwiftUI
 /// charging. Drawn by hand so the fill and color read clearly at small sizes.
 struct BatteryBadge: View {
     var snapshot: BatterySnapshot
+    /// Show the number beside the glyph.
+    var showsPercentage: Bool = true
 
     private var fillColor: Color {
         if snapshot.isCharging || snapshot.isPluggedIn { return ReefTheme.Status.charging }
@@ -16,10 +18,12 @@ struct BatteryBadge: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            Text("\(snapshot.percent)%")
-                .font(ReefTheme.Typography.wing)
-                .foregroundStyle(ReefTheme.Ink.primary)
-                .monospacedDigit()
+            if showsPercentage {
+                Text("\(snapshot.percent)%")
+                    .font(ReefTheme.Typography.wing)
+                    .foregroundStyle(ReefTheme.Ink.primary)
+                    .monospacedDigit()
+            }
 
             body(width: 24, height: 12)
         }

@@ -262,7 +262,8 @@ struct OverlayRootView: View {
                             onOpenPlayer: { openPage = .nowPlaying },
                             shelfCount: shelf.items.count,
                             onOpenShelf: { openPage = .shelf },
-                            onOpenCalendar: { openPage = .calendar })
+                            onOpenCalendar: { openPage = .calendar },
+                            hidesBatteryPercentage: settings.hidesBatteryPercentage)
                             .frame(width: state.visibleSize.width, height: state.visibleSize.height)
                             .transition(.islandOpen)
                     }

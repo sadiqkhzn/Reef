@@ -31,6 +31,7 @@ final class ReefSettings: ObservableObject {
         static let hiddenCalendars = "calendar.hidden"
         static let lowBatteryThreshold = "battery.lowThreshold"
         static let lowPowerModeActivity = "liveActivity.lowPowerMode"
+        static let hideBatteryPercentage = "battery.hidePercentage"
         static let opensOnHover = "open.onHover"
         static let hoverOpenSeconds = "open.hoverSeconds"
         static let quickPeek = "open.quickPeek"
@@ -136,6 +137,11 @@ final class ReefSettings: ObservableObject {
         didSet { defaults.set(showsLowPowerModeActivity, forKey: Key.lowPowerModeActivity) }
     }
 
+    /// Hide the battery number on the badge and the home card.
+    @Published var hidesBatteryPercentage: Bool {
+        didSet { defaults.set(hidesBatteryPercentage, forKey: Key.hideBatteryPercentage) }
+    }
+
     /// Show the wings when headphones or another Bluetooth device connects.
     @Published var showsDeviceActivity: Bool {
         didSet { defaults.set(showsDeviceActivity, forKey: Key.deviceActivity) }
@@ -223,6 +229,7 @@ final class ReefSettings: ObservableObject {
         showsLowBatteryActivity = defaults.object(forKey: Key.lowBatteryActivity) as? Bool ?? true
         lowBatteryThreshold = defaults.object(forKey: Key.lowBatteryThreshold) as? Int ?? 20
         showsLowPowerModeActivity = defaults.object(forKey: Key.lowPowerModeActivity) as? Bool ?? true
+        hidesBatteryPercentage = defaults.object(forKey: Key.hideBatteryPercentage) as? Bool ?? false
         showsDeviceActivity = defaults.object(forKey: Key.deviceActivity) as? Bool ?? true
         showsAudioOutputActivity = defaults.object(forKey: Key.audioOutputActivity) as? Bool ?? true
         showsCalendarActivity = defaults.object(forKey: Key.calendarActivity) as? Bool ?? true
@@ -258,6 +265,7 @@ final class ReefSettings: ObservableObject {
         showsLowBatteryActivity = true
         lowBatteryThreshold = 20
         showsLowPowerModeActivity = true
+        hidesBatteryPercentage = false
         showsDeviceActivity = true
         showsAudioOutputActivity = true
         showsCalendarActivity = true

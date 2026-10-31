@@ -28,6 +28,8 @@ struct IslandHomeView: View {
     var onOpenShelf: () -> Void = {}
     /// Open the agenda page. The event line taps through to it.
     var onOpenCalendar: () -> Void = {}
+    /// Hide the battery number, showing only the glyph and ring.
+    var hidesBatteryPercentage: Bool = false
 
     /// Inset from the island's rounded edge for the cards, wide enough that they
     /// do not crowd the corners.
@@ -81,7 +83,7 @@ struct IslandHomeView: View {
             }
             Spacer(minLength: notchWidth + ReefTheme.Spacing.l)
             if battery.isPresent {
-                BatteryBadge(snapshot: battery)
+                BatteryBadge(snapshot: battery, showsPercentage: !hidesBatteryPercentage)
             }
         }
         .padding(.horizontal, ReefTheme.Spacing.l)
@@ -189,16 +191,25 @@ struct IslandHomeView: View {
                 }
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("\(battery.percent)%")
-                    .font(ReefTheme.Typography.title)
-                    .monospacedDigit()
-                    .foregroundStyle(ReefTheme.Ink.primary)
-                    .contentTransition(.numericText())
-                Text(battery.status.title)
-                    .font(ReefTheme.Typography.caption)
-                    .foregroundStyle(ReefTheme.Ink.secondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.85)
+                if hidesBatteryPercentage {
+                    // No number: the status reads as the main label instead.
+                    Text(battery.status.title)
+                        .font(ReefTheme.Typography.title)
+                        .foregroundStyle(ReefTheme.Ink.primary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.85)
+                } else {
+                    Text("\(battery.percent)%")
+                        .font(ReefTheme.Typography.title)
+                        .monospacedDigit()
+                        .foregroundStyle(ReefTheme.Ink.primary)
+                        .contentTransition(.numericText())
+                    Text(battery.status.title)
+                        .font(ReefTheme.Typography.caption)
+                        .foregroundStyle(ReefTheme.Ink.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.85)
+                }
             }
             Spacer(minLength: 0)
         }
