@@ -75,7 +75,7 @@ final class NotchState: ObservableObject {
     static let expandedMinWidth: CGFloat = 400
     /// Height of the open body below the header row. The header row is as tall
     /// as the resting overlay, so its items sit beside the notch.
-    static let expandedBodyHeight: CGFloat = 136
+    static let expandedBodyHeight: CGFloat = 148
 
     /// Width of each wing the resting overlay grows on either side to show a
     /// live activity.
