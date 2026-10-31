@@ -41,6 +41,8 @@ struct LiveActivitySettingsPage: View {
                     }
                 }
 
+                Toggle("Hide battery percentage", isOn: $settings.hidesBatteryPercentage)
+
                 ActivityRow(
                     title: "Low Power Mode",
                     detail: "When Low Power Mode turns on.",
