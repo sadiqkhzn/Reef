@@ -38,6 +38,7 @@ final class ReefSettings: ObservableObject {
         static let simulatedNotch = "notch.simulated"
         static let simulatedNotchWidth = "notch.simulatedWidth"
         static let simulatedNotchHeight = "notch.simulatedHeight"
+        static let hideFromCapture = "privacy.hideFromCapture"
         static let contrastOutline = "appearance.contrastOutline"
         static let haptics = "appearance.haptics"
     }
@@ -73,6 +74,11 @@ final class ReefSettings: ObservableObject {
     /// Give a small haptic tap on the trackpad when the island opens or closes.
     @Published var haptics: Bool {
         didSet { defaults.set(haptics, forKey: Key.haptics) }
+    }
+
+    /// Keep the island out of screenshots and screen recordings.
+    @Published var hideFromScreenCapture: Bool {
+        didSet { defaults.set(hideFromScreenCapture, forKey: Key.hideFromCapture) }
     }
 
     /// How the open now-playing panel is colored.
@@ -205,6 +211,7 @@ final class ReefSettings: ObservableObject {
         motion = Self.value(defaults, Key.motion) ?? Self.defaultMotion
         contrastOutline = defaults.object(forKey: Key.contrastOutline) as? Bool ?? false
         haptics = defaults.object(forKey: Key.haptics) as? Bool ?? false
+        hideFromScreenCapture = defaults.object(forKey: Key.hideFromCapture) as? Bool ?? false
         playerTint = Self.value(defaults, Key.playerTint) ?? Self.defaultPlayerTint
         mediaSource = Self.value(defaults, Key.mediaSource) ?? Self.defaultMediaSource
         hidesMediaWhenSourceFrontmost = defaults.object(forKey: Key.hideMediaWhenSourceFrontmost) as? Bool ?? false
@@ -239,6 +246,7 @@ final class ReefSettings: ObservableObject {
         motion = Self.defaultMotion
         contrastOutline = false
         haptics = false
+        hideFromScreenCapture = false
         playerTint = Self.defaultPlayerTint
         mediaSource = Self.defaultMediaSource
         hidesMediaWhenSourceFrontmost = false

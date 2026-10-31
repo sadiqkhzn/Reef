@@ -65,8 +65,20 @@ final class NotchWindowController {
         observeLiveActivity()
         observeNowPlaying()
         observeStyle()
+        observeScreenCapture()
         followActiveScreen()
         reposition()
+    }
+
+    /// Keep the island in or out of screen captures as the person chooses. A
+    /// sharing type of none hides the window from screenshots and recordings.
+    private func observeScreenCapture() {
+        settings.$hideFromScreenCapture
+            .receive(on: RunLoop.main)
+            .sink { [weak self] hidden in
+                self?.panel.sharingType = hidden ? .none : .readOnly
+            }
+            .store(in: &cancellables)
     }
 
     /// Put the overlay on screen.
