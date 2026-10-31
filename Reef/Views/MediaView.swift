@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// The open media panel: artwork, track details, the source app, a scrubbable
@@ -12,6 +13,13 @@ struct MediaView: View {
     /// Vivid color drawn from the cover, falling back to white.
     private var tint: Color { nowPlaying.tint ?? .white }
 
+    /// Bring the playing app to the front.
+    private func showInApp() {
+        guard let id = nowPlaying.bundleIdentifier else { return }
+        NSRunningApplication.runningApplications(withBundleIdentifier: id).first?
+            .activate(options: [.activateAllWindows])
+    }
+
     var body: some View {
         HStack(spacing: 14) {
             artwork
@@ -21,10 +29,20 @@ struct MediaView: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 if let appName = nowPlaying.appName {
-                    Text(appName.uppercased())
+                    Button(action: showInApp) {
+                        HStack(spacing: 3) {
+                            Text(appName.uppercased())
+                            if nowPlaying.bundleIdentifier != nil {
+                                Image(systemName: "arrow.up.forward")
+                            }
+                        }
                         .font(.system(size: 9, weight: .semibold))
                         .foregroundStyle(.white.opacity(0.45))
                         .lineLimit(1)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(nowPlaying.bundleIdentifier == nil)
                 }
 
                 MarqueeText(
