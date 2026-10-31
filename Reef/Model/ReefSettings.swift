@@ -28,6 +28,7 @@ final class ReefSettings: ObservableObject {
         static let calendarActivity = "liveActivity.calendar"
         static let calendarLeadMinutes = "calendar.leadMinutes"
         static let eventAtRest = "calendar.eventAtRest"
+        static let restingActivity = "restingActivity"
         static let hiddenCalendars = "calendar.hidden"
         static let lowBatteryThreshold = "battery.lowThreshold"
         static let lowPowerModeActivity = "liveActivity.lowPowerMode"
@@ -168,9 +169,9 @@ final class ReefSettings: ObservableObject {
         didSet { defaults.set(calendarLeadMinutes, forKey: Key.calendarLeadMinutes) }
     }
 
-    /// Show the next event on the resting island while nothing is playing.
-    @Published var showsEventAtRest: Bool {
-        didSet { defaults.set(showsEventAtRest, forKey: Key.eventAtRest) }
+    /// What the island shows while resting.
+    @Published var restingActivity: RestingActivity {
+        didSet { defaults.set(restingActivity.rawValue, forKey: Key.restingActivity) }
     }
 
     /// Identifiers of calendars to leave out. Empty shows them all.
@@ -241,7 +242,14 @@ final class ReefSettings: ObservableObject {
         showsAudioOutputActivity = defaults.object(forKey: Key.audioOutputActivity) as? Bool ?? true
         showsCalendarActivity = defaults.object(forKey: Key.calendarActivity) as? Bool ?? true
         calendarLeadMinutes = defaults.object(forKey: Key.calendarLeadMinutes) as? Int ?? 10
-        showsEventAtRest = defaults.object(forKey: Key.eventAtRest) as? Bool ?? false
+        // Carry the old on/off event-at-rest choice over to the new picker.
+        if let stored: RestingActivity = Self.value(defaults, Key.restingActivity) {
+            restingActivity = stored
+        } else if defaults.object(forKey: Key.eventAtRest) as? Bool == true {
+            restingActivity = .both
+        } else {
+            restingActivity = .nowPlaying
+        }
         hiddenCalendarIDs = Set(defaults.stringArray(forKey: Key.hiddenCalendars) ?? [])
         opensOnHover = defaults.object(forKey: Key.opensOnHover) as? Bool ?? true
         hoverOpenSeconds = defaults.object(forKey: Key.hoverOpenSeconds) as? Double ?? 3.0
@@ -278,7 +286,7 @@ final class ReefSettings: ObservableObject {
         showsAudioOutputActivity = true
         showsCalendarActivity = true
         calendarLeadMinutes = 10
-        showsEventAtRest = false
+        restingActivity = .nowPlaying
         hiddenCalendarIDs = []
         opensOnHover = true
         hoverOpenSeconds = 3.0

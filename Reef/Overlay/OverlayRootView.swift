@@ -46,11 +46,23 @@ struct OverlayRootView: View {
     private var style: OverlayStyle { state.displayedStyle }
     private var isOpen: Bool { state.phase == .expanded }
 
-    /// The next event to show on the resting island, when the option is on and
-    /// nothing is playing. Nil otherwise.
+    /// The soonest event, used to decide the resting slot and to show it.
+    private var nextEvent: CalendarEvent? {
+        EventSchedule.next(calendar.events, now: Date())
+    }
+
+    /// What the resting island shows, from the person's idle-activity choice.
+    private var restingSlot: RestingSlot {
+        settings.restingActivity.slot(hasMedia: shownTrack != nil, hasEvent: nextEvent != nil)
+    }
+
+    /// True when the resting island shows the media wing (rather than an event
+    /// or nothing). The open player stays reachable regardless.
+    private var mediaAtRest: Bool { restingSlot == .media }
+
+    /// The event to show on the resting island, or nil.
     private var restingEvent: CalendarEvent? {
-        guard settings.showsEventAtRest, shownTrack == nil else { return nil }
-        return EventSchedule.next(calendar.events, now: Date())
+        restingSlot == .event ? nextEvent : nil
     }
 
     /// Whether the open island is showing the home page rather than the player.
@@ -97,9 +109,8 @@ struct OverlayRootView: View {
     /// Keep the shared now-playing flag in step with whether a track is actually
     /// being shown, so the window's hover region and sizing follow the gate.
     private func updateNowPlayingActive() {
-        let active = shownTrack != nil
-        state.nowPlayingActive = active
-        if !active { state.isOverControl = false }
+        state.nowPlayingActive = mediaAtRest
+        if !mediaAtRest { state.isOverControl = false }
         state.eventRestingActive = restingEvent != nil
     }
 
@@ -278,7 +289,7 @@ struct OverlayRootView: View {
                         isPeeking: state.isPeeking)
                         .frame(height: state.restingSize.height, alignment: .top)
                         .transition(.islandWing)
-                } else if let nowPlaying = shownTrack {
+                } else if mediaAtRest, let nowPlaying = shownTrack {
                     // One stable wing, so toggling play/pause never rebuilds it.
                     // The announcement just grows a title band below it.
                     ZStack(alignment: .top) {
@@ -385,7 +396,7 @@ struct OverlayRootView: View {
             value: state.announcingTitle)
         .onReceive(media.$current) { _ in updateNowPlayingActive() }
         .onReceive(calendar.$events) { _ in updateNowPlayingActive() }
-        .onChange(of: settings.showsEventAtRest) { _, _ in updateNowPlayingActive() }
+        .onChange(of: settings.restingActivity) { _, _ in updateNowPlayingActive() }
         .onChange(of: isOpen) { _, open in
             if !open { resetOpenPage() }
             if settings.haptics {

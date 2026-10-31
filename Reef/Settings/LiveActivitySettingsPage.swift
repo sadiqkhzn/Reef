@@ -94,7 +94,11 @@ struct LiveActivitySettingsPage: View {
                     }
                 }
 
-                Toggle("Show next event on the island", isOn: $settings.showsEventAtRest)
+                Picker("Resting activity", selection: $settings.restingActivity) {
+                    ForEach(RestingActivity.allCases) { activity in
+                        Text(activity.title).tag(activity)
+                    }
+                }
             } header: {
                 Text("Activities")
             } footer: {
