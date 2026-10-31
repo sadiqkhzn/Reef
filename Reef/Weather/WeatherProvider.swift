@@ -9,6 +9,8 @@ import Foundation
 @MainActor
 final class WeatherProvider: ObservableObject {
     @Published private(set) var snapshot: WeatherSnapshot?
+    /// The upcoming hours and days, for the weather page.
+    @Published private(set) var forecast: WeatherForecast?
     @Published private(set) var accessDenied = false
 
     /// Unit to request and show in. Changing it refetches.
@@ -63,6 +65,7 @@ final class WeatherProvider: ObservableObject {
         do {
             let (data, _) = try await URLSession.shared.data(from: url)
             snapshot = try WeatherSnapshot.decode(data, unit: unit)
+            if let forecast = WeatherForecast.decode(data) { self.forecast = forecast }
         } catch {
             // Keep the last good snapshot on a network or decode hiccup.
         }
@@ -78,10 +81,13 @@ final class WeatherProvider: ObservableObject {
             URLQueryItem(name: "latitude", value: String(format: "%.2f", coordinate.latitude)),
             URLQueryItem(name: "longitude", value: String(format: "%.2f", coordinate.longitude)),
             URLQueryItem(name: "current", value: "temperature_2m,weather_code"),
-            URLQueryItem(name: "daily", value: "temperature_2m_max,temperature_2m_min"),
+            URLQueryItem(name: "hourly", value: "temperature_2m,weather_code"),
+            URLQueryItem(
+                name: "daily",
+                value: "temperature_2m_max,temperature_2m_min,weather_code"),
             URLQueryItem(name: "temperature_unit", value: unit.apiValue),
             URLQueryItem(name: "timezone", value: "auto"),
-            URLQueryItem(name: "forecast_days", value: "1"),
+            URLQueryItem(name: "forecast_days", value: "6"),
         ]
         return components?.url
     }

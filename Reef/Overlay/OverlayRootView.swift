@@ -9,6 +9,7 @@ enum OpenPage {
     case shelf
     case calendar
     case timer
+    case weather
 }
 
 /// The SwiftUI root hosted inside the overlay panel.
@@ -261,6 +262,16 @@ struct OverlayRootView: View {
                             onClose: { openPage = shownTrack != nil ? .nowPlaying : .home })
                             .frame(width: state.visibleSize.width, height: state.visibleSize.height)
                             .transition(.islandOpen)
+                    } else if openPage == .weather {
+                        WeatherPageView(
+                            snapshot: weather.snapshot,
+                            forecast: weather.forecast,
+                            accent: settings.accent.color,
+                            headerHeight: state.collapsedSize.height,
+                            notchWidth: notchClearance,
+                            onClose: { openPage = shownTrack != nil ? .nowPlaying : .home })
+                            .frame(width: state.visibleSize.width, height: state.visibleSize.height)
+                            .transition(.islandOpen)
                     } else if let nowPlaying = shownTrack, !showsHome {
                         MediaView(nowPlaying: nowPlaying, media: media, colorStyle: settings.playerTint)
                             .frame(width: state.visibleSize.width, height: state.visibleSize.height)
@@ -280,6 +291,7 @@ struct OverlayRootView: View {
                             onOpenShelf: { openPage = .shelf },
                             onOpenCalendar: { openPage = .calendar },
                             onOpenTimer: { openPage = .timer },
+                            onOpenWeather: { openPage = .weather },
                             hidesBatteryPercentage: settings.hidesBatteryPercentage)
                             .frame(width: state.visibleSize.width, height: state.visibleSize.height)
                             .transition(.islandOpen)
