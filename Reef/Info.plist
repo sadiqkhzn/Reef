@@ -22,6 +22,8 @@
 	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
 	<key>LSUIElement</key>
 	<true/>
+	<key>NSAudioCaptureUsageDescription</key>
+	<string>Reef reads the audio levels of what is playing to draw a live waveform.</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>Reef shows a live activity when AirPods, headphones, or other Bluetooth devices connect.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>

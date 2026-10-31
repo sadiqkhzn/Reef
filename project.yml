@@ -40,6 +40,7 @@ targets:
         NSCalendarsFullAccessUsageDescription: "Reef shows your next event in the island and a reminder before it starts."
         NSLocationUsageDescription: "Reef uses your approximate location to show local weather in the island."
         NSLocationWhenInUseUsageDescription: "Reef uses your approximate location to show local weather in the island."
+        NSAudioCaptureUsageDescription: "Reef reads the audio levels of what is playing to draw a live waveform."
         NSSupportsAutomaticTermination: true
         NSSupportsSuddenTermination: true
     settings:
