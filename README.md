@@ -4,17 +4,13 @@
 
 ![platform](https://img.shields.io/badge/platform-macOS%2014%2B-blue)
 ![license](https://img.shields.io/badge/license-MIT-green)
-![tests](https://img.shields.io/badge/tests-62%20passing-brightgreen)
+![tests](https://img.shields.io/badge/tests-121%20passing-brightgreen)
 
 Reef sits quietly along the top edge of the screen. On a MacBook with a notch
 it wraps around the notch; on any other Mac it shows a small rounded pill just
 under the menu bar. It stays out of the way until there is something worth
-showing, like what is playing or how your devices are doing, and then it opens
-just enough to show it.
-
-This is early. The overlay, its glass materials, the battery live activities,
-and the settings window are in place; the rest of the glanceable content is being
-built out release by release. See the roadmap below for where it is headed.
+showing, like what is playing, your next event, or how your devices are doing,
+and then it opens just enough to show it.
 
 ## Look and feel
 
@@ -30,6 +26,33 @@ It can hug the top edge and flow out of the notch (Attached) or sit just below
 it as its own bubble (Floating), in one of six accent colors and three motion
 styles. Reduce Transparency, Increase Contrast, and Reduce Motion are honored
 throughout.
+
+## What it shows
+
+- **Now Playing** from any app or browser: cover art and a cover-tinted
+  equalizer on the resting island, and an open player with a scrolling title, a
+  live seek bar, shuffle and repeat, and the full transport. Pick which player
+  to follow, hide it while its app is frontmost, and tap the source to jump to
+  the app.
+- **Calendar**: your next event on the island, a heads-up before it starts, an
+  agenda of the coming days, and a per-calendar choice of what shows.
+- **Weather** for where you are, from a free service, on the open home page.
+- **Battery and power**: charging, fully charged, and low-battery activities
+  with an adjustable warning level, plus a Low Power Mode heads-up.
+- **Bluetooth**: AirPods and other device battery on connect, and a disconnect
+  activity. **Audio output** changes to wired, USB, HDMI, or AirPlay show too.
+- **A shelf** to stash files on the notch and drag them back out later.
+
+## How you reach it
+
+- **Swipe** the island to skip tracks and to open or close it, or hover and
+  click. The open island flips between the player, a home page, the shelf, and
+  the agenda.
+- Choose **where it lives**: follow the pointer across screens, the built-in
+  display, or the main screen. On a Mac without a notch it can draw a simulated
+  one.
+- Tune **how it opens** (hover or click, with a dwell), the quick peek, haptics,
+  a contrast outline, and whether it hides from screen capture.
 
 ## Why another one of these
 
@@ -72,20 +95,26 @@ xcodebuild -project Reef.xcodeproj -scheme Reef -destination 'platform=macOS' te
 ## Principles
 
 - **Quiet by default.** It earns attention, it does not demand it.
-- **Local only.** No accounts, no telemetry, no network calls of its own.
+- **Local first.** No accounts and no telemetry. The one thing that leaves the
+  Mac is the weather lookup: when you turn weather on, a coarse location,
+  rounded to about a kilometer, is sent to Open-Meteo to fetch the forecast, and
+  nothing else.
 - **Yours to shape.** Everything it shows should be something you chose to see.
 
 ## Roadmap
 
-- [x] v0.1 groundwork: floating overlay, notch and non-notch placement, multi-screen handling.
-- [ ] Now Playing: track, artwork, and transport controls.
-- [x] Hover to open, with a smooth expand and collapse.
+- [x] Floating overlay, notch and non-notch placement, multi-screen handling.
+- [x] Hover or click to open, with a smooth expand and collapse.
 - [x] Glass island design system: materials, accents, and motion presets.
-- [x] Battery live activities: charging, fully charged, and low battery.
-- [x] Device live activity when AirPods and other Bluetooth devices connect, with a quick peek.
-- [x] A settings window with appearance and live activity controls.
-- [ ] Nearby device status (AirPods and other Bluetooth devices).
+- [x] Battery and power activities, with an adjustable low-battery level.
+- [x] Bluetooth device battery and connect activity, and audio output changes.
+- [x] System-wide Now Playing: resting equalizer and a full open player.
+- [x] Calendar: next event, heads-up, agenda, and per-calendar filtering.
+- [x] Local weather on the home page.
+- [x] A file shelf, swipe gestures, and an onboarding and permissions screen.
+- [x] A settings window covering appearance, behavior, and activities.
 - [ ] A notarized `.dmg` once a signing certificate is in place.
+- [ ] In-app updates.
 
 ## License
 
