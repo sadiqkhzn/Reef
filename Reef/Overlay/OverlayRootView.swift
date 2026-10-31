@@ -8,6 +8,7 @@ enum OpenPage {
     case home
     case shelf
     case calendar
+    case timer
 }
 
 /// The SwiftUI root hosted inside the overlay panel.
@@ -30,6 +31,8 @@ struct OverlayRootView: View {
     @EnvironmentObject private var weather: WeatherProvider
     @EnvironmentObject private var shelf: ShelfModel
     @StateObject private var media = NowPlayingController()
+    /// The island's countdown timer, started from the timer page.
+    @StateObject private var timer = TimerController()
     /// True while a file drag is hovering the island, so it can open the shelf.
     @State private var dropTargeted = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -100,7 +103,10 @@ struct OverlayRootView: View {
         let active = shownTrack != nil
         state.nowPlayingActive = active
         if !active { state.isOverControl = false }
-        state.eventRestingActive = restingEvent != nil
+        // The timer's wing shows only when nothing is playing, so it widens the
+        // resting island just under a track.
+        state.timerRestingActive = timer.isActive && !active
+        state.eventRestingActive = restingEvent != nil && !state.timerRestingActive
     }
 
     /// Turn a finished drag on the island into an open/close, a track skip, or a
@@ -246,6 +252,15 @@ struct OverlayRootView: View {
                             onClose: { openPage = shownTrack != nil ? .nowPlaying : .home })
                             .frame(width: state.visibleSize.width, height: state.visibleSize.height)
                             .transition(.islandOpen)
+                    } else if openPage == .timer {
+                        TimerPageView(
+                            timer: timer,
+                            accent: settings.accent.color,
+                            headerHeight: state.collapsedSize.height,
+                            notchWidth: notchClearance,
+                            onClose: { openPage = shownTrack != nil ? .nowPlaying : .home })
+                            .frame(width: state.visibleSize.width, height: state.visibleSize.height)
+                            .transition(.islandOpen)
                     } else if let nowPlaying = shownTrack, !showsHome {
                         MediaView(nowPlaying: nowPlaying, media: media, colorStyle: settings.playerTint)
                             .frame(width: state.visibleSize.width, height: state.visibleSize.height)
@@ -264,6 +279,7 @@ struct OverlayRootView: View {
                             shelfCount: shelf.items.count,
                             onOpenShelf: { openPage = .shelf },
                             onOpenCalendar: { openPage = .calendar },
+                            onOpenTimer: { openPage = .timer },
                             hidesBatteryPercentage: settings.hidesBatteryPercentage)
                             .frame(width: state.visibleSize.width, height: state.visibleSize.height)
                             .transition(.islandOpen)
@@ -316,6 +332,18 @@ struct OverlayRootView: View {
                         width: state.mediaWingWidth + (state.isHovering ? NotchState.peekGrow.width : 0),
                         height: state.visibleSize.height,
                         alignment: .top)
+                    .transition(.islandWing)
+                } else if timer.isActive {
+                    // A timer is running (and nothing is playing): show it resting.
+                    TimelineView(.periodic(from: .now, by: 0.5)) { _ in
+                        TimerWingView(
+                            timer: timer,
+                            accent: settings.accent.color,
+                            centerWidth: state.collapsedSize.width,
+                            rowHeight: state.collapsedSize.height,
+                            showsLabel: notchClearance == 0)
+                    }
+                    .frame(height: state.restingSize.height, alignment: .top)
                     .transition(.islandWing)
                 } else if let event = restingEvent {
                     // Idle, with the next-event option on: show it in the wings.
@@ -382,9 +410,13 @@ struct OverlayRootView: View {
             MotionStyle.animation(settings.motion.wings, reduceMotion: reduceMotion),
             value: state.eventRestingActive)
         .animation(
+            MotionStyle.animation(settings.motion.wings, reduceMotion: reduceMotion),
+            value: state.timerRestingActive)
+        .animation(
             MotionStyle.animation(settings.motion.peek, reduceMotion: reduceMotion),
             value: state.announcingTitle)
         .onReceive(media.$current) { _ in updateNowPlayingActive() }
+        .onReceive(timer.$total) { _ in updateNowPlayingActive() }
         .onReceive(calendar.$events) { _ in updateNowPlayingActive() }
         .onChange(of: settings.showsEventAtRest) { _, _ in updateNowPlayingActive() }
         .onChange(of: isOpen) { _, open in

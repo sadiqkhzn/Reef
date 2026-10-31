@@ -28,6 +28,8 @@ struct IslandHomeView: View {
     var onOpenShelf: () -> Void = {}
     /// Open the agenda page. The event line taps through to it.
     var onOpenCalendar: () -> Void = {}
+    /// Open the timer page.
+    var onOpenTimer: () -> Void = {}
     /// Hide the battery number, showing only the glyph and ring.
     var hidesBatteryPercentage: Bool = false
 
@@ -90,6 +92,15 @@ struct IslandHomeView: View {
             }
             .buttonStyle(.plain)
             .help("Open the calendar")
+            Button(action: onOpenTimer) {
+                Image(systemName: "timer")
+                    .font(ReefTheme.Typography.caption)
+                    .foregroundStyle(ReefTheme.Ink.secondary)
+                    .padding(.leading, ReefTheme.Spacing.s)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help("Open the timer")
             Spacer(minLength: notchWidth + ReefTheme.Spacing.l)
             if battery.isPresent {
                 BatteryBadge(snapshot: battery, showsPercentage: !hidesBatteryPercentage)
