@@ -26,6 +26,8 @@ struct IslandHomeView: View {
     var shelfCount: Int = 0
     /// Switch the open island to the shelf page.
     var onOpenShelf: () -> Void = {}
+    /// Open the agenda page. The event line taps through to it.
+    var onOpenCalendar: () -> Void = {}
 
     private let inset = ReefTheme.Radius.islandInset
 
@@ -123,20 +125,24 @@ struct IslandHomeView: View {
     }
 
     /// A one-line glance at the next event: a dot in its calendar color, the
-    /// title, and a live countdown.
+    /// title, and a live countdown. Taps through to the agenda.
     private func eventLine(_ event: CalendarEvent, now: Date) -> some View {
-        HStack(spacing: 5) {
-            Circle()
-                .fill(event.colorHex.flatMap(Color.init(hex:)) ?? accent)
-                .frame(width: 6, height: 6)
-            Text(event.title)
-                .foregroundStyle(ReefTheme.Ink.primary)
-                .lineLimit(1)
-            Text(event.countdownText(now: now))
-                .foregroundStyle(ReefTheme.Ink.secondary)
-                .lineLimit(1)
+        Button(action: onOpenCalendar) {
+            HStack(spacing: 5) {
+                Circle()
+                    .fill(event.colorHex.flatMap(Color.init(hex:)) ?? accent)
+                    .frame(width: 6, height: 6)
+                Text(event.title)
+                    .foregroundStyle(ReefTheme.Ink.primary)
+                    .lineLimit(1)
+                Text(event.countdownText(now: now))
+                    .foregroundStyle(ReefTheme.Ink.secondary)
+                    .lineLimit(1)
+            }
+            .font(ReefTheme.Typography.caption)
+            .contentShape(Rectangle())
         }
-        .font(ReefTheme.Typography.caption)
+        .buttonStyle(.plain)
     }
 
     /// A one-line glance at the weather: the condition symbol, the temperature,
