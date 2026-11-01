@@ -19,6 +19,18 @@ final class AmbientController: ObservableObject {
     /// A backstop poll that hides the display as soon as any input is seen,
     /// independent of the event monitors, so it can never linger.
     private var inputPoll: Timer?
+    /// When the display was shown, so the input that triggered it (the click on
+    /// the menu, or the move that will dismiss it) does not dismiss it instantly.
+    private var shownAt: Date?
+    /// How long to ignore input right after showing, so an on-demand show is not
+    /// closed by the very interaction that opened it.
+    private let dismissGrace: TimeInterval = 1.5
+
+    /// True once enough time has passed since showing that input should dismiss.
+    private var dismissalArmed: Bool {
+        guard let shownAt else { return false }
+        return Date().timeIntervalSince(shownAt) >= dismissGrace
+    }
 
     init(settings: ReefSettings, content: @escaping () -> AnyView) {
         self.settings = settings
@@ -100,18 +112,19 @@ final class AmbientController: ObservableObject {
     /// it at once, rather than waiting for the idle poll to notice.
     private func watchForInput() {
         guard eventMonitors.isEmpty else { return }
+        shownAt = Date()
         let mask: NSEvent.EventTypeMask = [
             .keyDown, .mouseMoved, .leftMouseDown, .rightMouseDown, .scrollWheel,
         ]
 
         if let global = NSEvent.addGlobalMonitorForEvents(matching: mask, handler: { [weak self] _ in
-            MainActor.assumeIsolated { self?.hide() }
+            MainActor.assumeIsolated { self?.dismissIfArmed() }
         }) {
             eventMonitors.append(global)
         }
         // A local monitor covers input that lands on the ambient window itself.
         if let local = NSEvent.addLocalMonitorForEvents(matching: mask, handler: { [weak self] event in
-            MainActor.assumeIsolated { self?.hide() }
+            MainActor.assumeIsolated { self?.dismissIfArmed() }
             return event
         }) {
             eventMonitors.append(local)
@@ -122,11 +135,18 @@ final class AmbientController: ObservableObject {
         // Monitoring permission, or the on-demand show with no idle poll running).
         let poll = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated {
-                if IdleMonitor.idleSeconds() < 1 { self?.hide() }
+                guard let self, self.dismissalArmed else { return }
+                if IdleMonitor.idleSeconds() < 1 { self.hide() }
             }
         }
         RunLoop.main.add(poll, forMode: .common)
         inputPoll = poll
+    }
+
+    /// Hide on input, but only once the grace period after showing has passed, so
+    /// the interaction that opened the display does not immediately close it.
+    private func dismissIfArmed() {
+        if dismissalArmed { hide() }
     }
 
     private func stopWatchingForInput() {
@@ -136,5 +156,6 @@ final class AmbientController: ObservableObject {
         eventMonitors.removeAll()
         inputPoll?.invalidate()
         inputPoll = nil
+        shownAt = nil
     }
 }
