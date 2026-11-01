@@ -89,22 +89,6 @@ struct OverlayRootView: View {
 
     /// The small button on the open player that flips to the home page.
     @ViewBuilder
-    private var pageSwitch: some View {
-        Button {
-            openPage = .home
-        } label: {
-            Image(systemName: "house.fill")
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.75))
-                .frame(width: 22, height: 22)
-                .background(Circle().fill(.white.opacity(0.14)))
-                .contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .padding(.top, 8)
-        .padding(.trailing, 10)
-        .onHover { state.isOverControl = $0 }
-    }
 
     /// Pick a sensible page each time the island opens: the player when a track
     /// is on, the home page otherwise.
@@ -257,6 +241,30 @@ struct OverlayRootView: View {
             endPoint: .bottomTrailing)
     }
 
+    /// Height left for the current page above the tab bar.
+    private var pageHeight: CGFloat {
+        max(0, state.visibleSize.height - NotchState.tabBarHeight)
+    }
+
+    /// The open island's tabs, in order.
+    private var islandTabs: [IslandTab] {
+        [
+            IslandTab(
+                page: .nowPlaying,
+                symbol: shownTrack != nil ? "music.note" : "house.fill",
+                title: shownTrack != nil ? "Playing" : "Home"),
+            IslandTab(page: .calendar, symbol: "calendar", title: "Calendar"),
+            IslandTab(page: .weather, symbol: "cloud.sun.fill", title: "Weather"),
+            IslandTab(page: .battery, symbol: "battery.100percent", title: "Battery"),
+            IslandTab(page: .timer, symbol: "timer", title: "Timer"),
+            IslandTab(page: .shelf, symbol: "tray.fill", title: "Shelf"),
+        ]
+    }
+
+    private func selectTab(_ page: OpenPage) {
+        openPage = (page == .nowPlaying && shownTrack == nil) ? .home : page
+    }
+
     var body: some View {
         ZStack(alignment: .top) {
             IslandSurface(
@@ -283,7 +291,7 @@ struct OverlayRootView: View {
                             headerHeight: state.collapsedSize.height,
                             notchWidth: notchClearance,
                             onClose: { openPage = shownTrack != nil ? .nowPlaying : .home })
-                            .frame(width: state.visibleSize.width, height: state.visibleSize.height)
+                            .frame(width: state.visibleSize.width, height: pageHeight)
                             .transition(.islandOpen)
                     } else if openPage == .calendar {
                         AgendaView(
@@ -293,7 +301,7 @@ struct OverlayRootView: View {
                             notchWidth: notchClearance,
                             eventDays: calendar.monthEventDays,
                             onClose: { openPage = shownTrack != nil ? .nowPlaying : .home })
-                            .frame(width: state.visibleSize.width, height: state.visibleSize.height)
+                            .frame(width: state.visibleSize.width, height: pageHeight)
                             .transition(.islandOpen)
                     } else if openPage == .timer {
                         TimerPageView(
@@ -303,7 +311,7 @@ struct OverlayRootView: View {
                             headerHeight: state.collapsedSize.height,
                             notchWidth: notchClearance,
                             onClose: { openPage = shownTrack != nil ? .nowPlaying : .home })
-                            .frame(width: state.visibleSize.width, height: state.visibleSize.height)
+                            .frame(width: state.visibleSize.width, height: pageHeight)
                             .transition(.islandOpen)
                     } else if openPage == .weather {
                         WeatherPageView(
@@ -313,7 +321,7 @@ struct OverlayRootView: View {
                             headerHeight: state.collapsedSize.height,
                             notchWidth: notchClearance,
                             onClose: { openPage = shownTrack != nil ? .nowPlaying : .home })
-                            .frame(width: state.visibleSize.width, height: state.visibleSize.height)
+                            .frame(width: state.visibleSize.width, height: pageHeight)
                             .transition(.islandOpen)
                     } else if openPage == .battery {
                         BatteryDetailView(
@@ -322,15 +330,14 @@ struct OverlayRootView: View {
                             headerHeight: state.collapsedSize.height,
                             notchWidth: notchClearance,
                             onClose: { openPage = shownTrack != nil ? .nowPlaying : .home })
-                            .frame(width: state.visibleSize.width, height: state.visibleSize.height)
+                            .frame(width: state.visibleSize.width, height: pageHeight)
                             .transition(.islandOpen)
                     } else if let nowPlaying = shownTrack, !showsHome {
                         MediaView(nowPlaying: nowPlaying, media: media,
                             cleanTitle: settings.hideMediaTitleExtras,
                             accent: settings.accent.color,
                             colorStyle: settings.playerTint)
-                            .frame(width: state.visibleSize.width, height: state.visibleSize.height)
-                            .overlay(alignment: .topTrailing) { pageSwitch }
+                            .frame(width: state.visibleSize.width, height: pageHeight)
                             .transition(.islandOpen)
                     } else {
                         IslandHomeView(
@@ -349,7 +356,7 @@ struct OverlayRootView: View {
                             onOpenWeather: { openPage = .weather },
                             onOpenBattery: { openPage = .battery },
                             hidesBatteryPercentage: settings.hidesBatteryPercentage)
-                            .frame(width: state.visibleSize.width, height: state.visibleSize.height)
+                            .frame(width: state.visibleSize.width, height: pageHeight)
                             .transition(.islandOpen)
                     }
                 } else if let activity = state.liveActivity {
@@ -455,6 +462,21 @@ struct OverlayRootView: View {
             // lingering outside the shrinking silhouette.
             .frame(width: state.visibleSize.width, height: state.visibleSize.height, alignment: .top)
             .clipShape(shape)
+
+            if isOpen {
+                IslandTabBar(
+                    tabs: islandTabs,
+                    current: openPage,
+                    accent: settings.accent.color,
+                    onSelect: selectTab)
+                    .padding(.bottom, 8)
+                    .frame(
+                        width: state.visibleSize.width,
+                        height: state.visibleSize.height,
+                        alignment: .bottom)
+                    .onHover { state.isOverControl = $0 }
+                    .transition(.opacity)
+            }
         }
         .scaleEffect(isPressed && !isOpen && !state.isOverControl ? 0.96 : 1, anchor: .top)
         .animation(

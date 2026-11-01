@@ -72,10 +72,12 @@ final class NotchState: ObservableObject {
         height: ScreenMetrics.fallbackPillHeight)
 
     /// Minimum width the overlay opens to, regardless of the collapsed size.
-    static let expandedMinWidth: CGFloat = 400
+    static let expandedMinWidth: CGFloat = 440
     /// Height of the open body below the header row. The header row is as tall
     /// as the resting overlay, so its items sit beside the notch.
     static let expandedBodyHeight: CGFloat = 148
+    /// Height reserved at the bottom of the open island for the tab bar.
+    static let tabBarHeight: CGFloat = 36
 
     /// Width of each wing the resting overlay grows on either side to show a
     /// live activity.
@@ -102,7 +104,7 @@ final class NotchState: ObservableObject {
     static func expandedSize(collapsed: CGSize) -> CGSize {
         CGSize(
             width: max(collapsed.width, expandedMinWidth),
-            height: collapsed.height + expandedBodyHeight)
+            height: collapsed.height + expandedBodyHeight + tabBarHeight)
     }
 
     /// Size of the overlay when fully open.
