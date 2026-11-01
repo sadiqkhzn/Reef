@@ -19,6 +19,37 @@ final class PermissionsModel: NSObject, ObservableObject {
     @Published private(set) var location: PermissionStatus = .notDetermined
     @Published private(set) var bluetooth: PermissionStatus = .notDetermined
 
+    /// The permissions Reef asks for, so the onboarding flow can treat them
+    /// uniformly.
+    enum Permission { case calendar, location, bluetooth }
+
+    /// The current status of one permission.
+    func status(_ permission: Permission) -> PermissionStatus {
+        switch permission {
+        case .calendar: return calendar
+        case .location: return location
+        case .bluetooth: return bluetooth
+        }
+    }
+
+    /// Fire the system prompt for one permission.
+    func request(_ permission: Permission) {
+        switch permission {
+        case .calendar: requestCalendar()
+        case .location: requestLocation()
+        case .bluetooth: requestBluetooth()
+        }
+    }
+
+    /// Open the relevant pane in System Settings for one permission.
+    func openSettings(_ permission: Permission) {
+        switch permission {
+        case .calendar: openCalendarSettings()
+        case .location: openLocationSettings()
+        case .bluetooth: openBluetoothSettings()
+        }
+    }
+
     /// Called after the person answers a prompt, so the onboarding window can
     /// bring itself back to the front.
     var onResolved: (() -> Void)?
