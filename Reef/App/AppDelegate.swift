@@ -16,6 +16,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var activities: LiveActivityCenter?
     private var bluetooth: BluetoothMonitor?
     private var audioOutput: AudioOutputMonitor?
+    private var systemHUD: SystemHUDController?
     private let calendar = CalendarMonitor()
     private let weather = WeatherProvider()
     private let shelf = ShelfModel()
@@ -43,6 +44,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.activities = activities
 
         startAudioOutput(activities: activities)
+        startSystemHUD(activities: activities)
 
         let controller = NotchWindowController(
             state: state, settings: settings, battery: battery,
@@ -148,6 +150,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         monitor.start()
         audioOutput = monitor
+    }
+
+    /// Take over the volume and brightness keys to show Reef's HUD, for whichever
+    /// parts the person has turned on. Does nothing until Accessibility is
+    /// granted, and is skipped while hosting tests.
+    private func startSystemHUD(activities: LiveActivityCenter) {
+        guard !isHostingTests else { return }
+        let controller = SystemHUDController(settings: settings, activities: activities)
+        controller.start()
+        systemHUD = controller
     }
 
     private func installMenuBarItem() {
