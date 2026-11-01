@@ -77,6 +77,7 @@ final class ReefSettings: ObservableObject {
         static let lockCardStyle = "lock.cardStyle"
         static let lockShowsIsland = "lock.showsIsland"
         static let contrastOutline = "appearance.contrastOutline"
+        static let progressiveBlur = "appearance.progressiveBlur"
         static let haptics = "appearance.haptics"
     }
 
@@ -106,6 +107,11 @@ final class ReefSettings: ObservableObject {
     /// Draw a clear outline around the island for legibility.
     @Published var contrastOutline: Bool {
         didSet { defaults.set(contrastOutline, forKey: Key.contrastOutline) }
+    }
+
+    /// Add a graduated backdrop blur to the island surface.
+    @Published var progressiveBlur: Bool {
+        didSet { defaults.set(progressiveBlur, forKey: Key.progressiveBlur) }
     }
 
     /// Give a small haptic tap on the trackpad when the island opens or closes.
@@ -436,6 +442,7 @@ final class ReefSettings: ObservableObject {
         accent = Self.value(defaults, Key.accent) ?? Self.defaultAccent
         motion = Self.value(defaults, Key.motion) ?? Self.defaultMotion
         contrastOutline = defaults.object(forKey: Key.contrastOutline) as? Bool ?? false
+        progressiveBlur = defaults.object(forKey: Key.progressiveBlur) as? Bool ?? false
         haptics = defaults.object(forKey: Key.haptics) as? Bool ?? false
         lockScreenOverlay = defaults.object(forKey: Key.lockScreenOverlay) as? Bool ?? false
         lockCardStyle = LockCardStyle(rawValue: defaults.string(forKey: Key.lockCardStyle) ?? "")
@@ -509,6 +516,7 @@ final class ReefSettings: ObservableObject {
         accent = Self.defaultAccent
         motion = Self.defaultMotion
         contrastOutline = false
+        progressiveBlur = false
         haptics = false
         lockScreenOverlay = false
         lockCardStyle = .glass

@@ -62,6 +62,7 @@ struct AppearanceSettingsPage: View {
 
             Section {
                 Toggle("Contrast outline", isOn: $settings.contrastOutline)
+                Toggle("Progressive blur", isOn: $settings.progressiveBlur)
                 Toggle("Haptic feedback", isOn: $settings.haptics)
             } header: {
                 Text("Detail")
