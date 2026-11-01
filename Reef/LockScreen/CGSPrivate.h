@@ -29,3 +29,9 @@ void CGSShowSpaces(CGSConnectionID cid, CFArrayRef spaces);
 void CGSHideSpaces(CGSConnectionID cid, CFArrayRef spaces);
 void CGSAddWindowsToSpaces(CGSConnectionID cid, CFArrayRef windows, CFArrayRef spaces);
 void CGSRemoveWindowsFromSpaces(CGSConnectionID cid, CFArrayRef windows, CFArrayRef spaces);
+
+// The active space and its type. A normal desktop space is type 0 (user); a
+// space hosting a full-screen app is non-zero. Used to hide the island in
+// full-screen.
+CGSSpaceID CGSGetActiveSpace(CGSConnectionID cid);
+int CGSSpaceGetType(CGSConnectionID cid, CGSSpaceID sid);

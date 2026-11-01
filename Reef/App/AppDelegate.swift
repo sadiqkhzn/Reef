@@ -290,6 +290,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         item.menu = menu
         statusItem = item
+
+        // Hide the menu bar icon on request. Reopening Reef (launch again)
+        // brings Settings back — see applicationShouldHandleReopen.
+        item.isVisible = !settings.hideMenuBarIcon
+        settings.$hideMenuBarIcon
+            .receive(on: RunLoop.main)
+            .sink { [weak item] hidden in item?.isVisible = !hidden }
+            .store(in: &cancellables)
+    }
+
+    /// Launching Reef while it's already running opens Settings — the way back
+    /// when the menu bar icon is hidden.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows: Bool) -> Bool {
+        settingsWindow?.show()
+        return true
     }
 
     @objc private func openSettings() {
