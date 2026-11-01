@@ -43,7 +43,11 @@ final class AmbientWindowController {
         window.backgroundColor = .clear
         window.level = .screenSaver
         window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
-        window.ignoresMouseEvents = false
+        // Never trap input. The display is show-only, so every click passes
+        // straight through to whatever is underneath, and any input dismisses it
+        // through the controller's monitors and the idle poll. This guarantees a
+        // stalled or missed monitor can never leave the pointer stuck.
+        window.ignoresMouseEvents = true
         window.hasShadow = false
         window.isReleasedWhenClosed = false
 

@@ -16,6 +16,9 @@ final class AmbientController: ObservableObject {
     private let windowController: AmbientWindowController
     private var cancellables: Set<AnyCancellable> = []
     private var eventMonitors: [Any] = []
+    /// A backstop poll that hides the display as soon as any input is seen,
+    /// independent of the event monitors, so it can never linger.
+    private var inputPoll: Timer?
 
     init(settings: ReefSettings, content: @escaping () -> AnyView) {
         self.settings = settings
@@ -113,6 +116,17 @@ final class AmbientController: ObservableObject {
         }) {
             eventMonitors.append(local)
         }
+
+        // Backstop: poll the HID idle time and hide the moment input returns,
+        // even if the monitors miss it (for example a keyDown without Input
+        // Monitoring permission, or the on-demand show with no idle poll running).
+        let poll = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated {
+                if IdleMonitor.idleSeconds() < 1 { self?.hide() }
+            }
+        }
+        RunLoop.main.add(poll, forMode: .common)
+        inputPoll = poll
     }
 
     private func stopWatchingForInput() {
@@ -120,5 +134,7 @@ final class AmbientController: ObservableObject {
             NSEvent.removeMonitor(monitor)
         }
         eventMonitors.removeAll()
+        inputPoll?.invalidate()
+        inputPoll = nil
     }
 }
