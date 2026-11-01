@@ -72,6 +72,7 @@ struct GeneralSettingsPage: View {
             }
 
             Section {
+                Toggle("Show overlay on lock screen", isOn: $settings.lockScreenOverlay)
                 HStack {
                     Toggle("Play sound on lock", isOn: $settings.soundOnLock)
                     if settings.soundOnLock {
@@ -93,8 +94,10 @@ struct GeneralSettingsPage: View {
             } header: {
                 Text("Lock Screen")
             } footer: {
-                Text("Play a short sound when the Mac locks or unlocks. Reef reacts to the "
-                    + "lock and unlock events; it does not draw on the lock screen itself.")
+                Text("Show overlay draws the clock, media, weather, and battery over the "
+                    + "lock shield using a public window level; it is display-only and can't "
+                    + "affect login. macOS may hide it during secure authentication on some "
+                    + "setups. The sounds play when the Mac locks or unlocks.")
                     .foregroundStyle(.secondary)
             }
 
