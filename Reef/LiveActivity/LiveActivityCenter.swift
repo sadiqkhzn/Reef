@@ -135,6 +135,12 @@ final class LiveActivityCenter: ObservableObject {
         if case .calendarEvent = activity, settings.calendarEventSound {
             Self.playCalendarSound()
         }
+        if case .focus = activity, settings.focusSound {
+            Self.playCalendarSound()
+        }
+        if case .lowPowerMode = activity, settings.lowPowerSound {
+            Self.playLowBatterySound()
+        }
 
         let peek = DispatchWorkItem { [weak self] in
             self?.state.isPeeking = false

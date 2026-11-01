@@ -25,6 +25,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let focus = FocusMonitor()
     private let updates = UpdateController()
     private var travelTime: TravelTimeMonitor?
+    private var chime: ChimeController?
     private let onboarding = OnboardingWindowController()
     private let keepAwake = KeepAwakeManager()
     private var screenLock: ScreenLockMonitor?
@@ -58,6 +59,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         travelTime.start()
         self.travelTime = travelTime
+
+        let chime = ChimeController(settings: settings)
+        chime.start()
+        self.chime = chime
 
         startAudioOutput(activities: activities)
         startSystemHUD(activities: activities)
