@@ -26,6 +26,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let onboarding = OnboardingWindowController()
     private let keepAwake = KeepAwakeManager()
     private var screenLock: ScreenLockMonitor?
+    private var lockOverlay: LockScreenOverlayManager?
     private var keepAwakeItem: NSMenuItem?
     private var controller: NotchWindowController?
     private var settingsWindow: SettingsWindowController?
@@ -72,6 +73,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         ambient.start()
         self.ambient = ambient
+
+        let lockOverlay = LockScreenOverlayManager(settings: settings) {
+            [settings, media, weather, battery, calendar] in
+            AnyView(
+                AmbientView()
+                    .environmentObject(settings)
+                    .environmentObject(media)
+                    .environmentObject(weather)
+                    .environmentObject(battery)
+                    .environmentObject(calendar))
+        }
+        lockOverlay.start()
+        self.lockOverlay = lockOverlay
 
         // Share a small state file for the lock-screen widget, if it is
         // installed. Harmless (writes nothing) when it is not.

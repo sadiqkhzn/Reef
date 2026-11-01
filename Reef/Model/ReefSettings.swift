@@ -62,6 +62,7 @@ final class ReefSettings: ObservableObject {
         static let keepAwake = "power.keepAwake"
         static let soundOnLock = "lock.soundOnLock"
         static let soundOnUnlock = "lock.soundOnUnlock"
+        static let lockScreenOverlay = "lock.overlay"
         static let contrastOutline = "appearance.contrastOutline"
         static let haptics = "appearance.haptics"
     }
@@ -97,6 +98,11 @@ final class ReefSettings: ObservableObject {
     /// Give a small haptic tap on the trackpad when the island opens or closes.
     @Published var haptics: Bool {
         didSet { defaults.set(haptics, forKey: Key.haptics) }
+    }
+
+    /// Show Reef's overlay (clock, media, weather, battery) over the lock shield.
+    @Published var lockScreenOverlay: Bool {
+        didSet { defaults.set(lockScreenOverlay, forKey: Key.lockScreenOverlay) }
     }
 
     /// Play a sound when the screen locks.
@@ -353,6 +359,7 @@ final class ReefSettings: ObservableObject {
         motion = Self.value(defaults, Key.motion) ?? Self.defaultMotion
         contrastOutline = defaults.object(forKey: Key.contrastOutline) as? Bool ?? false
         haptics = defaults.object(forKey: Key.haptics) as? Bool ?? false
+        lockScreenOverlay = defaults.object(forKey: Key.lockScreenOverlay) as? Bool ?? false
         soundOnLock = defaults.object(forKey: Key.soundOnLock) as? Bool ?? false
         soundOnUnlock = defaults.object(forKey: Key.soundOnUnlock) as? Bool ?? false
         hideFromScreenCapture = defaults.object(forKey: Key.hideFromCapture) as? Bool ?? false
@@ -411,6 +418,7 @@ final class ReefSettings: ObservableObject {
         motion = Self.defaultMotion
         contrastOutline = false
         haptics = false
+        lockScreenOverlay = false
         soundOnLock = false
         soundOnUnlock = false
         hideFromScreenCapture = false
