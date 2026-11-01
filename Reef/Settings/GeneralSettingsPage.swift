@@ -72,6 +72,33 @@ struct GeneralSettingsPage: View {
             }
 
             Section {
+                HStack {
+                    Toggle("Play sound on lock", isOn: $settings.soundOnLock)
+                    if settings.soundOnLock {
+                        Button { ScreenLockMonitor.previewLock() } label: {
+                            Image(systemName: "play.circle")
+                        }
+                        .buttonStyle(.borderless)
+                    }
+                }
+                HStack {
+                    Toggle("Play sound on unlock", isOn: $settings.soundOnUnlock)
+                    if settings.soundOnUnlock {
+                        Button { ScreenLockMonitor.previewUnlock() } label: {
+                            Image(systemName: "play.circle")
+                        }
+                        .buttonStyle(.borderless)
+                    }
+                }
+            } header: {
+                Text("Lock Screen")
+            } footer: {
+                Text("Play a short sound when the Mac locks or unlocks. Reef reacts to the "
+                    + "lock and unlock events; it does not draw on the lock screen itself.")
+                    .foregroundStyle(.secondary)
+            }
+
+            Section {
                 Toggle("Open on hover", isOn: $settings.opensOnHover)
                 if settings.opensOnHover {
                     Picker("After", selection: $settings.hoverOpenSeconds) {

@@ -59,6 +59,8 @@ final class ReefSettings: ObservableObject {
         static let simulatedNotchHeight = "notch.simulatedHeight"
         static let hideFromCapture = "privacy.hideFromCapture"
         static let keepAwake = "power.keepAwake"
+        static let soundOnLock = "lock.soundOnLock"
+        static let soundOnUnlock = "lock.soundOnUnlock"
         static let contrastOutline = "appearance.contrastOutline"
         static let haptics = "appearance.haptics"
     }
@@ -94,6 +96,16 @@ final class ReefSettings: ObservableObject {
     /// Give a small haptic tap on the trackpad when the island opens or closes.
     @Published var haptics: Bool {
         didSet { defaults.set(haptics, forKey: Key.haptics) }
+    }
+
+    /// Play a sound when the screen locks.
+    @Published var soundOnLock: Bool {
+        didSet { defaults.set(soundOnLock, forKey: Key.soundOnLock) }
+    }
+
+    /// Play a sound when the screen unlocks.
+    @Published var soundOnUnlock: Bool {
+        didSet { defaults.set(soundOnUnlock, forKey: Key.soundOnUnlock) }
     }
 
     /// Keep the island out of screenshots and screen recordings.
@@ -335,6 +347,8 @@ final class ReefSettings: ObservableObject {
         motion = Self.value(defaults, Key.motion) ?? Self.defaultMotion
         contrastOutline = defaults.object(forKey: Key.contrastOutline) as? Bool ?? false
         haptics = defaults.object(forKey: Key.haptics) as? Bool ?? false
+        soundOnLock = defaults.object(forKey: Key.soundOnLock) as? Bool ?? false
+        soundOnUnlock = defaults.object(forKey: Key.soundOnUnlock) as? Bool ?? false
         hideFromScreenCapture = defaults.object(forKey: Key.hideFromCapture) as? Bool ?? false
         keepAwake = defaults.object(forKey: Key.keepAwake) as? Bool ?? false
         playerTint = Self.value(defaults, Key.playerTint) ?? Self.defaultPlayerTint
@@ -390,6 +404,8 @@ final class ReefSettings: ObservableObject {
         motion = Self.defaultMotion
         contrastOutline = false
         haptics = false
+        soundOnLock = false
+        soundOnUnlock = false
         hideFromScreenCapture = false
         keepAwake = false
         playerTint = Self.defaultPlayerTint

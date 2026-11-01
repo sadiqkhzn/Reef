@@ -25,6 +25,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let shelf = ShelfModel()
     private let onboarding = OnboardingWindowController()
     private let keepAwake = KeepAwakeManager()
+    private var screenLock: ScreenLockMonitor?
     private var keepAwakeItem: NSMenuItem?
     private var controller: NotchWindowController?
     private var settingsWindow: SettingsWindowController?
@@ -90,6 +91,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         installMenuBarItem()
 
         // Keep awake, restored from the saved choice and kept in step with it.
+        let screenLock = ScreenLockMonitor(settings: settings)
+        screenLock.start()
+        self.screenLock = screenLock
+
         keepAwake.setActive(settings.keepAwake)
         keepAwakeItem?.state = settings.keepAwake ? .on : .off
         settings.$keepAwake
