@@ -10,6 +10,7 @@ enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
     case appearance
     case liveActivities
     case systemHUD
+    case ambient
     case about
 
     enum Group: String, CaseIterable {
@@ -25,6 +26,7 @@ enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
         case .appearance: return "Appearance"
         case .liveActivities: return "Live Activities"
         case .systemHUD: return "System HUD"
+        case .ambient: return "Ambient Display"
         case .about: return "About"
         }
     }
@@ -35,6 +37,7 @@ enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
         case .appearance: return "paintpalette.fill"
         case .liveActivities: return "capsule.inset.filled"
         case .systemHUD: return "slider.horizontal.3"
+        case .ambient: return "moon.stars.fill"
         case .about: return "info.circle.fill"
         }
     }
@@ -46,13 +49,14 @@ enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
         case .appearance: return .indigo
         case .liveActivities: return .teal
         case .systemHUD: return .orange
+        case .ambient: return .purple
         case .about: return .blue
         }
     }
 
     var group: Group {
         switch self {
-        case .general, .appearance, .liveActivities, .systemHUD: return .core
+        case .general, .appearance, .liveActivities, .systemHUD, .ambient: return .core
         case .about: return .info
         }
     }
@@ -69,6 +73,9 @@ enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
             return ["battery", "charging", "low", "wings", "activity", "airpods", "bluetooth", "devices", "headphones"]
         case .systemHUD:
             return ["volume", "brightness", "hud", "osd", "overlay", "sound", "keys", "mute", "sliders"]
+        case .ambient:
+            return ["ambient", "standby", "idle", "clock", "screensaver", "lock", "weather",
+                    "now playing", "nightstand", "desk"]
         case .about:
             return ["version", "credits", "license", "github"]
         }

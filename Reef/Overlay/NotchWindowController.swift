@@ -34,7 +34,8 @@ final class NotchWindowController {
 
     init(
         state: NotchState, settings: ReefSettings, battery: BatteryModel,
-        calendar: CalendarMonitor, weather: WeatherProvider, shelf: ShelfModel
+        calendar: CalendarMonitor, weather: WeatherProvider, shelf: ShelfModel,
+        media: NowPlayingController
     ) {
         self.state = state
         self.settings = settings
@@ -53,7 +54,8 @@ final class NotchWindowController {
                     .environmentObject(battery)
                     .environmentObject(calendar)
                     .environmentObject(weather)
-                    .environmentObject(shelf)))
+                    .environmentObject(shelf)
+                    .environmentObject(media)))
         host.frame = container.bounds
         host.autoresizingMask = [.width, .height]
         container.addSubview(host)
