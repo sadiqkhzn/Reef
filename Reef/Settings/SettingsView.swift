@@ -55,6 +55,8 @@ struct SettingsView: View {
             AppearanceSettingsPage()
         case .liveActivities:
             LiveActivitySettingsPage()
+        case .systemHUD:
+            SystemHUDSettingsPage()
         case .about:
             AboutSettingsPage()
         case nil:

@@ -31,6 +31,9 @@ final class ReefSettings: ObservableObject {
         static let hiddenCalendars = "calendar.hidden"
         static let lowBatteryThreshold = "battery.lowThreshold"
         static let lowPowerModeActivity = "liveActivity.lowPowerMode"
+        static let replaceVolumeHUD = "hud.replaceVolume"
+        static let replaceBrightnessHUD = "hud.replaceBrightness"
+        static let hudSound = "hud.sound"
         static let hideBatteryPercentage = "battery.hidePercentage"
         static let opensOnHover = "open.onHover"
         static let hoverOpenSeconds = "open.hoverSeconds"
@@ -143,6 +146,23 @@ final class ReefSettings: ObservableObject {
         didSet { defaults.set(showsLowPowerModeActivity, forKey: Key.lowPowerModeActivity) }
     }
 
+    /// Replace the system volume overlay with Reef's HUD in the notch when the
+    /// volume keys are pressed. Needs Accessibility permission to take effect.
+    @Published var replacesVolumeHUD: Bool {
+        didSet { defaults.set(replacesVolumeHUD, forKey: Key.replaceVolumeHUD) }
+    }
+
+    /// Replace the system brightness overlay with Reef's HUD. Needs Accessibility
+    /// permission, and a display that supports software brightness.
+    @Published var replacesBrightnessHUD: Bool {
+        didSet { defaults.set(replacesBrightnessHUD, forKey: Key.replaceBrightnessHUD) }
+    }
+
+    /// Play a short click when the volume changes through Reef's HUD.
+    @Published var hudPlaysSound: Bool {
+        didSet { defaults.set(hudPlaysSound, forKey: Key.hudSound) }
+    }
+
     /// Hide the battery number on the badge and the home card.
     @Published var hidesBatteryPercentage: Bool {
         didSet { defaults.set(hidesBatteryPercentage, forKey: Key.hideBatteryPercentage) }
@@ -236,6 +256,9 @@ final class ReefSettings: ObservableObject {
         showsLowBatteryActivity = defaults.object(forKey: Key.lowBatteryActivity) as? Bool ?? true
         lowBatteryThreshold = defaults.object(forKey: Key.lowBatteryThreshold) as? Int ?? 20
         showsLowPowerModeActivity = defaults.object(forKey: Key.lowPowerModeActivity) as? Bool ?? true
+        replacesVolumeHUD = defaults.object(forKey: Key.replaceVolumeHUD) as? Bool ?? false
+        replacesBrightnessHUD = defaults.object(forKey: Key.replaceBrightnessHUD) as? Bool ?? false
+        hudPlaysSound = defaults.object(forKey: Key.hudSound) as? Bool ?? false
         hidesBatteryPercentage = defaults.object(forKey: Key.hideBatteryPercentage) as? Bool ?? false
         showsDeviceActivity = defaults.object(forKey: Key.deviceActivity) as? Bool ?? true
         showsAudioOutputActivity = defaults.object(forKey: Key.audioOutputActivity) as? Bool ?? true
@@ -273,6 +296,9 @@ final class ReefSettings: ObservableObject {
         showsLowBatteryActivity = true
         lowBatteryThreshold = 20
         showsLowPowerModeActivity = true
+        replacesVolumeHUD = false
+        replacesBrightnessHUD = false
+        hudPlaysSound = false
         hidesBatteryPercentage = false
         showsDeviceActivity = true
         showsAudioOutputActivity = true

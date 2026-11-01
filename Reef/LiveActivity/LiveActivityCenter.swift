@@ -79,6 +79,23 @@ final class LiveActivityCenter: ObservableObject {
         DispatchQueue.main.asyncAfter(deadline: .now() + activity.duration, execute: work)
     }
 
+    /// Show a volume or brightness HUD and hold it briefly, re-arming the
+    /// dismiss each time a new level arrives so it stays up while the key is
+    /// held. Unlike `present`, it shows no peek detail line and always takes
+    /// over, since it answers a direct key press.
+    func presentHUD(_ activity: LiveActivity) {
+        dismissWork?.cancel()
+        peekWork?.cancel()
+        state.isPeeking = false
+        state.liveActivity = activity
+
+        let work = DispatchWorkItem { [weak self] in
+            self?.state.liveActivity = nil
+        }
+        dismissWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + activity.duration, execute: work)
+    }
+
     /// A Bluetooth device connected. The battery often lands a moment after the
     /// connection, so if none is reported yet the activity still shows, then
     /// updates in place once a level arrives.
@@ -155,6 +172,9 @@ final class LiveActivityCenter: ObservableObject {
         case .audioOutput: return settings.showsAudioOutputActivity
         case .calendarEvent: return settings.showsCalendarActivity
         case .lowPowerMode: return settings.showsLowPowerModeActivity
+        // HUDs are gated by the key handler, not the battery/activity path, and
+        // are shown directly through `presentHUD`.
+        case .volume, .brightness: return true
         }
     }
 }

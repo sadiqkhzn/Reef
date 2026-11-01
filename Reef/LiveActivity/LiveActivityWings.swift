@@ -58,6 +58,8 @@ struct LiveActivityWings: View {
             return ReefTheme.Ink.primary
         case .lowPowerMode:
             return ReefTheme.Status.warning
+        case .volume, .brightness:
+            return ReefTheme.Ink.primary
         }
     }
 
@@ -98,6 +100,16 @@ struct LiveActivityWings: View {
             Image(systemName: "bolt.fill")
                 .font(.system(size: 12, weight: .bold))
                 .foregroundStyle(tint)
+        case .volume(let level, let muted):
+            Image(systemName: LiveActivity.volumeSymbol(level: level, muted: muted))
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(muted ? ReefTheme.Ink.secondary : ReefTheme.Ink.primary)
+                .contentTransition(.symbolEffect(.replace))
+        case .brightness(let level):
+            Image(systemName: LiveActivity.brightnessSymbol(level: level))
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(ReefTheme.Ink.primary)
+                .contentTransition(.symbolEffect(.replace))
         }
     }
 
@@ -155,6 +167,32 @@ struct LiveActivityWings: View {
             Image(systemName: "leaf.fill")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(tint)
+        case .volume(let level, _):
+            LevelBar(value: level)
+        case .brightness(let level):
+            LevelBar(value: level)
         }
+    }
+}
+
+/// A slim capsule that fills from the left to show a 0...1 level, used by the
+/// volume and brightness HUDs in the trailing wing.
+private struct LevelBar: View {
+    var value: Double
+
+    private var fraction: CGFloat { CGFloat(min(max(value, 0), 1)) }
+
+    var body: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(ReefTheme.Ink.primary.opacity(0.22))
+                Capsule()
+                    .fill(ReefTheme.Ink.primary)
+                    .frame(width: max(3, geo.size.width * fraction))
+            }
+        }
+        .frame(width: 32, height: 4)
+        .animation(.easeOut(duration: 0.18), value: fraction)
     }
 }

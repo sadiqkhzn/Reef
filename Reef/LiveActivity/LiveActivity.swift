@@ -24,10 +24,18 @@ enum LiveActivity: Equatable {
     case calendarEvent(title: String, countdown: String)
     /// Low Power Mode was just turned on.
     case lowPowerMode
+    /// The output volume changed by key. Shown as a HUD in place of the system
+    /// overlay while the volume keys are pressed.
+    case volume(level: Double, muted: Bool)
+    /// The display brightness changed by key, shown as a HUD.
+    case brightness(level: Double)
 
-    /// Higher wins when two activities compete for the wings.
+    /// Higher wins when two activities compete for the wings. The volume and
+    /// brightness HUDs sit above the rest so a direct key press is never masked
+    /// by a lower activity that happens to be on screen.
     var priority: Int {
         switch self {
+        case .volume, .brightness: return 50
         case .lowBattery(_, let isCritical): return isCritical ? 30 : 20
         case .calendarEvent: return 18
         case .lowPowerMode: return 16
@@ -48,6 +56,7 @@ enum LiveActivity: Equatable {
         case .calendarEvent: return 5
         case .lowPowerMode: return 4
         case .lowBattery: return 6
+        case .volume, .brightness: return 1.3
         }
     }
 
@@ -67,6 +76,8 @@ enum LiveActivity: Equatable {
         case .audioOutput(_, let kind): return kind.title
         case .calendarEvent: return "Up next"
         case .lowPowerMode: return "Low Power"
+        case .volume: return "Volume"
+        case .brightness: return "Brightness"
         }
     }
 
@@ -84,6 +95,9 @@ enum LiveActivity: Equatable {
         case .audioOutput(let name, _): return "Audio · \(name)"
         case .calendarEvent(let title, let countdown): return "\(title) · \(countdown)"
         case .lowPowerMode: return "Low Power Mode on"
+        case .volume(let level, let muted):
+            return muted ? "Volume · Muted" : "Volume · \(Self.percent(level))%"
+        case .brightness(let level): return "Brightness · \(Self.percent(level))%"
         }
     }
 
@@ -100,7 +114,26 @@ enum LiveActivity: Equatable {
         case .audioOutput(let name, _): return "Audio output, \(name)"
         case .calendarEvent(let title, let countdown): return "Up next, \(title), \(countdown)"
         case .lowPowerMode: return "Low Power Mode on"
+        case .volume(let level, let muted):
+            return muted ? "Volume muted" : "Volume, \(Self.percent(level)) percent"
+        case .brightness(let level): return "Brightness, \(Self.percent(level)) percent"
         }
+    }
+
+    /// A 0...1 level as a whole percent.
+    static func percent(_ level: Double) -> Int { Int((level * 100).rounded()) }
+
+    /// Speaker glyph for a volume level, reflecting loudness and mute.
+    static func volumeSymbol(level: Double, muted: Bool) -> String {
+        if muted || level <= 0 { return "speaker.slash.fill" }
+        if level < 1.0 / 3 { return "speaker.wave.1.fill" }
+        if level < 2.0 / 3 { return "speaker.wave.2.fill" }
+        return "speaker.wave.3.fill"
+    }
+
+    /// Sun glyph for a brightness level.
+    static func brightnessSymbol(level: Double) -> String {
+        level < 0.5 ? "sun.min.fill" : "sun.max.fill"
     }
 }
 
