@@ -47,6 +47,9 @@ struct SystemHUDSettingsPage: View {
                                 .foregroundStyle(.secondary)
                         }
                         Spacer()
+                        Button("Grant Access") {
+                            SystemHUDController.requestAccessibility()
+                        }
                         Button("Open Settings") {
                             SystemHUDController.openAccessibilitySettings()
                         }
