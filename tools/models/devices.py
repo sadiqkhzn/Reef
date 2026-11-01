@@ -132,24 +132,24 @@ def _region_force(p):
 
 def earbud_parts(prefix="bud"):
     box_lo, box_hi = (-15.5, -11.0, -23.0), (10.0, 11.0, 10.0)
-    detail = 0.035
+    detail = 0.05
     return [
-        Part(f"{prefix}_body", "gloss_white", bud_body, box_lo, box_hi, 0.085, 13000),
-        Part(f"{prefix}_tip", "silicone", ear_tip, (-16.5, -9.0, -6.5), (-6.0, 6.0, 9.0), 0.06, 3200),
-        Part(f"{prefix}_tip_mouth", "black_mesh", tip_mouth, (-16.5, -6.0, -4.5), (-9.0, 4.0, 7.0), detail, 700),
-        Part(f"{prefix}_tip_mesh", "tip_mesh", tip_mesh, (-16.5, -6.0, -4.5), (-9.0, 4.0, 7.0), detail, 450),
+        Part(f"{prefix}_body", "gloss_white", bud_body, box_lo, box_hi, 0.12, 6500),
+        Part(f"{prefix}_tip", "silicone", ear_tip, (-16.5, -9.0, -6.5), (-6.0, 6.0, 9.0), 0.085, 1600),
+        Part(f"{prefix}_tip_mouth", "black_mesh", tip_mouth, (-16.5, -6.0, -4.5), (-9.0, 4.0, 7.0), detail, 350),
+        Part(f"{prefix}_tip_mesh", "tip_mesh", tip_mesh, (-16.5, -6.0, -4.5), (-9.0, 4.0, 7.0), detail, 225),
         Part(f"{prefix}_top_vent", "black_mesh", S.shell(bud_body, _region_top_vent),
-             (-0.5, -6.5, 3.0), (5.5, 5.5, 9.5), detail, 700),
+             (-0.5, -6.5, 3.0), (5.5, 5.5, 9.5), detail, 350),
         Part(f"{prefix}_front_vent", "black_mesh", S.shell(bud_body, _region_front_vent),
-             (-5.5, -11.0, 3.0), (0.0, -3.0, 8.0), detail, 350),
+             (-5.5, -11.0, 3.0), (0.0, -3.0, 8.0), detail, 200),
         Part(f"{prefix}_sensor", "sensor", S.shell(bud_body, _region_sensor),
-             (-9.0, -1.0, -6.5), (-1.0, 4.5, -2.0), detail, 400),
+             (-9.0, -1.0, -6.5), (-1.0, 4.5, -2.0), detail, 200),
         Part(f"{prefix}_stem_mic", "black_mesh", S.shell(bud_body, _region_stem_mic),
-             (0.5, -2.5, -22.5), (7.0, 5.5, -20.5), detail, 500),
+             (0.5, -2.5, -22.5), (7.0, 5.5, -20.5), detail, 250),
         Part(f"{prefix}_stem_top_mic", "black_mesh", S.shell(bud_body, _region_stem_top_mic),
-             (3.0, -1.0, -12.0), (7.0, 3.0, -6.5), detail, 300),
+             (3.0, -1.0, -12.0), (7.0, 3.0, -6.5), detail, 200),
         Part(f"{prefix}_force", "satin_white", S.shell(bud_body, _region_force, offset=0.01, thickness=0.03),
-             (3.0, -1.5, -19.5), (7.5, 4.5, -10.5), detail, 500),
+             (3.0, -1.5, -19.5), (7.5, 4.5, -10.5), detail, 250),
     ]
 
 
@@ -251,14 +251,14 @@ def case_lanyard(p):
 def case_parts():
     lo, hi = (-31.5, -12.0, -23.5), (31.5, 12.0, 8.0)
     lid_lo, lid_hi = (-31.5, -8.0, 4.0), (31.5, 28.0, 30.0)
-    detail = 0.04
+    detail = 0.055
     return [
-        Part("case_base", "gloss_white", case_base, lo, hi, 0.13, 17000),
-        Part("case_lid", "gloss_white", case_lid, lid_lo, lid_hi, 0.13, 9000),
-        Part("case_hinge", "steel", case_hinge, (-9.0, 7.0, 3.5), (9.0, 13.0, 9.0), 0.05, 800),
+        Part("case_base", "gloss_white", case_base, lo, hi, 0.18, 8500),
+        Part("case_lid", "gloss_white", case_lid, lid_lo, lid_hi, 0.18, 4500),
+        Part("case_hinge", "steel", case_hinge, (-9.0, 7.0, 3.5), (9.0, 13.0, 9.0), 0.05, 400),
         Part("case_led", "led", S.shell(case_outer, _region_led, offset=0.02, thickness=0.05),
-             (-1.5, -12.0, -5.0), (1.5, -9.5, -1.8), 0.025, 600),
-        Part("case_lanyard", "steel", case_lanyard, (26.5, -2.5, -17.5), (33.5, 2.5, -10.5), 0.04, 1000),
+             (-1.5, -12.0, -5.0), (1.5, -9.5, -1.8), 0.025, 300),
+        Part("case_lanyard", "steel", case_lanyard, (26.5, -2.5, -17.5), (33.5, 2.5, -10.5), 0.04, 500),
     ]
 
 
@@ -364,16 +364,16 @@ def headphone_parts():
         cx = side * CUP_X
         parts += [
             Part(f"{tag}_cup", "aluminum", cup_shell(side),
-                 (cx - 19, -36, -44), (cx + 19, 36, 50), 0.2, 9000),
+                 (cx - 19, -36, -44), (cx + 19, 36, 50), 0.28, 4500),
             Part(f"{tag}_cushion", "knit", cushion(side),
-                 (side * 34.5 - 13, -33, -41), (side * 34.5 + 13, 33, 41), 0.2, 6500),
+                 (side * 34.5 - 13, -33, -41), (side * 34.5 + 13, 33, 41), 0.28, 3250),
             Part(f"{tag}_cloth", "speaker_cloth", speaker_cloth(side),
-                 (side * 45.4 - 1.5, -18, -27), (side * 45.4 + 1.5, 18, 27), 0.12, 600),
+                 (side * 45.4 - 1.5, -18, -27), (side * 45.4 + 1.5, 18, 27), 0.16, 300),
             Part(f"{tag}_arm", "steel", arm(side),
-                 (cx - 6, -7, 38), (cx + 6, 7, 69), 0.1, 2500),
+                 (cx - 6, -7, 38), (cx + 6, 7, 69), 0.14, 1250),
         ]
     parts += [
-        Part("frame", "steel", frame, (-70, -5, 60), (70, 5, 149), 0.13, 5000),
-        Part("canopy", "knit", canopy, (-62, -23, 63), (62, 23, 135), 0.22, 5000),
+        Part("frame", "steel", frame, (-70, -5, 60), (70, 5, 149), 0.18, 2500),
+        Part("canopy", "knit", canopy, (-62, -23, 63), (62, 23, 135), 0.3, 2500),
     ]
     return parts
