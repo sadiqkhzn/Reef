@@ -122,6 +122,15 @@ struct LiveActivitySettingsPage: View {
                 }
 
                 if settings.showsDeviceActivity {
+                    Picker("Device icons", selection: $settings.deviceArtwork) {
+                        ForEach(DeviceArtwork.allCases) { style in
+                            Text(style.title).tag(style)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+
+                    DeviceArtworkPreview(artwork: settings.deviceArtwork)
+
                     LabeledContent("Duration") {
                         HStack {
                             Slider(value: $settings.connectivityDuration, in: 1...10, step: 0.5)
@@ -174,8 +183,9 @@ struct LiveActivitySettingsPage: View {
             } header: {
                 Text("Connectivity")
             } footer: {
-                Text("Device icons use Apple's SF Symbols. Duration sets how long a "
-                    + "connect, disconnect, or low-battery activity stays in the wings.")
+                Text("3D models are Reef's own earbuds, case, and headphones; devices without "
+                    + "a model, such as keyboards and mice, use Apple's SF Symbols. Duration sets "
+                    + "how long a connect, disconnect, or low-battery activity stays in the wings.")
                     .foregroundStyle(.secondary)
             }
 
@@ -339,5 +349,47 @@ private struct ActivityRow: View {
                 .labelsHidden()
                 .toggleStyle(.switch)
         }
+    }
+}
+
+/// The three device icons drawn in the chosen style, on a dark strip like the
+/// island, so the choice can be judged before closing the window.
+private struct DeviceArtworkPreview: View {
+    var artwork: DeviceArtwork
+
+    private struct Sample: Identifiable {
+        var model: DeviceModel
+        var symbol: String
+        var label: String
+        var id: String { label }
+    }
+
+    private let samples = [
+        Sample(model: .earbuds, symbol: "airpods", label: "Earbuds"),
+        Sample(model: .earbudsCase, symbol: "airpodspro", label: "With case"),
+        Sample(model: .headphones, symbol: "airpodsmax", label: "Headphones"),
+    ]
+
+    var body: some View {
+        HStack(spacing: 22) {
+            ForEach(samples) { sample in
+                VStack(spacing: 6) {
+                    DeviceGlyph(
+                        model: sample.model, symbol: sample.symbol, artwork: artwork,
+                        size: 44, symbolSize: 24, tint: .white)
+                        .frame(width: 44, height: 44)
+                    Text(sample.label)
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.6))
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.black.opacity(0.85)))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Preview of device icons as \(artwork.title)")
     }
 }

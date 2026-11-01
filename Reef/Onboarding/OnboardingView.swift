@@ -10,6 +10,11 @@ struct OnboardingView: View {
     var onDone: () -> Void
 
     @State private var step = 0
+    /// Read straight from defaults, since onboarding runs before the settings
+    /// object is shared; the settings store writes the same key.
+    @AppStorage(ReefSettings.Key.deviceArtwork) private var artworkRaw = DeviceArtwork.models.rawValue
+
+    private var artwork: DeviceArtwork { DeviceArtwork(rawValue: artworkRaw) ?? .models }
 
     /// Deep indigo through violet, the flow's own color, independent of the
     /// person's island accent.
@@ -269,7 +274,9 @@ struct OnboardingView: View {
                 }
             case .bluetooth:
                 HStack(spacing: 6) {
-                    Image(systemName: "airpodspro").foregroundStyle(.white)
+                    DeviceGlyph(
+                        model: .earbuds, symbol: "airpodspro", artwork: artwork,
+                        size: 16, symbolSize: 11, tint: .white)
                     Text("AirPods").foregroundStyle(.white)
                     Text("82%").foregroundStyle(ReefTheme.Status.charging)
                 }
@@ -299,10 +306,17 @@ struct OnboardingView: View {
                                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                                     .strokeBorder(.white.opacity(0.12), lineWidth: 0.5))
                             .shadow(color: .black.opacity(0.25), radius: 3, y: 1)
-                        Image(systemName: item.symbol)
-                            .font(.system(size: item.large ? 22 : 18, weight: .regular))
-                            .symbolRenderingMode(item.multicolor ? .multicolor : .hierarchical)
-                            .foregroundStyle(.white)
+                        if let model = item.model {
+                            DeviceGlyph(
+                                model: model, symbol: item.symbol, artwork: artwork,
+                                size: 42, symbolSize: item.large ? 22 : 18, tint: .white,
+                                spins: true)
+                        } else {
+                            Image(systemName: item.symbol)
+                                .font(.system(size: item.large ? 22 : 18, weight: .regular))
+                                .symbolRenderingMode(item.multicolor ? .multicolor : .hierarchical)
+                                .foregroundStyle(.white)
+                        }
                     }
                     Text(item.label)
                         .font(.system(size: 10, weight: .medium, design: .rounded))
@@ -408,6 +422,8 @@ private struct Step {
         let label: String
         var multicolor = false
         var large = false
+        /// A 3D model to show instead of the symbol when models are chosen.
+        var model: DeviceModel?
         var id: String { symbol + label }
     }
 
@@ -458,9 +474,9 @@ private struct Step {
             title: "Reef needs your permission to show connected devices.",
             permission: .bluetooth,
             items: [
-                .init(symbol: "airpods", label: "AirPods", large: true),
-                .init(symbol: "airpodspro", label: "AirPods Pro", large: true),
-                .init(symbol: "airpodsmax", label: "AirPods Max", large: true),
+                .init(symbol: "airpods", label: "Earbuds", large: true, model: .earbuds),
+                .init(symbol: "airpodspro", label: "With case", large: true, model: .earbudsCase),
+                .init(symbol: "airpodsmax", label: "Headphones", large: true, model: .headphones),
             ]),
         Step(
             heroSymbol: "checkmark.seal.fill",

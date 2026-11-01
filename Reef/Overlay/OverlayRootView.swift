@@ -338,7 +338,8 @@ struct OverlayRootView: View {
                         centerWidth: state.collapsedSize.width,
                         rowHeight: state.collapsedSize.height,
                         showsLabel: notchClearance == 0 && !settings.hidesActivityLabel,
-                        isPeeking: state.isPeeking)
+                        isPeeking: state.isPeeking,
+                        deviceArtwork: settings.deviceArtwork)
                         .frame(height: state.restingSize.height, alignment: .top)
                         .transition(.islandWing)
                 } else if let nowPlaying = shownTrack {

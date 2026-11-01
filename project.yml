@@ -17,6 +17,9 @@ targets:
       - path: Reef
         excludes:
           - "Vendor/**"
+          - "Assets/Models/**"
+      - path: Reef/Assets/Models
+        buildPhase: resources
       - path: Reef/Vendor/mediaremote-adapter/mediaremote-adapter.pl
         buildPhase: resources
       - path: Reef/Vendor/mediaremote-adapter/LICENSE

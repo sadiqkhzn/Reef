@@ -1,0 +1,8 @@
+# Step 1, build (Python 3.11, which Blender's module requires):
+bpy==5.0.1
+numpy>=1.24
+scikit-image>=0.24
+
+# Step 2, package (any recent Python), in a separate environment:
+# usd-core>=24.0
+# numpy>=1.24
