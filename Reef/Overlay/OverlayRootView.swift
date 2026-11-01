@@ -62,6 +62,12 @@ struct OverlayRootView: View {
         return EventSchedule.next(calendar.events, now: Date())
     }
 
+    /// The weather to show on the resting island when idle and there's no event.
+    private var restingWeather: WeatherSnapshot? {
+        guard settings.showsWeatherAtRest, shownTrack == nil, restingEvent == nil else { return nil }
+        return weather.snapshot
+    }
+
     /// Whether the open island is showing the home page rather than the player.
     /// Home when there is no track, or when the person flipped to it.
     private var showsHome: Bool { shownTrack == nil || openPage == .home }
@@ -116,6 +122,9 @@ struct OverlayRootView: View {
         state.stopwatchRestingActive = stopwatch.isActive && !active && !timer.isActive
         state.eventRestingActive =
             restingEvent != nil && !state.timerRestingActive && !state.stopwatchRestingActive
+        state.weatherRestingActive =
+            restingWeather != nil && !state.eventRestingActive
+            && !state.timerRestingActive && !state.stopwatchRestingActive
         updateAudioMonitor()
     }
 
@@ -422,6 +431,15 @@ struct OverlayRootView: View {
                     }
                     .frame(height: state.restingSize.height, alignment: .top)
                     .transition(.islandWing)
+                } else if let snapshot = restingWeather {
+                    // Idle with no event and weather-at-rest on: show the weather.
+                    RestingWeatherView(
+                        snapshot: snapshot,
+                        centerWidth: state.collapsedSize.width,
+                        rowHeight: state.collapsedSize.height,
+                        showsLabel: notchClearance == 0)
+                        .frame(height: state.restingSize.height, alignment: .top)
+                        .transition(.islandWing)
                 }
             }
             // Keep the content inside the island so it closes with it rather than
@@ -476,6 +494,9 @@ struct OverlayRootView: View {
             value: state.eventRestingActive)
         .animation(
             MotionStyle.animation(settings.motion.wings, reduceMotion: reduceMotion),
+            value: state.weatherRestingActive)
+        .animation(
+            MotionStyle.animation(settings.motion.wings, reduceMotion: reduceMotion),
             value: state.timerRestingActive)
         .animation(
             MotionStyle.animation(settings.motion.wings, reduceMotion: reduceMotion),
@@ -487,6 +508,8 @@ struct OverlayRootView: View {
         .onReceive(timer.$total) { _ in updateNowPlayingActive() }
         .onReceive(stopwatch.$isRunning) { _ in updateNowPlayingActive() }
         .onReceive(calendar.$events) { _ in updateNowPlayingActive() }
+        .onReceive(weather.$snapshot) { _ in updateNowPlayingActive() }
+        .onChange(of: settings.showsWeatherAtRest) { _, _ in updateNowPlayingActive() }
         .onChange(of: settings.showsEventAtRest) { _, _ in updateNowPlayingActive() }
         .onChange(of: settings.useLiveWaveform) { _, _ in updateAudioMonitor() }
         .onChange(of: isOpen) { _, open in
