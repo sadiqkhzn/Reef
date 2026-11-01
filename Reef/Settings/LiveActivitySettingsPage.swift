@@ -252,6 +252,17 @@ struct LiveActivitySettingsPage: View {
                         Text("15 minutes before").tag(15)
                         Text("30 minutes before").tag(30)
                     }
+                    HStack {
+                        Toggle("Play sound on event reminder", isOn: $settings.calendarEventSound)
+                        if settings.calendarEventSound {
+                            Button {
+                                LiveActivityCenter.playCalendarSound()
+                            } label: {
+                                Image(systemName: "play.circle")
+                            }
+                            .buttonStyle(.borderless)
+                        }
+                    }
                 }
 
             } header: {

@@ -132,6 +132,9 @@ final class LiveActivityCenter: ObservableObject {
         if case .deviceLowBattery = activity, settings.deviceLowBatterySound {
             Self.playLowBatterySound()
         }
+        if case .calendarEvent = activity, settings.calendarEventSound {
+            Self.playCalendarSound()
+        }
 
         let peek = DispatchWorkItem { [weak self] in
             self?.state.isPeeking = false
@@ -151,6 +154,11 @@ final class LiveActivityCenter: ObservableObject {
     /// Play the low-battery alert sound. Also used by the settings preview.
     static func playLowBatterySound() {
         NSSound(named: NSSound.Name("Submarine"))?.play()
+    }
+
+    /// Play the upcoming-event reminder sound.
+    static func playCalendarSound() {
+        NSSound(named: NSSound.Name("Glass"))?.play()
     }
 
     /// Show a volume or brightness HUD and hold it briefly, re-arming the
