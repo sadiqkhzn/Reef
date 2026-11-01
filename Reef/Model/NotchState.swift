@@ -129,6 +129,10 @@ final class NotchState: ObservableObject {
     /// resting size, just under the timer.
     @Published var stopwatchRestingActive: Bool = false
 
+    /// True while the resting island shows the weather (idle, no event, and the
+    /// option is on). Drives the resting size.
+    @Published var weatherRestingActive: Bool = false
+
     /// Whether hovering grows the island a touch (the quick peek). Set from the
     /// person's setting.
     @Published var peekOnHover: Bool = true
@@ -153,7 +157,7 @@ final class NotchState: ObservableObject {
                 width: collapsedSize.width + Self.wingWidth * 2,
                 height: collapsedSize.height)
         }
-        if eventRestingActive {
+        if eventRestingActive || weatherRestingActive {
             return CGSize(
                 width: collapsedSize.width + Self.wingWidth * 2,
                 height: collapsedSize.height)

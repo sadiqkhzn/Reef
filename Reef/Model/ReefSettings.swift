@@ -36,6 +36,7 @@ final class ReefSettings: ObservableObject {
         static let focusSound = "sound.focus"
         static let lowPowerSound = "sound.lowPower"
         static let eventAtRest = "calendar.eventAtRest"
+        static let weatherAtRest = "weather.atRest"
         static let hiddenCalendars = "calendar.hidden"
         static let lowBatteryThreshold = "battery.lowThreshold"
         static let lowPowerModeActivity = "liveActivity.lowPowerMode"
@@ -381,6 +382,11 @@ final class ReefSettings: ObservableObject {
         didSet { defaults.set(showsEventAtRest, forKey: Key.eventAtRest) }
     }
 
+    /// Show the weather on the resting island when idle and there's no event.
+    @Published var showsWeatherAtRest: Bool {
+        didSet { defaults.set(showsWeatherAtRest, forKey: Key.weatherAtRest) }
+    }
+
     /// Identifiers of calendars to leave out. Empty shows them all.
     @Published var hiddenCalendarIDs: Set<String> {
         didSet { defaults.set(Array(hiddenCalendarIDs), forKey: Key.hiddenCalendars) }
@@ -485,6 +491,7 @@ final class ReefSettings: ObservableObject {
         focusSound = defaults.object(forKey: Key.focusSound) as? Bool ?? false
         lowPowerSound = defaults.object(forKey: Key.lowPowerSound) as? Bool ?? false
         showsEventAtRest = defaults.object(forKey: Key.eventAtRest) as? Bool ?? false
+        showsWeatherAtRest = defaults.object(forKey: Key.weatherAtRest) as? Bool ?? false
         hiddenCalendarIDs = Set(defaults.stringArray(forKey: Key.hiddenCalendars) ?? [])
         opensOnHover = defaults.object(forKey: Key.opensOnHover) as? Bool ?? true
         hoverOpenSeconds = defaults.object(forKey: Key.hoverOpenSeconds) as? Double ?? 3.0
@@ -556,6 +563,7 @@ final class ReefSettings: ObservableObject {
         focusSound = false
         lowPowerSound = false
         showsEventAtRest = false
+        showsWeatherAtRest = false
         hiddenCalendarIDs = []
         opensOnHover = true
         hoverOpenSeconds = 3.0

@@ -180,6 +180,7 @@ struct GeneralSettingsPage: View {
                         }
                     }
                     .pickerStyle(.segmented)
+                    Toggle("Show on the island when idle", isOn: $settings.showsWeatherAtRest)
                 }
             } header: {
                 Text("Weather")
