@@ -111,7 +111,7 @@ struct LiveActivitySettingsPage: View {
 
             Section {
                 ActivityRow(
-                    title: "Devices",
+                    title: "Connectivity",
                     detail: "When AirPods, headphones, or another Bluetooth device connects.",
                     symbol: "airpodspro",
                     tint: .white,
@@ -121,6 +121,65 @@ struct LiveActivitySettingsPage: View {
                         .deviceConnected(name: "AirPods Pro", kind: .airpodsPro, battery: 82))
                 }
 
+                if settings.showsDeviceActivity {
+                    LabeledContent("Duration") {
+                        HStack {
+                            Slider(value: $settings.connectivityDuration, in: 1...10, step: 0.5)
+                                .frame(width: 150)
+                            Text(String(format: "%.1f s", settings.connectivityDuration))
+                                .monospacedDigit()
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    ActivityRow(
+                        title: "Warn on low battery",
+                        detail: "When a connected device runs low.",
+                        symbol: "battery.25percent",
+                        tint: ReefTheme.Status.warning,
+                        isOn: $settings.deviceLowBatteryWarning
+                    ) {
+                        activities.present(
+                            .deviceLowBattery(name: "AirPods Pro", kind: .airpodsPro, percent: 15))
+                    }
+
+                    if settings.deviceLowBatteryWarning {
+                        LabeledContent("Low battery threshold") {
+                            HStack {
+                                Slider(
+                                    value: Binding(
+                                        get: { Double(settings.deviceLowBatteryThreshold) },
+                                        set: { settings.deviceLowBatteryThreshold = Int($0) }),
+                                    in: 10...50, step: 5)
+                                    .frame(width: 150)
+                                Text("\(settings.deviceLowBatteryThreshold)%")
+                                    .monospacedDigit()
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+
+                        HStack {
+                            Toggle("Play sound on low battery", isOn: $settings.deviceLowBatterySound)
+                            if settings.deviceLowBatterySound {
+                                Button {
+                                    LiveActivityCenter.playLowBatterySound()
+                                } label: {
+                                    Image(systemName: "play.circle")
+                                }
+                                .buttonStyle(.borderless)
+                            }
+                        }
+                    }
+                }
+            } header: {
+                Text("Connectivity")
+            } footer: {
+                Text("Device icons use Apple's SF Symbols. Duration sets how long a "
+                    + "connect, disconnect, or low-battery activity stays in the wings.")
+                    .foregroundStyle(.secondary)
+            }
+
+            Section {
                 ActivityRow(
                     title: "Audio output",
                     detail: "When sound switches to wired headphones, HDMI, USB, or AirPlay.",

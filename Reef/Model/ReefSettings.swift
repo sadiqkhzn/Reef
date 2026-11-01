@@ -36,6 +36,10 @@ final class ReefSettings: ObservableObject {
         static let batteryActivityDuration = "battery.activityDuration"
         static let lowBatterySound = "battery.lowSound"
         static let hideActivityLabel = "liveActivity.hideLabel"
+        static let connectivityDuration = "connectivity.duration"
+        static let deviceLowBatteryWarning = "connectivity.lowWarning"
+        static let deviceLowBatteryThreshold = "connectivity.lowThreshold"
+        static let deviceLowBatterySound = "connectivity.lowSound"
         static let replaceVolumeHUD = "hud.replaceVolume"
         static let replaceBrightnessHUD = "hud.replaceBrightness"
         static let hudSound = "hud.sound"
@@ -241,6 +245,26 @@ final class ReefSettings: ObservableObject {
         didSet { defaults.set(showsDeviceActivity, forKey: Key.deviceActivity) }
     }
 
+    /// How long a connectivity activity stays in the wings, in seconds.
+    @Published var connectivityDuration: Double {
+        didSet { defaults.set(connectivityDuration, forKey: Key.connectivityDuration) }
+    }
+
+    /// Warn when a connected device (AirPods, headphones) runs low.
+    @Published var deviceLowBatteryWarning: Bool {
+        didSet { defaults.set(deviceLowBatteryWarning, forKey: Key.deviceLowBatteryWarning) }
+    }
+
+    /// Percent at which a connected device's low-battery warning shows.
+    @Published var deviceLowBatteryThreshold: Int {
+        didSet { defaults.set(deviceLowBatteryThreshold, forKey: Key.deviceLowBatteryThreshold) }
+    }
+
+    /// Play a sound with a connected device's low-battery warning.
+    @Published var deviceLowBatterySound: Bool {
+        didSet { defaults.set(deviceLowBatterySound, forKey: Key.deviceLowBatterySound) }
+    }
+
     /// Show the wings when system audio switches to a different output.
     @Published var showsAudioOutputActivity: Bool {
         didSet { defaults.set(showsAudioOutputActivity, forKey: Key.audioOutputActivity) }
@@ -340,6 +364,10 @@ final class ReefSettings: ObservableObject {
         ambientShowsNextEvent = defaults.object(forKey: Key.ambientNextEvent) as? Bool ?? true
         hidesBatteryPercentage = defaults.object(forKey: Key.hideBatteryPercentage) as? Bool ?? false
         showsDeviceActivity = defaults.object(forKey: Key.deviceActivity) as? Bool ?? true
+        connectivityDuration = defaults.object(forKey: Key.connectivityDuration) as? Double ?? 5
+        deviceLowBatteryWarning = defaults.object(forKey: Key.deviceLowBatteryWarning) as? Bool ?? true
+        deviceLowBatteryThreshold = defaults.object(forKey: Key.deviceLowBatteryThreshold) as? Int ?? 20
+        deviceLowBatterySound = defaults.object(forKey: Key.deviceLowBatterySound) as? Bool ?? false
         showsAudioOutputActivity = defaults.object(forKey: Key.audioOutputActivity) as? Bool ?? true
         showsCalendarActivity = defaults.object(forKey: Key.calendarActivity) as? Bool ?? true
         calendarLeadMinutes = defaults.object(forKey: Key.calendarLeadMinutes) as? Int ?? 10
@@ -391,6 +419,10 @@ final class ReefSettings: ObservableObject {
         ambientShowsNextEvent = true
         hidesBatteryPercentage = false
         showsDeviceActivity = true
+        connectivityDuration = 5
+        deviceLowBatteryWarning = true
+        deviceLowBatteryThreshold = 20
+        deviceLowBatterySound = false
         showsAudioOutputActivity = true
         showsCalendarActivity = true
         calendarLeadMinutes = 10

@@ -17,6 +17,8 @@ enum LiveActivity: Equatable {
     case deviceConnected(name: String, kind: DeviceKind, battery: Int?)
     /// A Bluetooth device just disconnected.
     case deviceDisconnected(name: String, kind: DeviceKind)
+    /// A connected Bluetooth device ran low on battery.
+    case deviceLowBattery(name: String, kind: DeviceKind, percent: Int)
     /// System audio switched to a different output (wired, HDMI, USB, AirPlay).
     case audioOutput(name: String, kind: AudioOutputKind)
     /// An event is coming up soon. Countdown is a ready-made phrase like
@@ -39,6 +41,15 @@ enum LiveActivity: Equatable {
         }
     }
 
+    /// True for the connectivity activities (device connect, disconnect, and a
+    /// connected device's low battery), which share the connectivity duration.
+    var isConnectivity: Bool {
+        switch self {
+        case .deviceConnected, .deviceDisconnected, .deviceLowBattery: return true
+        default: return false
+        }
+    }
+
     /// Higher wins when two activities compete for the wings. The volume and
     /// brightness HUDs sit above the rest so a direct key press is never masked
     /// by a lower activity that happens to be on screen.
@@ -47,6 +58,7 @@ enum LiveActivity: Equatable {
         case .volume, .brightness: return 50
         case .lowBattery(_, let isCritical): return isCritical ? 30 : 20
         case .calendarEvent: return 18
+        case .deviceLowBattery: return 17
         case .lowPowerMode: return 16
         case .deviceConnected: return 15
         case .deviceDisconnected: return 14
@@ -61,6 +73,7 @@ enum LiveActivity: Equatable {
         switch self {
         case .charging, .fullyCharged: return 4
         case .deviceConnected, .deviceDisconnected: return 3.5
+        case .deviceLowBattery: return 6
         case .audioOutput: return 3
         case .calendarEvent: return 5
         case .lowPowerMode: return 4
@@ -82,6 +95,7 @@ enum LiveActivity: Equatable {
         case .lowBattery(_, let isCritical): return isCritical ? "Battery critical" : "Low battery"
         case .deviceConnected: return "Connected"
         case .deviceDisconnected: return "Disconnected"
+        case .deviceLowBattery: return "Low battery"
         case .audioOutput(_, let kind): return kind.title
         case .calendarEvent: return "Up next"
         case .lowPowerMode: return "Low Power"
@@ -101,6 +115,7 @@ enum LiveActivity: Equatable {
             if let battery { return "\(name) · \(battery)%" }
             return "\(name) · Connected"
         case .deviceDisconnected(let name, _): return "\(name) · Disconnected"
+        case .deviceLowBattery(let name, _, let percent): return "\(name) · \(percent)% left"
         case .audioOutput(let name, _): return "Audio · \(name)"
         case .calendarEvent(let title, let countdown): return "\(title) · \(countdown)"
         case .lowPowerMode: return "Low Power Mode on"
@@ -120,6 +135,8 @@ enum LiveActivity: Equatable {
             if let battery { return "\(name) connected, \(battery) percent battery" }
             return "\(name) connected"
         case .deviceDisconnected(let name, _): return "\(name) disconnected"
+        case .deviceLowBattery(let name, _, let percent):
+            return "\(name) low battery, \(percent) percent"
         case .audioOutput(let name, _): return "Audio output, \(name)"
         case .calendarEvent(let title, let countdown): return "Up next, \(title), \(countdown)"
         case .lowPowerMode: return "Low Power Mode on"
