@@ -28,6 +28,7 @@ final class ReefSettings: ObservableObject {
         static let audioOutputActivity = "liveActivity.audioOutput"
         static let calendarActivity = "liveActivity.calendar"
         static let calendarLeadMinutes = "calendar.leadMinutes"
+        static let calendarEventSound = "calendar.eventSound"
         static let eventAtRest = "calendar.eventAtRest"
         static let hiddenCalendars = "calendar.hidden"
         static let lowBatteryThreshold = "battery.lowThreshold"
@@ -322,6 +323,11 @@ final class ReefSettings: ObservableObject {
         didSet { defaults.set(calendarLeadMinutes, forKey: Key.calendarLeadMinutes) }
     }
 
+    /// Play a sound when an upcoming-event reminder appears.
+    @Published var calendarEventSound: Bool {
+        didSet { defaults.set(calendarEventSound, forKey: Key.calendarEventSound) }
+    }
+
     /// Show the next event on the resting island while nothing is playing.
     @Published var showsEventAtRest: Bool {
         didSet { defaults.set(showsEventAtRest, forKey: Key.eventAtRest) }
@@ -421,6 +427,7 @@ final class ReefSettings: ObservableObject {
         showsAudioOutputActivity = defaults.object(forKey: Key.audioOutputActivity) as? Bool ?? true
         showsCalendarActivity = defaults.object(forKey: Key.calendarActivity) as? Bool ?? true
         calendarLeadMinutes = defaults.object(forKey: Key.calendarLeadMinutes) as? Int ?? 10
+        calendarEventSound = defaults.object(forKey: Key.calendarEventSound) as? Bool ?? false
         showsEventAtRest = defaults.object(forKey: Key.eventAtRest) as? Bool ?? false
         hiddenCalendarIDs = Set(defaults.stringArray(forKey: Key.hiddenCalendars) ?? [])
         opensOnHover = defaults.object(forKey: Key.opensOnHover) as? Bool ?? true
@@ -483,6 +490,7 @@ final class ReefSettings: ObservableObject {
         showsAudioOutputActivity = true
         showsCalendarActivity = true
         calendarLeadMinutes = 10
+        calendarEventSound = false
         showsEventAtRest = false
         hiddenCalendarIDs = []
         opensOnHover = true
