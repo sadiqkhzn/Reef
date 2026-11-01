@@ -28,6 +28,9 @@ enum LiveActivity: Equatable {
     case lowPowerMode
     /// A macOS Focus turned on (`on` true) or off (`on` false).
     case focus(name: String, symbol: String, on: Bool)
+    /// It's time to leave for an upcoming event at a location. `leaveText` is a
+    /// ready-made phrase like "Leave now" or "Leave in 5 min".
+    case timeToLeave(title: String, leaveText: String)
     /// The output volume changed by key. Shown as a HUD in place of the system
     /// overlay while the volume keys are pressed.
     case volume(level: Double, muted: Bool)
@@ -59,6 +62,7 @@ enum LiveActivity: Equatable {
         switch self {
         case .volume, .brightness: return 50
         case .lowBattery(_, let isCritical): return isCritical ? 30 : 20
+        case .timeToLeave: return 22
         case .focus: return 19
         case .calendarEvent: return 18
         case .deviceLowBattery: return 17
@@ -82,6 +86,7 @@ enum LiveActivity: Equatable {
         case .lowPowerMode: return 4
         case .lowBattery: return 6
         case .focus: return 4
+        case .timeToLeave: return 6
         case .volume, .brightness: return 1.3
         }
     }
@@ -104,6 +109,7 @@ enum LiveActivity: Equatable {
         case .calendarEvent: return "Up next"
         case .lowPowerMode: return "Low Power"
         case .focus(let name, _, let on): return on ? name : "Focus off"
+        case .timeToLeave: return "Time to leave"
         case .volume: return "Volume"
         case .brightness: return "Brightness"
         }
@@ -125,6 +131,7 @@ enum LiveActivity: Equatable {
         case .calendarEvent(let title, let countdown): return "\(title) · \(countdown)"
         case .lowPowerMode: return "Low Power Mode on"
         case .focus(let name, _, let on): return on ? "\(name) · On" : "Focus · Off"
+        case .timeToLeave(let title, let leaveText): return "\(title) · \(leaveText)"
         case .volume(let level, let muted):
             return muted ? "Volume · Muted" : "Volume · \(Self.percent(level))%"
         case .brightness(let level): return "Brightness · \(Self.percent(level))%"
@@ -147,6 +154,7 @@ enum LiveActivity: Equatable {
         case .calendarEvent(let title, let countdown): return "Up next, \(title), \(countdown)"
         case .lowPowerMode: return "Low Power Mode on"
         case .focus(let name, _, let on): return on ? "\(name) focus on" : "Focus off"
+        case .timeToLeave(let title, let leaveText): return "Time to leave, \(title), \(leaveText)"
         case .volume(let level, let muted):
             return muted ? "Volume muted" : "Volume, \(Self.percent(level)) percent"
         case .brightness(let level): return "Brightness, \(Self.percent(level)) percent"
