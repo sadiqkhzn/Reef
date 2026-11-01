@@ -30,6 +30,15 @@ enum LiveActivity: Equatable {
     /// The display brightness changed by key, shown as a HUD.
     case brightness(level: Double)
 
+    /// True for the battery-related activities, which share the battery settings
+    /// (master switch, duration, low-battery sound).
+    var isBattery: Bool {
+        switch self {
+        case .charging, .fullyCharged, .lowBattery, .lowPowerMode: return true
+        default: return false
+        }
+    }
+
     /// Higher wins when two activities compete for the wings. The volume and
     /// brightness HUDs sit above the rest so a direct key press is never masked
     /// by a lower activity that happens to be on screen.

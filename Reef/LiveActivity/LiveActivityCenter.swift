@@ -1,3 +1,4 @@
+import AppKit
 import Combine
 import Foundation
 
@@ -48,7 +49,8 @@ final class LiveActivityCenter: ObservableObject {
     private func powerStateChanged() {
         let now = ProcessInfo.processInfo.isLowPowerModeEnabled
         defer { lastLowPowerMode = now }
-        guard now, !lastLowPowerMode, settings.showsLowPowerModeActivity else { return }
+        guard now, !lastLowPowerMode,
+            settings.batteryActivitiesEnabled, settings.showsLowPowerModeActivity else { return }
         present(.lowPowerMode)
     }
 
@@ -64,11 +66,22 @@ final class LiveActivityCenter: ObservableObject {
         state.liveActivity = activity
         state.isPeeking = true
 
+        // Battery activities honor the person's chosen duration; others keep
+        // their built-in timing.
+        let duration = activity.isBattery
+            ? max(1, settings.batteryActivityDuration)
+            : activity.duration
+
+        // A low-battery alert can play a sound, when asked.
+        if case .lowBattery = activity, settings.lowBatterySound {
+            Self.playLowBatterySound()
+        }
+
         let peek = DispatchWorkItem { [weak self] in
             self?.state.isPeeking = false
         }
         peekWork = peek
-        let peekTime = min(LiveActivity.peekDuration, activity.duration)
+        let peekTime = min(LiveActivity.peekDuration, duration)
         DispatchQueue.main.asyncAfter(deadline: .now() + peekTime, execute: peek)
 
         let work = DispatchWorkItem { [weak self] in
@@ -76,7 +89,12 @@ final class LiveActivityCenter: ObservableObject {
             self?.state.liveActivity = nil
         }
         dismissWork = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + activity.duration, execute: work)
+        DispatchQueue.main.asyncAfter(deadline: .now() + duration, execute: work)
+    }
+
+    /// Play the low-battery alert sound. Also used by the settings preview.
+    static func playLowBatterySound() {
+        NSSound(named: NSSound.Name("Submarine"))?.play()
     }
 
     /// Show a volume or brightness HUD and hold it briefly, re-arming the
@@ -165,6 +183,8 @@ final class LiveActivityCenter: ObservableObject {
     }
 
     private func isEnabled(_ activity: LiveActivity) -> Bool {
+        // The battery master switch gates every battery activity.
+        if activity.isBattery && !settings.batteryActivitiesEnabled { return false }
         switch activity {
         case .charging, .fullyCharged: return settings.showsChargingActivity
         case .lowBattery: return settings.showsLowBatteryActivity

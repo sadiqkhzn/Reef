@@ -32,6 +32,10 @@ final class ReefSettings: ObservableObject {
         static let hiddenCalendars = "calendar.hidden"
         static let lowBatteryThreshold = "battery.lowThreshold"
         static let lowPowerModeActivity = "liveActivity.lowPowerMode"
+        static let batteryActivitiesEnabled = "battery.activitiesEnabled"
+        static let batteryActivityDuration = "battery.activityDuration"
+        static let lowBatterySound = "battery.lowSound"
+        static let hideActivityLabel = "liveActivity.hideLabel"
         static let replaceVolumeHUD = "hud.replaceVolume"
         static let replaceBrightnessHUD = "hud.replaceBrightness"
         static let hudSound = "hud.sound"
@@ -136,6 +140,28 @@ final class ReefSettings: ObservableObject {
     /// Unit the weather is shown in.
     @Published var temperatureUnit: TemperatureUnit {
         didSet { defaults.set(temperatureUnit.rawValue, forKey: Key.temperatureUnit) }
+    }
+
+    /// Master switch for every battery activity (charging, full, low, low power).
+    /// Off hides them all without losing the individual choices below.
+    @Published var batteryActivitiesEnabled: Bool {
+        didSet { defaults.set(batteryActivitiesEnabled, forKey: Key.batteryActivitiesEnabled) }
+    }
+
+    /// How long a battery activity stays in the wings, in seconds.
+    @Published var batteryActivityDuration: Double {
+        didSet { defaults.set(batteryActivityDuration, forKey: Key.batteryActivityDuration) }
+    }
+
+    /// Play a sound when the battery runs low.
+    @Published var lowBatterySound: Bool {
+        didSet { defaults.set(lowBatterySound, forKey: Key.lowBatterySound) }
+    }
+
+    /// Hide the short text label in the middle of the wings (on Macs with no
+    /// notch), leaving just the glyph and value.
+    @Published var hidesActivityLabel: Bool {
+        didSet { defaults.set(hidesActivityLabel, forKey: Key.hideActivityLabel) }
     }
 
     /// Show the wings when power is connected or the battery finishes charging.
@@ -295,6 +321,10 @@ final class ReefSettings: ObservableObject {
         naturalSwipeDirection = defaults.object(forKey: Key.naturalSwipe) as? Bool ?? true
         showsWeather = defaults.object(forKey: Key.weather) as? Bool ?? true
         temperatureUnit = Self.value(defaults, Key.temperatureUnit) ?? .celsius
+        batteryActivitiesEnabled = defaults.object(forKey: Key.batteryActivitiesEnabled) as? Bool ?? true
+        batteryActivityDuration = defaults.object(forKey: Key.batteryActivityDuration) as? Double ?? 5
+        lowBatterySound = defaults.object(forKey: Key.lowBatterySound) as? Bool ?? false
+        hidesActivityLabel = defaults.object(forKey: Key.hideActivityLabel) as? Bool ?? false
         showsChargingActivity = defaults.object(forKey: Key.chargingActivity) as? Bool ?? true
         showsLowBatteryActivity = defaults.object(forKey: Key.lowBatteryActivity) as? Bool ?? true
         lowBatteryThreshold = defaults.object(forKey: Key.lowBatteryThreshold) as? Int ?? 20
@@ -342,6 +372,10 @@ final class ReefSettings: ObservableObject {
         naturalSwipeDirection = true
         showsWeather = true
         temperatureUnit = .celsius
+        batteryActivitiesEnabled = true
+        batteryActivityDuration = 5
+        lowBatterySound = false
+        hidesActivityLabel = false
         showsChargingActivity = true
         showsLowBatteryActivity = true
         lowBatteryThreshold = 20

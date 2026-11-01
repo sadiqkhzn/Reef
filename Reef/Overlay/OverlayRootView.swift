@@ -337,7 +337,7 @@ struct OverlayRootView: View {
                         activity: activity,
                         centerWidth: state.collapsedSize.width,
                         rowHeight: state.collapsedSize.height,
-                        showsLabel: notchClearance == 0,
+                        showsLabel: notchClearance == 0 && !settings.hidesActivityLabel,
                         isPeeking: state.isPeeking)
                         .frame(height: state.restingSize.height, alignment: .top)
                         .transition(.islandWing)
@@ -388,7 +388,7 @@ struct OverlayRootView: View {
                             accent: settings.accent.color,
                             centerWidth: state.collapsedSize.width,
                             rowHeight: state.collapsedSize.height,
-                            showsLabel: notchClearance == 0)
+                            showsLabel: notchClearance == 0 && !settings.hidesActivityLabel)
                     }
                     .frame(height: state.restingSize.height, alignment: .top)
                     .transition(.islandWing)
@@ -399,7 +399,7 @@ struct OverlayRootView: View {
                         accent: settings.accent.color,
                         centerWidth: state.collapsedSize.width,
                         rowHeight: state.collapsedSize.height,
-                        showsLabel: notchClearance == 0)
+                        showsLabel: notchClearance == 0 && !settings.hidesActivityLabel)
                         .frame(height: state.restingSize.height, alignment: .top)
                         .transition(.islandWing)
                 } else if let event = restingEvent {
