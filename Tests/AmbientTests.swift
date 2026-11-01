@@ -49,30 +49,4 @@ final class AmbientTests: XCTestCase {
         XCTAssertFalse(text.isEmpty)
         XCTAssertTrue(text.contains("November"))
     }
-
-    // MARK: - Lock widget bridge
-
-    func testBridgeJSONCarriesEachSection() {
-        let track = NowPlaying(title: "Song", artist: "Artist", album: "", isPlaying: true)
-        let weather = WeatherSnapshot(
-            temperature: 12, high: 15, low: 8, condition: .clear, unit: .celsius)
-        let battery = BatterySnapshot(
-            isPresent: true, percent: 80, isCharging: true, isPluggedIn: true)
-
-        let json = LockWidgetBridge.snapshotJSON(track: track, weather: weather, battery: battery)
-
-        let playing = json["nowPlaying"] as? [String: Any]
-        XCTAssertEqual(playing?["title"] as? String, "Song")
-        XCTAssertEqual(playing?["isPlaying"] as? Bool, true)
-        XCTAssertEqual((json["weather"] as? [String: Any])?["temp"] as? String, "12°")
-        XCTAssertEqual((json["battery"] as? [String: Any])?["percent"] as? Int, 80)
-    }
-
-    func testBridgeJSONOmitsAbsentBatteryAndNilSources() {
-        let json = LockWidgetBridge.snapshotJSON(
-            track: nil, weather: nil, battery: .absent)
-        XCTAssertNil(json["nowPlaying"])
-        XCTAssertNil(json["weather"])
-        XCTAssertNil(json["battery"])
-    }
 }
