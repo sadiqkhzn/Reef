@@ -4,7 +4,7 @@
 
 ![platform](https://img.shields.io/badge/platform-macOS%2014%2B-blue)
 ![license](https://img.shields.io/badge/license-MIT-green)
-![tests](https://img.shields.io/badge/tests-121%20passing-brightgreen)
+![tests](https://img.shields.io/badge/tests-160%20passing-brightgreen)
 
 Reef sits quietly along the top edge of the screen. On a MacBook with a notch
 it wraps around the notch; on any other Mac it shows a small rounded pill just
@@ -40,7 +40,8 @@ throughout.
 - **Battery and power**: charging, fully charged, and low-battery activities
   with an adjustable warning level, plus a Low Power Mode heads-up.
 - **Bluetooth**: AirPods and other device battery on connect, and a disconnect
-  activity. **Audio output** changes to wired, USB, HDMI, or AirPlay show too.
+  activity, drawn with Reef's own 3D earbud and headphone models or with SF
+  Symbols, your choice. **Audio output** changes to wired, USB, HDMI, or AirPlay show too.
 - **A shelf** to stash files on the notch and drag them back out later.
 
 ## How you reach it

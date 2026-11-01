@@ -40,6 +40,7 @@ final class ReefSettings: ObservableObject {
         static let deviceLowBatteryWarning = "connectivity.lowWarning"
         static let deviceLowBatteryThreshold = "connectivity.lowThreshold"
         static let deviceLowBatterySound = "connectivity.lowSound"
+        static let deviceArtwork = "connectivity.artwork"
         static let replaceVolumeHUD = "hud.replaceVolume"
         static let replaceBrightnessHUD = "hud.replaceBrightness"
         static let hudSound = "hud.sound"
@@ -245,6 +246,11 @@ final class ReefSettings: ObservableObject {
         didSet { defaults.set(showsDeviceActivity, forKey: Key.deviceActivity) }
     }
 
+    /// Whether devices are drawn as Reef's 3D models or as SF Symbols.
+    @Published var deviceArtwork: DeviceArtwork {
+        didSet { defaults.set(deviceArtwork.rawValue, forKey: Key.deviceArtwork) }
+    }
+
     /// How long a connectivity activity stays in the wings, in seconds.
     @Published var connectivityDuration: Double {
         didSet { defaults.set(connectivityDuration, forKey: Key.connectivityDuration) }
@@ -364,6 +370,7 @@ final class ReefSettings: ObservableObject {
         ambientShowsNextEvent = defaults.object(forKey: Key.ambientNextEvent) as? Bool ?? true
         hidesBatteryPercentage = defaults.object(forKey: Key.hideBatteryPercentage) as? Bool ?? false
         showsDeviceActivity = defaults.object(forKey: Key.deviceActivity) as? Bool ?? true
+        deviceArtwork = Self.value(defaults, Key.deviceArtwork) ?? .models
         connectivityDuration = defaults.object(forKey: Key.connectivityDuration) as? Double ?? 5
         deviceLowBatteryWarning = defaults.object(forKey: Key.deviceLowBatteryWarning) as? Bool ?? true
         deviceLowBatteryThreshold = defaults.object(forKey: Key.deviceLowBatteryThreshold) as? Int ?? 20
@@ -419,6 +426,7 @@ final class ReefSettings: ObservableObject {
         ambientShowsNextEvent = true
         hidesBatteryPercentage = false
         showsDeviceActivity = true
+        deviceArtwork = .models
         connectivityDuration = 5
         deviceLowBatteryWarning = true
         deviceLowBatteryThreshold = 20

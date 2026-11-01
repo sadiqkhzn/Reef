@@ -14,6 +14,8 @@ struct LiveActivityWings: View {
     var rowHeight: CGFloat
     var showsLabel: Bool
     var isPeeking: Bool = false
+    /// How device activities draw their device.
+    var deviceArtwork: DeviceArtwork = .symbols
 
     var body: some View {
         VStack(spacing: 0) {
@@ -83,17 +85,12 @@ struct LiveActivityWings: View {
                 .foregroundStyle(tint)
                 .symbolEffect(.pulse, options: .repeating, isActive: isCritical)
         case .deviceConnected(_, let kind, _):
-            Image(systemName: kind.symbol)
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(ReefTheme.Ink.primary)
+            deviceGlyph(kind, tint: ReefTheme.Ink.primary)
         case .deviceDisconnected(_, let kind):
-            Image(systemName: kind.symbol)
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(ReefTheme.Ink.secondary)
+            deviceGlyph(kind, tint: ReefTheme.Ink.secondary)
+                .opacity(0.6)
         case .deviceLowBattery(_, let kind, _):
-            Image(systemName: kind.symbol)
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(tint)
+            deviceGlyph(kind, tint: tint)
                 .symbolEffect(.pulse, options: .repeating)
         case .audioOutput(_, let kind):
             Image(systemName: kind.symbol)
@@ -118,6 +115,18 @@ struct LiveActivityWings: View {
                 .foregroundStyle(ReefTheme.Ink.primary)
                 .contentTransition(.symbolEffect(.replace))
         }
+    }
+
+    /// The device in the leading wing: its 3D model when one fits and models
+    /// are chosen, otherwise its symbol.
+    private func deviceGlyph(_ kind: DeviceKind, tint: Color) -> some View {
+        DeviceGlyph(
+            model: DeviceModel(kind: kind),
+            symbol: kind.symbol,
+            artwork: deviceArtwork,
+            size: min(rowHeight - 6, 26),
+            symbolSize: 14,
+            tint: tint)
     }
 
     @ViewBuilder
