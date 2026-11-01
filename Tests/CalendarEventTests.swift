@@ -82,4 +82,40 @@ final class CalendarEventTests: XCTestCase {
         XCTAssertNil(EventSchedule.next([event("done", startsIn: -120, lasts: 30)], now: now))
         XCTAssertNil(EventSchedule.next([event("allday", startsIn: 10, allDay: true)], now: now))
     }
+
+    // MARK: - Meeting link
+
+    private func event(withURL url: URL? = nil, location: String? = nil, notes: String? = nil)
+        -> CalendarEvent {
+        CalendarEvent(
+            id: "m", title: "m", start: now, end: now.addingTimeInterval(3600),
+            isAllDay: false, colorHex: nil, location: location, url: url, notes: notes)
+    }
+
+    func testMeetingURLFromEventURL() {
+        let e = event(withURL: URL(string: "https://zoom.us/j/123456")!)
+        XCTAssertEqual(e.meetingURL?.host, "zoom.us")
+    }
+
+    func testMeetingURLFoundInNotes() {
+        let e = event(notes: "Agenda below.\nJoin: https://meet.google.com/abc-defg-hij\nThanks")
+        XCTAssertEqual(e.meetingURL?.host, "meet.google.com")
+    }
+
+    func testMeetingURLPrefersKnownHost() {
+        // A plain link and a conferencing link both present: the known host wins.
+        let e = event(
+            location: "https://example.com/docs",
+            notes: "call https://teams.microsoft.com/l/meetup-join/xyz")
+        XCTAssertEqual(e.meetingURL?.host, "teams.microsoft.com")
+    }
+
+    func testMeetingURLFallsBackToAnyLink() {
+        let e = event(notes: "Notes at https://example.com/page")
+        XCTAssertEqual(e.meetingURL?.absoluteString, "https://example.com/page")
+    }
+
+    func testNoMeetingURLWhenNoneAttached() {
+        XCTAssertNil(event(location: "Room 4B", notes: "Bring coffee").meetingURL)
+    }
 }

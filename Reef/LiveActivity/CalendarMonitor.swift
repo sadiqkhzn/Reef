@@ -88,7 +88,11 @@ final class CalendarMonitor: ObservableObject {
                     end: event.endDate,
                     isAllDay: event.isAllDay,
                     colorHex: Self.hex(event.calendar?.cgColor),
-                    calendarID: event.calendar?.calendarIdentifier)
+                    calendarID: event.calendar?.calendarIdentifier,
+                    location: event.location?.trimmingCharacters(in: .whitespacesAndNewlines)
+                        .nilIfEmpty,
+                    url: event.url,
+                    notes: event.notes)
             }
         events = mapped.sorted { $0.start < $1.start }
         refreshMonth(now: now)
