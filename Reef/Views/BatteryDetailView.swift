@@ -36,17 +36,12 @@ struct BatteryDetailView: View {
 
     private var header: some View {
         HStack(spacing: 0) {
-            Button(action: onClose) {
-                Label("Battery", systemImage: "chevron.left")
-                    .labelStyle(.titleAndIcon)
-                    .font(ReefTheme.Typography.caption)
-                    .foregroundStyle(accent)
-                    .padding(.horizontal, ReefTheme.Spacing.s)
-                    .padding(.vertical, 3)
-                    .background(Capsule().fill(accent.opacity(0.18)))
-                    .contentShape(Capsule())
-            }
-            .buttonStyle(.plain)
+            Text("Battery")
+                .font(ReefTheme.Typography.caption)
+                .foregroundStyle(accent)
+                .padding(.horizontal, ReefTheme.Spacing.s)
+                .padding(.vertical, 3)
+                .background(Capsule().fill(accent.opacity(0.18)))
             Spacer(minLength: notchWidth + ReefTheme.Spacing.l)
         }
         .padding(.horizontal, ReefTheme.Spacing.l)

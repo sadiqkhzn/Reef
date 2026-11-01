@@ -58,16 +58,12 @@ struct TimerPageView: View {
 
     private var header: some View {
         HStack(spacing: ReefTheme.Spacing.s) {
-            Button(action: onClose) {
-                Image(systemName: "chevron.left")
-                    .font(ReefTheme.Typography.caption)
-                    .foregroundStyle(accent)
-                    .padding(.horizontal, ReefTheme.Spacing.s)
-                    .padding(.vertical, 3)
-                    .background(Capsule().fill(accent.opacity(0.18)))
-                    .contentShape(Capsule())
-            }
-            .buttonStyle(.plain)
+            Text("Timer")
+                .font(ReefTheme.Typography.caption)
+                .foregroundStyle(accent)
+                .padding(.horizontal, ReefTheme.Spacing.s)
+                .padding(.vertical, 3)
+                .background(Capsule().fill(accent.opacity(0.18)))
             modeToggle
             Spacer(minLength: notchWidth + ReefTheme.Spacing.s)
         }
