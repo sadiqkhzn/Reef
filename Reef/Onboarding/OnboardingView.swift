@@ -290,17 +290,17 @@ struct OnboardingView: View {
             ForEach(items) { item in
                 VStack(spacing: 8) {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
                             .fill(LinearGradient(
                                 colors: [.white.opacity(0.14), .white.opacity(0.04)],
                                 startPoint: .top, endPoint: .bottom))
-                            .frame(width: 64, height: 64)
+                            .frame(width: 46, height: 46)
                             .overlay(
-                                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
                                     .strokeBorder(.white.opacity(0.12), lineWidth: 0.5))
-                            .shadow(color: .black.opacity(0.25), radius: 4, y: 2)
+                            .shadow(color: .black.opacity(0.25), radius: 3, y: 1)
                         Image(systemName: item.symbol)
-                            .font(.system(size: item.large ? 34 : 26, weight: .regular))
+                            .font(.system(size: item.large ? 22 : 18, weight: .regular))
                             .symbolRenderingMode(item.multicolor ? .multicolor : .hierarchical)
                             .foregroundStyle(.white)
                     }
