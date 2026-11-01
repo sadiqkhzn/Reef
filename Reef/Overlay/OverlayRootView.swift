@@ -337,6 +337,7 @@ struct OverlayRootView: View {
                         MediaView(nowPlaying: nowPlaying, media: media,
                             cleanTitle: settings.hideMediaTitleExtras,
                             accent: settings.accent.color,
+                            liveLevels: liveLevels,
                             colorStyle: settings.playerTint)
                             .frame(width: state.visibleSize.width, height: pageHeight)
                             .transition(.islandOpen)

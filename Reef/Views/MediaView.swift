@@ -12,6 +12,8 @@ struct MediaView: View {
     var cleanTitle: Bool = false
     /// Accent used for the dominant play control.
     var accent: Color = .white
+    /// Live audio levels for the equalizer, when the live waveform is on.
+    var liveLevels: [Float]? = nil
     /// How the panel is colored behind the track details.
     var colorStyle: PlayerTint = .bloom
 
@@ -85,7 +87,21 @@ struct MediaView: View {
             .frame(width: 96, height: 96)
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             .background(glow)
+            .overlay(alignment: .bottomLeading) { equalizer }
             .overlay(alignment: .bottomTrailing) { sourceBadge }
+    }
+
+    /// The live equalizer tucked into the artwork's bottom-left corner, on a
+    /// small dark pill so the bars read on any cover. Opposite the source badge.
+    @ViewBuilder
+    private var equalizer: some View {
+        if let levels = liveLevels, nowPlaying.isPlaying {
+            MediaEqualizer(tint: .white, active: true, barCount: 7, levels: levels)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 3)
+                .background(Capsule().fill(.black.opacity(0.4)))
+                .padding(5)
+        }
     }
 
     @ViewBuilder
