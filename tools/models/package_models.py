@@ -53,7 +53,11 @@ def package(src, dst):
                     api.RemovePrimvar(primvar.GetPrimvarName())
     with tempfile.TemporaryDirectory() as tmp:
         flat = os.path.join(tmp, os.path.basename(dst).replace(".usdz", ".usdc"))
-        stage.Flatten().Export(flat)
+        layer = stage.Flatten()
+        # Flattening records the source file's path; replace it so the shipped
+        # file carries no details of the machine it was built on.
+        layer.documentation = "Reef device model"
+        layer.Export(flat)
         if os.path.exists(dst):
             os.remove(dst)
         if not UsdUtils.CreateNewUsdzPackage(Sdf.AssetPath(flat), dst):
