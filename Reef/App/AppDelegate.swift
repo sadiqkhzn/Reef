@@ -92,13 +92,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         lockOverlay.start()
         self.lockOverlay = lockOverlay
 
-        settingsWindow = SettingsWindowController { [settings, calendar, weather, ambient] in
+        settingsWindow = SettingsWindowController { [settings, calendar, weather, ambient, focus] in
             SettingsView()
                 .environmentObject(settings)
                 .environmentObject(activities)
                 .environmentObject(calendar)
                 .environmentObject(weather)
                 .environmentObject(ambient)
+                .environmentObject(focus)
         }
 
         installMenuBarItem()

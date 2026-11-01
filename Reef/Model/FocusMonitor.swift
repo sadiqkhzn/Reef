@@ -22,6 +22,9 @@ struct FocusStatus: Equatable {
 @MainActor
 final class FocusMonitor: ObservableObject {
     @Published private(set) var current: FocusStatus?
+    /// True when the Focus database exists but can't be read — the app needs
+    /// Full Disk Access to see `~/Library/DoNotDisturb`.
+    @Published private(set) var accessDenied = false
 
     private let dbDir = FileManager.default.homeDirectoryForCurrentUser
         .appendingPathComponent("Library/DoNotDisturb/DB", isDirectory: true)
@@ -45,7 +48,14 @@ final class FocusMonitor: ObservableObject {
     }
 
     private func read() {
-        let next = Self.readCurrent(in: dbDir)
+        let url = dbDir.appendingPathComponent("Assertions.json")
+        let exists = FileManager.default.fileExists(atPath: url.path)
+        let data = try? Data(contentsOf: url)
+        // The file is there but unreadable → Full Disk Access is missing.
+        let denied = exists && data == nil
+        if denied != accessDenied { accessDenied = denied }
+
+        let next = denied ? nil : Self.readCurrent(in: dbDir)
         if next != current { current = next }
     }
 

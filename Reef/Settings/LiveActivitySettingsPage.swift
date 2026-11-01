@@ -6,6 +6,7 @@ struct LiveActivitySettingsPage: View {
     @EnvironmentObject private var settings: ReefSettings
     @EnvironmentObject private var activities: LiveActivityCenter
     @EnvironmentObject private var calendar: CalendarMonitor
+    @EnvironmentObject private var focus: FocusMonitor
 
     var body: some View {
         Form {
@@ -65,6 +66,29 @@ struct LiveActivitySettingsPage: View {
                         isOn: $settings.showsFocusActivity
                     ) {
                         activities.present(.focus(name: "Work", symbol: "moon.fill", on: true))
+                    }
+
+                    if settings.showsFocusActivity && focus.accessDenied {
+                        HStack(alignment: .top, spacing: 8) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundStyle(ReefTheme.Status.warning)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Focus needs Full Disk Access")
+                                    .font(.callout.weight(.medium))
+                                Text("macOS protects the Focus database. Grant Reef Full "
+                                    + "Disk Access, then it can show Focus changes.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Button("Open Full Disk Access…") {
+                                    if let url = URL(string: "x-apple.systempreferences:"
+                                        + "com.apple.preference.security?Privacy_AllFiles") {
+                                        NSWorkspace.shared.open(url)
+                                    }
+                                }
+                                .buttonStyle(.link)
+                            }
+                        }
+                        .padding(.vertical, 2)
                     }
 
                     ActivityRow(
