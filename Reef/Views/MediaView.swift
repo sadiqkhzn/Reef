@@ -20,6 +20,16 @@ struct MediaView: View {
             .activate(options: [.activateAllWindows])
     }
 
+    /// Put the track on the clipboard as "Title - Artist", or just the title
+    /// when there is no artist.
+    private func copyTrack() {
+        let artist = nowPlaying.artist.trimmingCharacters(in: .whitespaces)
+        let text = artist.isEmpty ? nowPlaying.title : "\(nowPlaying.title) - \(artist)"
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(text, forType: .string)
+    }
+
     var body: some View {
         HStack(spacing: 14) {
             artwork
@@ -68,6 +78,12 @@ struct MediaView: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .background(playerWash)
+        .contextMenu {
+            Button("Copy", systemImage: "doc.on.doc", action: copyTrack)
+            if nowPlaying.bundleIdentifier != nil {
+                Button("Show in App", systemImage: "arrow.up.forward.app", action: showInApp)
+            }
+        }
     }
 
     /// The color laid behind the panel, following the chosen player style.
