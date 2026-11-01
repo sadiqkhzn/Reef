@@ -329,6 +329,7 @@ struct OverlayRootView: View {
                             accent: settings.accent.color,
                             headerHeight: state.collapsedSize.height,
                             notchWidth: notchClearance,
+                            deviceArtwork: settings.deviceArtwork,
                             onClose: { openPage = shownTrack != nil ? .nowPlaying : .home })
                             .frame(width: state.visibleSize.width, height: pageHeight)
                             .transition(.islandOpen)
