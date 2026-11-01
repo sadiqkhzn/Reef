@@ -6,6 +6,8 @@ struct MarqueeText: View {
     let text: String
     var color: Color = .white
     var font: Font = .system(size: 12, weight: .semibold)
+    /// How the text sits when it fits without scrolling.
+    var alignment: Alignment = .center
     /// Scroll speed in points per second.
     var speed: CGFloat = 34
     /// Gap between the end of the text and the start of its repeat.
@@ -30,7 +32,7 @@ struct MarqueeText: View {
                         .offset(x: -CGFloat(progress) * (textWidth + gap))
                     }
                 } else {
-                    label.frame(width: geo.size.width, alignment: .center)
+                    label.frame(width: geo.size.width, alignment: alignment)
                 }
             }
             .frame(width: geo.size.width, height: geo.size.height, alignment: .leading)

@@ -58,7 +58,8 @@ struct MediaView: View {
                 MarqueeText(
                     text: nowPlaying.title,
                     color: .white,
-                    font: .system(size: 14, weight: .semibold))
+                    font: .system(size: 14, weight: .semibold),
+                    alignment: .leading)
                     .frame(height: 18)
 
                 Text(nowPlaying.artist)

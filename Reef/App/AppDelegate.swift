@@ -73,15 +73,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         ambient.start()
         self.ambient = ambient
 
-        let lockOverlay = LockScreenOverlayManager(settings: settings) {
-            [settings, media, weather, battery, calendar] in
+        let lockState = LockScreenState()
+        let lockOverlay = LockScreenOverlayManager(settings: settings, lockState: lockState) {
+            [settings, media, weather, battery, calendar, state] in
             AnyView(
-                AmbientView()
+                LockScreenView()
                     .environmentObject(settings)
                     .environmentObject(media)
                     .environmentObject(weather)
                     .environmentObject(battery)
-                    .environmentObject(calendar))
+                    .environmentObject(calendar)
+                    .environmentObject(lockState)
+                    .environmentObject(state))
         }
         lockOverlay.start()
         self.lockOverlay = lockOverlay

@@ -63,6 +63,8 @@ final class ReefSettings: ObservableObject {
         static let soundOnLock = "lock.soundOnLock"
         static let soundOnUnlock = "lock.soundOnUnlock"
         static let lockScreenOverlay = "lock.overlay"
+        static let lockCardStyle = "lock.cardStyle"
+        static let lockShowsIsland = "lock.showsIsland"
         static let contrastOutline = "appearance.contrastOutline"
         static let haptics = "appearance.haptics"
     }
@@ -103,6 +105,16 @@ final class ReefSettings: ObservableObject {
     /// Show Reef's overlay (clock, media, weather, battery) over the lock shield.
     @Published var lockScreenOverlay: Bool {
         didSet { defaults.set(lockScreenOverlay, forKey: Key.lockScreenOverlay) }
+    }
+
+    /// Surface style for the lock-screen Now Playing card.
+    @Published var lockCardStyle: LockCardStyle {
+        didSet { defaults.set(lockCardStyle.rawValue, forKey: Key.lockCardStyle) }
+    }
+
+    /// Also show a compact island pill (now playing) at the top of the lock screen.
+    @Published var lockShowsIsland: Bool {
+        didSet { defaults.set(lockShowsIsland, forKey: Key.lockShowsIsland) }
     }
 
     /// Play a sound when the screen locks.
@@ -360,6 +372,9 @@ final class ReefSettings: ObservableObject {
         contrastOutline = defaults.object(forKey: Key.contrastOutline) as? Bool ?? false
         haptics = defaults.object(forKey: Key.haptics) as? Bool ?? false
         lockScreenOverlay = defaults.object(forKey: Key.lockScreenOverlay) as? Bool ?? false
+        lockCardStyle = LockCardStyle(rawValue: defaults.string(forKey: Key.lockCardStyle) ?? "")
+            ?? .glass
+        lockShowsIsland = defaults.object(forKey: Key.lockShowsIsland) as? Bool ?? false
         soundOnLock = defaults.object(forKey: Key.soundOnLock) as? Bool ?? false
         soundOnUnlock = defaults.object(forKey: Key.soundOnUnlock) as? Bool ?? false
         hideFromScreenCapture = defaults.object(forKey: Key.hideFromCapture) as? Bool ?? false
@@ -419,6 +434,8 @@ final class ReefSettings: ObservableObject {
         contrastOutline = false
         haptics = false
         lockScreenOverlay = false
+        lockCardStyle = .glass
+        lockShowsIsland = false
         soundOnLock = false
         soundOnUnlock = false
         hideFromScreenCapture = false
