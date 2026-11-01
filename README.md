@@ -3,7 +3,7 @@
 **A calm widget that lives at the top of your Mac's screen.**
 
 ![platform](https://img.shields.io/badge/platform-macOS%2014%2B-blue)
-![license](https://img.shields.io/badge/license-MIT-green)
+![license](https://img.shields.io/badge/license-GPLv3%20%7C%20Commercial-blue)
 ![tests](https://img.shields.io/badge/tests-153%20passing-brightgreen)
 
 Reef sits quietly along the top edge of the screen. On a MacBook with a notch
@@ -119,4 +119,9 @@ xcodebuild -project Reef.xcodeproj -scheme Reef -destination 'platform=macOS' te
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+Reef is **dual-licensed**: free under the **GNU GPL v3** for open-source and
+personal use, or under a **commercial license** for use in closed-source /
+proprietary products. See [LICENSE](LICENSE) for the GPLv3 terms and
+[COMMERCIAL-LICENSE.md](COMMERCIAL-LICENSE.md) for the commercial option.
+
+Copyright (C) 2026 Sadiq Khan.
