@@ -17,6 +17,10 @@ final class LiveActivityCenter: ObservableObject {
     private var cancellables: Set<AnyCancellable> = []
     /// Event ids already shown as a heads-up, so each fires at most once.
     private var alertedEvents: Set<String> = []
+    /// Devices already warned about low battery, so each warns once until it
+    /// recovers above the threshold.
+    private var warnedDevices: Set<String> = []
+    private var deviceBatteryTimer: Timer?
 
     init(state: NotchState, settings: ReefSettings, battery: BatteryModel, calendar: CalendarMonitor) {
         self.state = state
@@ -41,6 +45,37 @@ final class LiveActivityCenter: ObservableObject {
             .publisher(for: .NSProcessInfoPowerStateDidChange)
             .sink { [weak self] _ in self?.powerStateChanged() }
             .store(in: &cancellables)
+
+        // Poll connected-device batteries so a low AirPods/headphone level can
+        // raise a one-time warning.
+        let timer = Timer(timeInterval: 120, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.checkDeviceBatteries() }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        deviceBatteryTimer = timer
+    }
+
+    /// Warn once when a connected device drops to or below the threshold, and
+    /// re-arm the warning once it recovers a few points above it.
+    private func checkDeviceBatteries() {
+        guard settings.showsDeviceActivity, settings.deviceLowBatteryWarning else { return }
+        let threshold = settings.deviceLowBatteryThreshold
+
+        var stillLow: Set<String> = []
+        for device in BluetoothBatteryReader.all() {
+            guard let percent = device.overall, !device.isCharging else { continue }
+            if percent <= threshold {
+                stillLow.insert(device.name)
+                if !warnedDevices.contains(device.name) {
+                    warnedDevices.insert(device.name)
+                    present(.deviceLowBattery(
+                        name: device.name, kind: DeviceKind(name: device.name), percent: percent))
+                }
+            }
+        }
+        // Keep only devices still low; ones that recovered or disconnected are
+        // forgotten, so they can warn again next time they run down.
+        warnedDevices.formIntersection(stillLow)
     }
 
     private var lastLowPowerMode = false
@@ -66,14 +101,22 @@ final class LiveActivityCenter: ObservableObject {
         state.liveActivity = activity
         state.isPeeking = true
 
-        // Battery activities honor the person's chosen duration; others keep
-        // their built-in timing.
-        let duration = activity.isBattery
-            ? max(1, settings.batteryActivityDuration)
-            : activity.duration
+        // Battery and connectivity activities honor the person's chosen duration;
+        // others keep their built-in timing.
+        let duration: TimeInterval
+        if activity.isBattery {
+            duration = max(1, settings.batteryActivityDuration)
+        } else if activity.isConnectivity {
+            duration = max(1, settings.connectivityDuration)
+        } else {
+            duration = activity.duration
+        }
 
-        // A low-battery alert can play a sound, when asked.
+        // Low-battery alerts can play a sound, when asked.
         if case .lowBattery = activity, settings.lowBatterySound {
+            Self.playLowBatterySound()
+        }
+        if case .deviceLowBattery = activity, settings.deviceLowBatterySound {
             Self.playLowBatterySound()
         }
 
@@ -189,6 +232,8 @@ final class LiveActivityCenter: ObservableObject {
         case .charging, .fullyCharged: return settings.showsChargingActivity
         case .lowBattery: return settings.showsLowBatteryActivity
         case .deviceConnected, .deviceDisconnected: return settings.showsDeviceActivity
+        case .deviceLowBattery:
+            return settings.showsDeviceActivity && settings.deviceLowBatteryWarning
         case .audioOutput: return settings.showsAudioOutputActivity
         case .calendarEvent: return settings.showsCalendarActivity
         case .lowPowerMode: return settings.showsLowPowerModeActivity

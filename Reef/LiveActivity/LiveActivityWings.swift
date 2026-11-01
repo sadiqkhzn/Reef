@@ -52,6 +52,8 @@ struct LiveActivityWings: View {
             return ReefTheme.Status.charging
         case .deviceDisconnected:
             return ReefTheme.Ink.secondary
+        case .deviceLowBattery:
+            return ReefTheme.Status.warning
         case .audioOutput:
             return ReefTheme.Ink.primary
         case .calendarEvent:
@@ -88,6 +90,11 @@ struct LiveActivityWings: View {
             Image(systemName: kind.symbol)
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(ReefTheme.Ink.secondary)
+        case .deviceLowBattery(_, let kind, _):
+            Image(systemName: kind.symbol)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(tint)
+                .symbolEffect(.pulse, options: .repeating)
         case .audioOutput(_, let kind):
             Image(systemName: kind.symbol)
                 .font(.system(size: 14, weight: .medium))
@@ -155,6 +162,12 @@ struct LiveActivityWings: View {
             Image(systemName: "xmark.circle.fill")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(tint)
+        case .deviceLowBattery(_, _, let percent):
+            Text("\(percent)%")
+                .font(ReefTheme.Typography.wing)
+                .monospacedDigit()
+                .foregroundStyle(tint)
+                .contentTransition(.numericText())
         case .audioOutput:
             Image(systemName: "waveform")
                 .font(.system(size: 13, weight: .semibold))
