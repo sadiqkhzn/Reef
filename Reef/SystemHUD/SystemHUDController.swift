@@ -52,21 +52,39 @@ final class SystemHUDController {
         }
     }
 
+    /// Whether the feature was on at the last check, so a settings change can
+    /// tell "the person just turned it on" (worth a one-time prompt) from a
+    /// passive re-check (never prompts).
+    private var wasWanted = false
+
     /// Begin watching settings and, if anything is turned on, the keys. Also
     /// re-checks when the app comes forward, so granting Accessibility in System
-    /// Settings and switching back starts interception without a restart.
+    /// Settings and switching back starts interception without a restart — and
+    /// without prompting again.
     func start() {
+        wasWanted = settings.replacesVolumeHUD || settings.replacesBrightnessHUD
+
         settings.$replacesVolumeHUD
             .combineLatest(settings.$replacesBrightnessHUD)
-            .sink { [weak self] _, _ in self?.refresh() }
+            .dropFirst()
+            .sink { [weak self] volume, brightness in
+                guard let self else { return }
+                let wanted = volume || brightness
+                // Only prompt the moment the person switches the feature on, not
+                // on every toggle or re-check.
+                let justEnabled = wanted && !self.wasWanted
+                self.wasWanted = wanted
+                self.refresh(prompting: justEnabled)
+            }
             .store(in: &cancellables)
 
         NotificationCenter.default
             .publisher(for: NSApplication.didBecomeActiveNotification)
-            .sink { [weak self] _ in self?.refresh() }
+            .sink { [weak self] _ in self?.refresh(prompting: false) }
             .store(in: &cancellables)
 
-        refresh()
+        // At launch, start the tap if already trusted; never prompt on launch.
+        refresh(prompting: false)
     }
 
     /// Whether Reef currently has Accessibility permission.
@@ -88,21 +106,25 @@ final class SystemHUDController {
         NSWorkspace.shared.open(url)
     }
 
-    /// Start or stop the key tap to match the current settings.
-    private func refresh() {
+    /// Start or stop the key tap to match the current settings. Prompts for
+    /// Accessibility only when `prompting` is true (the person just turned the
+    /// feature on); otherwise it silently waits until access is granted, so a
+    /// passive re-check — opening the menu, switching back to Reef — never raises
+    /// the permission dialog again.
+    private func refresh(prompting: Bool) {
         let wanted = settings.replacesVolumeHUD || settings.replacesBrightnessHUD
         guard wanted else {
             monitor.stop()
             return
         }
-        guard Self.isTrusted else {
-            // Not permitted yet: prompt once, and leave the system overlays in
-            // charge until access is granted.
+        if Self.isTrusted {
+            if !monitor.isRunning {
+                monitor.start()
+            }
+        } else if prompting {
+            // Not permitted yet, and the person just asked for it: prompt once and
+            // leave the system overlays in charge until access is granted.
             Self.requestAccessibility()
-            return
-        }
-        if !monitor.isRunning {
-            monitor.start()
         }
     }
 
