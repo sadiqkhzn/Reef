@@ -63,6 +63,8 @@ final class ReefSettings: ObservableObject {
         static let simulatedNotchWidth = "notch.simulatedWidth"
         static let simulatedNotchHeight = "notch.simulatedHeight"
         static let hideFromCapture = "privacy.hideFromCapture"
+        static let hideInFullscreen = "visibility.hideInFullscreen"
+        static let hideMenuBarIcon = "visibility.hideMenuBarIcon"
         static let keepAwake = "power.keepAwake"
         static let soundOnLock = "lock.soundOnLock"
         static let soundOnUnlock = "lock.soundOnUnlock"
@@ -134,6 +136,16 @@ final class ReefSettings: ObservableObject {
     /// Keep the island out of screenshots and screen recordings.
     @Published var hideFromScreenCapture: Bool {
         didSet { defaults.set(hideFromScreenCapture, forKey: Key.hideFromCapture) }
+    }
+
+    /// Hide the island while a full-screen app is frontmost.
+    @Published var hideInFullscreen: Bool {
+        didSet { defaults.set(hideInFullscreen, forKey: Key.hideInFullscreen) }
+    }
+
+    /// Hide the Reef menu bar icon. Reopen Settings by launching Reef again.
+    @Published var hideMenuBarIcon: Bool {
+        didSet { defaults.set(hideMenuBarIcon, forKey: Key.hideMenuBarIcon) }
     }
 
     /// Keep the Mac and its display from sleeping.
@@ -402,6 +414,8 @@ final class ReefSettings: ObservableObject {
         soundOnLock = defaults.object(forKey: Key.soundOnLock) as? Bool ?? false
         soundOnUnlock = defaults.object(forKey: Key.soundOnUnlock) as? Bool ?? false
         hideFromScreenCapture = defaults.object(forKey: Key.hideFromCapture) as? Bool ?? false
+        hideInFullscreen = defaults.object(forKey: Key.hideInFullscreen) as? Bool ?? false
+        hideMenuBarIcon = defaults.object(forKey: Key.hideMenuBarIcon) as? Bool ?? false
         keepAwake = defaults.object(forKey: Key.keepAwake) as? Bool ?? false
         playerTint = Self.value(defaults, Key.playerTint) ?? Self.defaultPlayerTint
         useLiveWaveform = defaults.object(forKey: Key.liveWaveform) as? Bool ?? false
@@ -467,6 +481,8 @@ final class ReefSettings: ObservableObject {
         soundOnLock = false
         soundOnUnlock = false
         hideFromScreenCapture = false
+        hideInFullscreen = false
+        hideMenuBarIcon = false
         keepAwake = false
         playerTint = Self.defaultPlayerTint
         useLiveWaveform = false

@@ -68,8 +68,38 @@ final class NotchWindowController {
         observeNowPlaying()
         observeStyle()
         observeScreenCapture()
+        observeFullscreen()
         followActiveScreen()
         reposition()
+    }
+
+    /// Hide the island while a full-screen app is frontmost, when the person
+    /// asks. A normal desktop is a type-0 space; a full-screen app runs in a
+    /// non-zero space.
+    private func observeFullscreen() {
+        settings.$hideInFullscreen
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in self?.updateFullscreenVisibility() }
+            .store(in: &cancellables)
+
+        NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.activeSpaceDidChangeNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.updateFullscreenVisibility() }
+        }
+    }
+
+    private func updateFullscreenVisibility() {
+        if settings.hideInFullscreen && Self.isActiveSpaceFullscreen() {
+            panel.orderOut(nil)
+        } else {
+            panel.orderFrontRegardless()
+        }
+    }
+
+    private static func isActiveSpaceFullscreen() -> Bool {
+        let cid = CGSMainConnectionID()
+        return CGSSpaceGetType(cid, CGSGetActiveSpace(cid)) != 0
     }
 
     /// Keep the island in or out of screen captures as the person chooses. A

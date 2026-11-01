@@ -74,6 +74,18 @@ struct GeneralSettingsPage: View {
             }
 
             Section {
+                Toggle("Hide island in full-screen apps", isOn: $settings.hideInFullscreen)
+                Toggle("Hide menu bar icon", isOn: $settings.hideMenuBarIcon)
+                if settings.hideMenuBarIcon {
+                    Text("Reopen Settings by launching Reef again.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            } header: {
+                Text("Visibility")
+            }
+
+            Section {
                 Toggle("Keep awake", isOn: $settings.keepAwake)
                 Toggle("Hide from screen capture", isOn: $settings.hideFromScreenCapture)
             } header: {
