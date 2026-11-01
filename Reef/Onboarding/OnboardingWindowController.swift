@@ -55,17 +55,20 @@ final class OnboardingWindowController: NSObject {
 
     private func makeWindow() -> NSWindow {
         let window = NSWindow(
-            contentRect: CGRect(x: 0, y: 0, width: 440, height: 560),
+            contentRect: CGRect(x: 0, y: 0, width: 460, height: 600),
             styleMask: [.titled, .closable, .fullSizeContentView],
             backing: .buffered,
             defer: false)
         window.title = "Welcome to Reef"
+        window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
+        window.isMovableByWindowBackground = true
+        window.backgroundColor = NSColor(red: 0.04, green: 0.04, blue: 0.06, alpha: 1)
         window.isReleasedWhenClosed = false
         window.delegate = self
         window.contentViewController = NSHostingController(
             rootView: OnboardingView(permissions: permissions) { [weak self] in self?.window?.close() })
-        window.setContentSize(CGSize(width: 440, height: 560))
+        window.setContentSize(CGSize(width: 460, height: 600))
         return window
     }
 }

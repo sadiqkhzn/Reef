@@ -10,6 +10,18 @@ struct LiveActivitySettingsPage: View {
     var body: some View {
         Form {
             Section {
+                IdleActivityPicker(showsEvent: $settings.showsEventAtRest)
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+            } header: {
+                Text("Idle Activity")
+            } footer: {
+                Text("What the resting island shows when nothing is playing. Media always "
+                    + "takes over the wings while a track is on.")
+                    .foregroundStyle(.secondary)
+            }
+
+            Section {
                 ActivityRow(
                     title: "Charging",
                     detail: "When power is connected, and when the battery is full.",
@@ -94,7 +106,6 @@ struct LiveActivitySettingsPage: View {
                     }
                 }
 
-                Toggle("Show next event on the island", isOn: $settings.showsEventAtRest)
             } header: {
                 Text("Activities")
             } footer: {
@@ -140,6 +151,52 @@ struct LiveActivitySettingsPage: View {
                     settings.hiddenCalendarIDs.insert(id)
                 }
             })
+    }
+}
+
+/// A pair of tiles for the resting island's idle activity: nothing, or the next
+/// calendar event. Media is automatic and so is not an option here.
+private struct IdleActivityPicker: View {
+    @Binding var showsEvent: Bool
+
+    var body: some View {
+        HStack(spacing: ReefTheme.Spacing.m) {
+            tile(title: "None", symbol: "circle.slash", selected: !showsEvent) {
+                showsEvent = false
+            }
+            tile(title: "Next event", symbol: "calendar", selected: showsEvent) {
+                showsEvent = true
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, 4)
+    }
+
+    private func tile(
+        title: String, symbol: String, selected: Bool, action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            VStack(spacing: 6) {
+                Image(systemName: symbol)
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundStyle(selected ? Color.accentColor : .secondary)
+                    .frame(height: 24)
+                Text(title)
+                    .font(.caption)
+                    .foregroundStyle(selected ? .primary : .secondary)
+            }
+            .frame(width: 92, height: 72)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color.primary.opacity(selected ? 0.08 : 0.04)))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(
+                        selected ? Color.accentColor : Color.primary.opacity(0.08),
+                        lineWidth: selected ? 2 : 0.5))
+            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+        .buttonStyle(.plain)
     }
 }
 
