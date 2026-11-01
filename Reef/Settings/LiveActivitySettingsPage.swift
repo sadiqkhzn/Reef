@@ -22,49 +22,94 @@ struct LiveActivitySettingsPage: View {
             }
 
             Section {
-                ActivityRow(
-                    title: "Charging",
-                    detail: "When power is connected, and when the battery is full.",
-                    symbol: "bolt.fill",
-                    tint: ReefTheme.Status.charging,
-                    isOn: $settings.showsChargingActivity
-                ) {
-                    activities.present(.charging(percent: 64))
+                Toggle(isOn: $settings.batteryActivitiesEnabled) {
+                    Label("Battery", systemImage: "battery.100percent")
                 }
 
-                ActivityRow(
-                    title: "Low battery",
-                    detail: "At the chosen level and again at "
-                        + "\(BatteryActivityPolicy.criticalThreshold)% while on battery.",
-                    symbol: "battery.25percent",
-                    tint: ReefTheme.Status.warning,
-                    isOn: $settings.showsLowBatteryActivity
-                ) {
-                    activities.present(
-                        .lowBattery(percent: settings.lowBatteryThreshold, isCritical: false))
-                }
-
-                if settings.showsLowBatteryActivity {
-                    Picker("Warn at", selection: $settings.lowBatteryThreshold) {
-                        Text("15%").tag(15)
-                        Text("20%").tag(20)
-                        Text("25%").tag(25)
-                        Text("30%").tag(30)
+                if settings.batteryActivitiesEnabled {
+                    LabeledContent("Duration") {
+                        HStack {
+                            Slider(value: $settings.batteryActivityDuration, in: 1...10, step: 0.5)
+                                .frame(width: 150)
+                            Text(String(format: "%.1f s", settings.batteryActivityDuration))
+                                .monospacedDigit()
+                                .foregroundStyle(.secondary)
+                        }
                     }
+
+                    ActivityRow(
+                        title: "Charging",
+                        detail: "When power is connected, and when the battery is full.",
+                        symbol: "bolt.fill",
+                        tint: ReefTheme.Status.charging,
+                        isOn: $settings.showsChargingActivity
+                    ) {
+                        activities.present(.charging(percent: 64))
+                    }
+
+                    ActivityRow(
+                        title: "Notify on low power mode",
+                        detail: "When Low Power Mode turns on.",
+                        symbol: "leaf.fill",
+                        tint: ReefTheme.Status.warning,
+                        isOn: $settings.showsLowPowerModeActivity
+                    ) {
+                        activities.present(.lowPowerMode)
+                    }
+
+                    ActivityRow(
+                        title: "Warn on low battery",
+                        detail: "At the chosen level and again at "
+                            + "\(BatteryActivityPolicy.criticalThreshold)% while on battery.",
+                        symbol: "battery.25percent",
+                        tint: ReefTheme.Status.warning,
+                        isOn: $settings.showsLowBatteryActivity
+                    ) {
+                        activities.present(
+                            .lowBattery(percent: settings.lowBatteryThreshold, isCritical: false))
+                    }
+
+                    if settings.showsLowBatteryActivity {
+                        LabeledContent("Low battery threshold") {
+                            HStack {
+                                Slider(
+                                    value: Binding(
+                                        get: { Double(settings.lowBatteryThreshold) },
+                                        set: { settings.lowBatteryThreshold = Int($0) }),
+                                    in: 10...50, step: 5)
+                                    .frame(width: 150)
+                                Text("\(settings.lowBatteryThreshold)%")
+                                    .monospacedDigit()
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+
+                        HStack {
+                            Toggle("Play sound on low battery", isOn: $settings.lowBatterySound)
+                            if settings.lowBatterySound {
+                                Button {
+                                    LiveActivityCenter.playLowBatterySound()
+                                } label: {
+                                    Image(systemName: "play.circle")
+                                }
+                                .buttonStyle(.borderless)
+                            }
+                        }
+                    }
+
+                    Toggle("Hide label", isOn: $settings.hidesActivityLabel)
+                    Toggle("Hide percentage", isOn: $settings.hidesBatteryPercentage)
                 }
+            } header: {
+                Text("Battery")
+            } footer: {
+                Text("Battery activities show beside the notch when power connects, the "
+                    + "battery runs low, or Low Power Mode turns on. Duration sets how long "
+                    + "they stay. Hide label drops the center text on Macs without a notch.")
+                    .foregroundStyle(.secondary)
+            }
 
-                Toggle("Hide battery percentage", isOn: $settings.hidesBatteryPercentage)
-
-                ActivityRow(
-                    title: "Low Power Mode",
-                    detail: "When Low Power Mode turns on.",
-                    symbol: "leaf.fill",
-                    tint: ReefTheme.Status.warning,
-                    isOn: $settings.showsLowPowerModeActivity
-                ) {
-                    activities.present(.lowPowerMode)
-                }
-
+            Section {
                 ActivityRow(
                     title: "Devices",
                     detail: "When AirPods, headphones, or another Bluetooth device connects.",
