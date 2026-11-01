@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Generate Reef's device models.
 
-Builds three original, unbranded device models from parametric surfaces and
-writes them as USDZ files that SceneKit loads natively:
+Builds three device models from parametric surfaces and writes them as USDZ
+files that SceneKit loads natively. They follow the look of today's premium
+earbuds and headphones closely, in glossy white, stainless steel, anodized
+aluminum, and knit mesh, but carry no logos or brand marks:
 
     earbuds.usdz          a pair of in-ear wireless earbuds
-    earbuds-case.usdz     the earbuds in a pebble-shaped charging case, lid open
+    earbuds-case.usdz     the earbuds standing in their charging case, lid open
     headphones.usdz       over-ear headphones
 
 Every surface is computed here, so the models carry no third-party license and
@@ -40,29 +42,30 @@ from pxr import Gf, Sdf, Usd, UsdGeom, UsdShade, UsdUtils
 # Colors are written here as they should look on screen (sRGB) and converted
 # to the linear values UsdPreviewSurface expects when the file is written.
 MATERIALS = {
-    # Matte white plastic with a soft satin clear coat.
-    "satin_white": dict(color=(0.93, 0.93, 0.92), roughness=0.42, metallic=0.0,
-                        clearcoat=0.35, clearcoat_roughness=0.3),
-    # The inside of the case: the same plastic, a touch darker and flatter.
-    "inner_white": dict(color=(0.84, 0.84, 0.83), roughness=0.6, metallic=0.0),
-    # Soft silicone ear tips.
-    "silicone": dict(color=(0.96, 0.96, 0.95), roughness=0.78, metallic=0.0),
-    # The wells the buds sit in.
-    "grille": dict(color=(0.09, 0.09, 0.1), roughness=0.62, metallic=0.0),
-    # Acoustic vents and sensor windows: a quiet grey, not a hole.
-    "vent": dict(color=(0.55, 0.55, 0.56), roughness=0.7, metallic=0.0),
-    # The thin seam where the case lid meets the base.
-    "seam": dict(color=(0.6, 0.6, 0.6), roughness=0.6, metallic=0.0),
-    # The case's single status LED.
-    "led": dict(color=(0.25, 0.9, 0.45), roughness=0.3, metallic=0.0,
-                emissive=(0.3, 1.0, 0.5)),
-    # Headphone shells and headband.
-    "charcoal": dict(color=(0.12, 0.12, 0.13), roughness=0.5, metallic=0.0,
-                     clearcoat=0.15, clearcoat_roughness=0.4),
-    # Plush cushions and the headband pad.
-    "fabric": dict(color=(0.065, 0.065, 0.07), roughness=0.95, metallic=0.0),
-    # Brushed-aluminum accents.
-    "aluminum": dict(color=(0.8, 0.81, 0.82), roughness=0.3, metallic=1.0),
+    # Glossy white polycarbonate, like the earbuds and their case.
+    "gloss_white": dict(color=(0.97, 0.97, 0.965), roughness=0.2, metallic=0.0,
+                        clearcoat=0.6, clearcoat_roughness=0.12),
+    # The inside of the case: the same plastic with a softer finish.
+    "inner_white": dict(color=(0.9, 0.9, 0.895), roughness=0.45, metallic=0.0),
+    # Ear tips: a soft, faintly grey silicone.
+    "silicone": dict(color=(0.9, 0.9, 0.9), roughness=0.72, metallic=0.0),
+    # Black acoustic mesh: the top vent and the microphone at the stem tip.
+    "black_mesh": dict(color=(0.05, 0.05, 0.055), roughness=0.75, metallic=0.0),
+    # The cavities the buds sit in, and the inside of a tip.
+    "cavity": dict(color=(0.32, 0.32, 0.33), roughness=0.7, metallic=0.0),
+    # The hairline seam where the lid meets the case.
+    "seam": dict(color=(0.55, 0.55, 0.56), roughness=0.5, metallic=0.0),
+    # The case's status light.
+    "led": dict(color=(0.3, 0.92, 0.5), roughness=0.3, metallic=0.0,
+                emissive=(0.35, 1.0, 0.55)),
+    # Polished stainless steel: the headband frame, arms, and lanyard loop.
+    "steel": dict(color=(0.86, 0.86, 0.87), roughness=0.14, metallic=1.0),
+    # Silver anodized aluminum ear cups.
+    "aluminum": dict(color=(0.86, 0.87, 0.88), roughness=0.36, metallic=1.0),
+    # Light knit mesh: the cushions and the headband canopy.
+    "knit": dict(color=(0.84, 0.84, 0.84), roughness=0.95, metallic=0.0),
+    # The dark speaker fabric inside each cushion.
+    "speaker_fabric": dict(color=(0.22, 0.22, 0.23), roughness=0.95, metallic=0.0),
 }
 
 
@@ -278,33 +281,42 @@ def chain(*matrices):
 def earbud(side=1):
     """One earbud as {material: Mesh}. side is 1 for right, -1 for left.
 
-    The head is a soft bean. The silicone tip points inward along -X and a
-    short rounded stem drops below with a slight outward lean.
+    Proportioned after modern in-ear buds: a glossy, nearly round head, an
+    oval silicone tip angled inward along -X, a short flattened stem that
+    leans slightly outward, a black vent on top, and a black microphone mesh
+    at the tip of the stem.
     """
-    parts = {"satin_white": [], "silicone": [], "vent": []}
+    parts = {"gloss_white": [], "silicone": [], "black_mesh": [], "cavity": []}
 
-    head = superellipsoid(0.0105, 0.0098, 0.0112, 0.85, 0.9, rows=32, cols=56)
-    parts["satin_white"].append(head)
+    head = superellipsoid(0.0099, 0.0095, 0.0101, 0.92, 0.92, rows=36, cols=60)
+    parts["gloss_white"].append(head)
 
-    # Ear tip: a short neck flaring into a rounded silicone dome.
-    tip_profile = [(0.0, 0.0), (0.0034, 0.0), (0.0036, 0.0022), (0.0052, 0.0034),
-                   (0.0063, 0.0046), (0.0066, 0.0058), (0.0061, 0.007),
-                   (0.0046, 0.0079), (0.0024, 0.0084), (0.0, 0.0085)]
-    tip = lathe(tip_profile, 40).transformed(
-        chain(translate(-0.0085, 0.0012, 0.0), rotate("z", 90), rotate("x", 0)))
-    parts["silicone"].append(tip)
+    # Ear tip: a short neck flaring into an oval silicone dome, with the dark
+    # mouth of the sound tube at its end.
+    tip_profile = [(0.0, 0.0), (0.0036, 0.0), (0.0038, 0.0018), (0.0052, 0.0028),
+                   (0.0064, 0.0039), (0.0068, 0.0051), (0.0064, 0.0063),
+                   (0.005, 0.0072), (0.0031, 0.0077), (0.0, 0.0078)]
+    tip_place = chain(translate(-0.0083, 0.001, 0.0005), rotate("z", 90), rotate("y", 12),
+                      scale(1.0, 1.0, 0.84))
+    parts["silicone"].append(lathe(tip_profile, 48).transformed(tip_place))
+    mouth = superellipsoid(0.0021, 0.0004, 0.0018, 1.0, 1.0, rows=10, cols=24)
+    parts["cavity"].append(mouth.transformed(chain(tip_place, translate(0, 0.0077, 0))))
 
-    # Stem: a gently tapered rounded cylinder.
-    stem = lathe(rounded_profile(0.0037, 0.0031, 0.0185, 0.0018, 0.0028, 8), 36)
-    parts["satin_white"].append(stem.transformed(
-        chain(translate(0.0016, -0.0035, 0.0012), rotate("z", 168), rotate("x", -6))))
+    # Stem: a short rounded bar with an oval section, flattened front to
+    # back, ending in a black microphone mesh.
+    length = 0.0185
+    stem_local = lathe(rounded_profile(0.0034, 0.0029, length, 0.0016, 0.0024, 9), 40)
+    mic_local = superellipsoid(0.0023, 0.0007, 0.0023, 1.0, 1.0, rows=10, cols=24).transformed(
+        translate(0, length - 0.0002, 0))
+    stem_place = chain(translate(0.0018, -0.0038, 0.001), rotate("z", 166), rotate("x", -5),
+                       scale(1.0, 1.0, 0.8))
+    parts["gloss_white"].append(stem_local.transformed(stem_place))
+    parts["black_mesh"].append(mic_local.transformed(stem_place))
 
-    # A slim acoustic vent on the outer face, and a small sensor window.
-    vent = superellipsoid(0.00045, 0.0021, 0.0011, 0.6, 0.6, rows=12, cols=24)
-    parts["vent"].append(vent.transformed(
-        chain(translate(0.0097, 0.0028, 0.0028), rotate("y", -18))))
-    sensor = superellipsoid(0.0003, 0.0011, 0.0011, 1.0, 1.0, rows=10, cols=20)
-    parts["vent"].append(sensor.transformed(translate(-0.006, -0.0014, 0.0088)))
+    # The black vent across the top of the head, following its curve.
+    vent = superellipsoid(0.0031, 0.0005, 0.0017, 0.7, 0.7, rows=12, cols=28)
+    parts["black_mesh"].append(vent.transformed(
+        chain(translate(0.0036, 0.0088, 0.0009), rotate("z", -22), rotate("x", 6))))
 
     mirror = np.eye(4) if side > 0 else scale(-1, 1, 1)
     return {k: Mesh.merge(v).transformed(mirror) for k, v in parts.items() if v}
@@ -326,91 +338,116 @@ def earbuds_pair():
 
 
 def charging_case():
-    """A pebble case cut at a seam, lid hinged open at the back, buds inside."""
+    """A landscape case with squircle corners, its lid flipped back, and the
+    buds standing in their cavities."""
     model = {}
 
     def add(material, mesh):
         model.setdefault(material, []).append(mesh)
 
-    rx, ry, rz, e1, e2 = 0.026, 0.018, 0.0124, 0.6, 0.66
-    seam_y = 0.0045
+    # About 61 x 45 x 22 mm. e1 squares the front outline into a squircle;
+    # e2 keeps the ends well rounded seen from above.
+    rx, ry, rz, e1, e2 = 0.0303, 0.0226, 0.0109, 0.36, 0.72
+    seam_y = 0.0068
 
     def lat_at(y):
         return math.asin(min(1.0, (y / ry) ** (1.0 / e1))) / math.pi
 
     seam_lat = lat_at(seam_y)
-    base = superellipsoid(rx, ry, rz, e1, e2, rows=34, cols=72, lat_range=(-0.5, seam_lat))
-    add("satin_white", base)
+    base = superellipsoid(rx, ry, rz, e1, e2, rows=44, cols=96, lat_range=(-0.5, seam_lat))
+    add("gloss_white", base)
 
-    # The seam ring: the cross-section where the base was cut.
+    # The hairline seam where the base was cut.
     cu = signed_pow(math.cos(seam_lat * math.pi), e1)
-    ring = superellipse_ring(rx * cu, rz * cu, e2, 72)
-    seam_path = [(x, seam_y, z) for x, z in ring]
-    add("seam", sweep(seam_path, 0.0009, 0.0007, exponent=1.0, section=8, closed=True))
+    ring = superellipse_ring(rx * cu, rz * cu, e2, 96)
+    add("seam", sweep([(x, seam_y, z) for x, z in ring], 0.0006, 0.0005,
+                      exponent=1.0, section=8, closed=True))
 
-    # The deck closing the base, with two wells for the buds.
-    deck = disc(rx * cu * 0.985, rz * cu * 0.985, e2, 72).transformed(translate(0, seam_y, 0))
+    # The deck, with an angled cavity for each bud.
+    deck = disc(rx * cu * 0.99, rz * cu * 0.99, e2, 96).transformed(translate(0, seam_y, 0))
     add("inner_white", deck)
-    for x in (-0.0105, 0.0105):
-        well = disc(0.0068, 0.006, 1.0, 40).transformed(translate(x, seam_y + 0.00005, 0.0006))
-        add("grille", well)
+    for x in (-0.0118, 0.0118):
+        cavity = disc(0.0074, 0.0058, 0.9, 48).transformed(
+            translate(x, seam_y + 0.00005, 0.0004))
+        add("cavity", cavity)
 
-    # The lid, hinged along the back edge and opened.
-    lid = superellipsoid(rx, ry, rz, e1, e2, rows=22, cols=72, lat_range=(seam_lat, 0.5))
-    lid_inside = disc(rx * cu * 0.985, rz * cu * 0.985, e2, 72).transformed(
+    # The lid, hinged along the back edge and flipped open past upright.
+    lid = superellipsoid(rx, ry, rz, e1, e2, rows=26, cols=96, lat_range=(seam_lat, 0.5))
+    lid_inside = disc(rx * cu * 0.99, rz * cu * 0.99, e2, 96).transformed(
         chain(translate(0, seam_y, 0), scale(1, -1, 1)))
-    hinge = chain(translate(0, seam_y, -rz * cu), rotate("x", -78), translate(0, -seam_y, rz * cu))
-    add("satin_white", lid.transformed(hinge))
+    hinge = chain(translate(0, seam_y, -rz * cu), rotate("x", -104),
+                  translate(0, -seam_y, rz * cu))
+    add("gloss_white", lid.transformed(hinge))
     add("inner_white", lid_inside.transformed(hinge))
 
-    # The status LED on the front face.
-    led = superellipsoid(0.0011, 0.0011, 0.0005, 1.0, 1.0, rows=12, cols=20)
-    add("led", led.transformed(translate(0.0, -0.0028, rz * 0.995)))
+    # The status light, centered on the front just below the seam.
+    led = superellipsoid(0.0012, 0.0012, 0.0004, 1.0, 1.0, rows=12, cols=20)
+    add("led", led.transformed(translate(0.0, seam_y - 0.0052, rz * 0.985)))
 
-    # Two buds standing in their wells, stems sunk into the base.
-    for side, x, turn in ((-1, -0.0105, 25), (1, 0.0105, -25)):
+    # A small stainless lanyard loop on the right side.
+    loop_path = [(rx + 0.0011 + 0.0016 * math.cos(t), -0.006 + 0.0028 * math.sin(t), 0.0)
+                 for t in np.linspace(-math.pi / 2, math.pi / 2, 24)]
+    add("steel", sweep(loop_path, 0.0026, 0.0012, exponent=0.8, section=14))
+
+    # The buds: heads above the deck, tilted toward each other, stems down.
+    for side, x, turn, lean in ((-1, -0.0118, 32, -10), (1, 0.0118, -32, 10)):
         bud = earbud(side)
-        matrix = chain(translate(x, seam_y + 0.0016, 0.0004), rotate("y", turn), rotate("x", 8),
-                       scale(0.86, 0.86, 0.86))
+        matrix = chain(translate(x, seam_y + 0.0034, 0.0004), rotate("y", turn),
+                       rotate("z", lean), scale(0.9, 0.9, 0.9))
         for material, mesh in bud.items():
             add(material, mesh.transformed(matrix))
     return model
 
 
 def headphones():
+    """Over-ear headphones: rounded-rectangle aluminum cups, knit cushions, a
+    stainless headband frame with a mesh canopy, and telescoping arms."""
     model = {}
 
     def add(material, mesh):
         model.setdefault(material, []).append(mesh)
 
-    cup_x = 0.084
+    cup_x = 0.083
+    cup_top = 0.047
     for side in (-1, 1):
-        # The ear cup shell: an oval puck with softly squared edges.
-        shell = superellipsoid(0.019, 0.046, 0.035, 0.5, 0.75, rows=30, cols=64)
-        add("charcoal", shell.transformed(translate(side * cup_x, 0, 0)))
-        # The brushed-aluminum plate on the outside of the cup.
-        plate = disc(0.03, 0.021, 0.75, 64).transformed(
-            chain(translate(side * (cup_x + 0.0197), 0, 0), rotate("z", -90 * side)))
-        add("aluminum", plate)
-        # The plush oval cushion on the inside face.
-        path = [(0.0, 0.031 * math.sin(t), 0.023 * math.cos(t))
-                for t in np.linspace(0, 2 * math.pi, 64, endpoint=False)]
-        cushion = sweep(path, 0.017, 0.0145, exponent=0.7, section=24, closed=True)
-        add("fabric", cushion.transformed(translate(side * (cup_x - 0.022), 0, 0)))
-        # Yoke arm and pivot linking the cup to the headband.
-        arm_path = [(side * cup_x, 0.083, 0), (side * cup_x, 0.062, 0), (side * cup_x, 0.049, 0)]
-        add("aluminum", sweep(arm_path, 0.0075, 0.005, exponent=0.7, section=16))
-        pivot = lathe(rounded_profile(0.0048, 0.0048, 0.006, 0.0012, 0.0012, 5), 28)
-        add("aluminum", pivot.transformed(
-            chain(translate(side * cup_x, 0.0465, -0.003), rotate("x", 90))))
+        # The cup: a deep aluminum shell whose face is a rounded rectangle.
+        shell = superellipsoid(0.0185, 0.047, 0.039, 0.4, 0.62, rows=40, cols=72)
+        add("aluminum", shell.transformed(translate(side * cup_x, 0, 0)))
 
-    # The headband: a smooth arc from one yoke to the other.
-    arc = [(cup_x * math.cos(t), 0.083 + 0.088 * math.sin(t), 0.0)
-           for t in np.linspace(math.pi, 0, 72)]
-    add("charcoal", sweep(arc, 0.030, 0.0075, exponent=0.55, section=28))
-    pad = [(0.9 * cup_x * math.cos(t), 0.083 + 0.0805 * math.sin(t), 0.0)
-           for t in np.linspace(math.radians(152), math.radians(28), 48)]
-    add("fabric", sweep(pad, 0.023, 0.0072, exponent=0.6, section=24))
+        # The knit cushion on the inner face, also a rounded rectangle.
+        ring = superellipse_ring(0.034, 0.028, 0.45, 72)
+        path = [(0.0, y, z) for z, y in ring]
+        cushion = sweep(path, 0.018, 0.0165, exponent=0.62, section=26, closed=True)
+        add("knit", cushion.transformed(translate(side * (cup_x - 0.0225), 0, 0)))
+        fabric = disc(0.026, 0.02, 0.45, 72).transformed(
+            chain(translate(side * (cup_x - 0.0215), 0, 0), rotate("z", 90 * side)))
+        add("speaker_fabric", fabric)
+
+        # A telescoping stainless arm rising from the top of the cup, ending
+        # in a small hinge block.
+        arm = [(side * cup_x, cup_top - 0.002, 0), (side * cup_x, cup_top + 0.014, 0),
+               (side * cup_x, cup_top + 0.03, 0)]
+        add("steel", sweep(arm, 0.0042, 0.0042, exponent=1.0, section=18))
+        block = superellipsoid(0.0042, 0.0034, 0.0052, 0.5, 0.5, rows=12, cols=24)
+        add("steel", block.transformed(translate(side * cup_x, cup_top + 0.031, 0)))
+
+    # The crown and the button on top of the right cup.
+    crown_profile = [(0.0, 0.0)] + [(0.0042 + (0.00025 if k % 2 else 0.0), 0.0007 * k)
+                                    for k in range(8)] + [(0.0036, 0.0058), (0.0, 0.006)]
+    crown = lathe(crown_profile, 40)
+    add("aluminum", crown.transformed(translate(cup_x, cup_top - 0.0045, 0.019)))
+    button = superellipsoid(0.0026, 0.0018, 0.006, 0.6, 0.6, rows=10, cols=24)
+    add("aluminum", button.transformed(translate(cup_x, cup_top - 0.0006, -0.017)))
+
+    # The headband: a slim stainless frame, and the knit canopy slung below
+    # it from end to end.
+    top = cup_top + 0.031
+    frame = [(cup_x * math.cos(t), top + 0.092 * math.sin(t), 0.0)
+             for t in np.linspace(math.pi, 0, 80)]
+    add("steel", sweep(frame, 0.009, 0.0042, exponent=0.6, section=22))
+    canopy = [(0.93 * cup_x * math.cos(t), top + 0.0805 * math.sin(t), 0.0)
+              for t in np.linspace(math.radians(160), math.radians(20), 64)]
+    add("knit", sweep(canopy, 0.04, 0.0034, exponent=0.45, section=28))
     return model
 
 

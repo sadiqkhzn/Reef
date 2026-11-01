@@ -6,14 +6,15 @@ onboarding tiles, with SF Symbols as the fallback. The models live in
 
 | File | What it is |
 |---|---|
-| `earbuds.usdz` | A pair of in-ear wireless earbuds with short rounded stems and silicone tips |
-| `earbuds-case.usdz` | The earbuds standing in a pebble-shaped charging case, lid open, with a status LED |
-| `headphones.usdz` | Over-ear headphones in matte charcoal with brushed-aluminum accents |
+| `earbuds.usdz` | A pair of glossy white in-ear buds: round heads, oval silicone tips, short flattened stems, a black vent on top and a black microphone mesh at each stem tip |
+| `earbuds-case.usdz` | The buds standing in a landscape charging case with squircle corners, the lid flipped open, a front status light, and a stainless lanyard loop |
+| `headphones.usdz` | Over-ear headphones: silver aluminum cups with rounded-rectangle faces, knit cushions over dark speaker fabric, a stainless headband frame with a mesh canopy, telescoping arms, and a crown and button on the right cup |
 
-Every surface is computed in the script from parametric shapes, so the models
-are original, carry no logos or brand marks, and are covered by the project's
-MIT license like the rest of the code. There is no third-party asset license to
-track.
+They follow the look of today's premium earbuds and headphones closely so a
+connected device is recognizable at a glance, but they carry no logos, brand
+marks, or product names. Every surface is computed in the script from
+parametric shapes, so the models are covered by the project's MIT license like
+the rest of the code, with no third-party asset license to track.
 
 ## Regenerating
 
@@ -33,5 +34,5 @@ indices, and material parameters as plain JSON).
 - Materials are `UsdPreviewSurface`, which SceneKit renders with its
   physically based lighting. Colors are authored in sRGB in the script and
   written as linear values.
-- Keep each model under about 25,000 triangles so the app stays light. The
-  current models are 12k to 22k triangles and about 700 KB together.
+- Keep each model under about 35,000 triangles so the app stays light. The
+  current models are 16k to 32k triangles and about 950 KB together.
