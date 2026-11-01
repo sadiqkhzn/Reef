@@ -12,14 +12,25 @@ struct WeatherPageView: View {
     var onClose: () -> Void
 
     var body: some View {
-        VStack(spacing: 0) {
-            header
-                .frame(height: headerHeight)
-
+        ZStack {
             if let snapshot {
-                content(snapshot)
-            } else {
-                empty
+                // A soft wash of the current sky, so the page reads as weather at
+                // a glance rather than a plain list.
+                LinearGradient(
+                    colors: snapshot.condition.skyColors.map { $0.opacity(0.42) },
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing)
+                    .ignoresSafeArea()
+            }
+            VStack(spacing: 0) {
+                header
+                    .frame(height: headerHeight)
+
+                if let snapshot {
+                    content(snapshot)
+                } else {
+                    empty
+                }
             }
         }
     }
@@ -43,7 +54,7 @@ struct WeatherPageView: View {
     }
 
     private func content(_ snapshot: WeatherSnapshot) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: ReefTheme.Spacing.s) {
             current(snapshot)
             if let hours = forecast?.upcomingHours(), !hours.isEmpty {
                 hourStrip(hours)
@@ -53,19 +64,23 @@ struct WeatherPageView: View {
             }
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, ReefTheme.Spacing.l)
+        .padding(.horizontal, ReefTheme.Radius.islandInset)
         .padding(.vertical, 6)
     }
 
     private func current(_ snapshot: WeatherSnapshot) -> some View {
-        HStack(spacing: 10) {
+        HStack(spacing: ReefTheme.Spacing.m) {
             Image(systemName: snapshot.condition.symbol)
-                .font(.system(size: 26))
-                .foregroundStyle(accent)
-                .frame(width: 34)
+                .font(.system(size: 28))
+                .symbolRenderingMode(.multicolor)
+                .frame(width: 44, height: 44)
+                .background(
+                    Circle()
+                        .fill(snapshot.condition.tint.opacity(0.28))
+                        .blur(radius: 2))
             VStack(alignment: .leading, spacing: 1) {
                 Text(snapshot.temperatureText)
-                    .font(.system(size: 24, weight: .semibold))
+                    .font(.system(size: 26, weight: .semibold, design: .rounded))
                     .foregroundStyle(ReefTheme.Ink.primary)
                 Text(snapshot.condition.label)
                     .font(ReefTheme.Typography.caption)
@@ -73,49 +88,60 @@ struct WeatherPageView: View {
             }
             Spacer(minLength: 0)
             if let high = snapshot.highText, let low = snapshot.lowText {
-                VStack(alignment: .trailing, spacing: 1) {
-                    Text("H \(high)")
+                VStack(alignment: .trailing, spacing: 2) {
+                    Label(high, systemImage: "arrow.up")
                         .foregroundStyle(ReefTheme.Ink.primary)
-                    Text("L \(low)")
+                    Label(low, systemImage: "arrow.down")
                         .foregroundStyle(ReefTheme.Ink.secondary)
                 }
+                .labelStyle(.titleAndIcon)
                 .font(ReefTheme.Typography.caption)
+                .monospacedDigit()
             }
         }
+        .islandCard(padding: ReefTheme.Spacing.m)
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     private func hourStrip(_ hours: [HourForecast]) -> some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 12) {
+            HStack(spacing: 6) {
                 ForEach(hours) { hour in
                     VStack(spacing: 3) {
                         Text(Self.hourLabel(hour.date))
-                            .font(.system(size: 9))
+                            .font(.system(size: 9, weight: .medium))
                             .foregroundStyle(ReefTheme.Ink.secondary)
                         Image(systemName: hour.condition.symbol)
-                            .font(.system(size: 13))
-                            .foregroundStyle(accent)
+                            .font(.system(size: 14))
+                            .symbolRenderingMode(.multicolor)
+                            .frame(height: 16)
                         Text(hour.temperatureText)
-                            .font(.system(size: 11, weight: .medium))
+                            .font(.system(size: 11, weight: .semibold, design: .rounded))
                             .foregroundStyle(ReefTheme.Ink.primary)
                     }
+                    .padding(.vertical, 6)
+                    .frame(width: 40)
+                    .background(
+                        RoundedRectangle(cornerRadius: ReefTheme.Radius.control, style: .continuous)
+                            .fill(ReefTheme.Ink.fill))
                 }
             }
-            .padding(.vertical, 2)
+            .padding(.horizontal, 1)
+            .padding(.vertical, 1)
         }
     }
 
     private func dayList(_ days: [DayForecast]) -> some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 3) {
             ForEach(days) { day in
-                HStack(spacing: 8) {
+                HStack(spacing: ReefTheme.Spacing.s) {
                     Text(Self.dayLabel(day.date))
-                        .font(.system(size: 11))
+                        .font(.system(size: 11, weight: .medium, design: .rounded))
                         .foregroundStyle(ReefTheme.Ink.primary)
                         .frame(width: 34, alignment: .leading)
                     Image(systemName: day.condition.symbol)
                         .font(.system(size: 12))
-                        .foregroundStyle(accent)
+                        .symbolRenderingMode(.multicolor)
                         .frame(width: 20)
                     Spacer(minLength: 0)
                     Text(day.lowText)
@@ -123,8 +149,13 @@ struct WeatherPageView: View {
                     Text(day.highText)
                         .foregroundStyle(ReefTheme.Ink.primary)
                 }
-                .font(.system(size: 11))
+                .font(.system(size: 11, design: .rounded))
                 .monospacedDigit()
+                .padding(.horizontal, ReefTheme.Spacing.s)
+                .padding(.vertical, 5)
+                .background(
+                    RoundedRectangle(cornerRadius: ReefTheme.Radius.control, style: .continuous)
+                        .fill(ReefTheme.Ink.fill))
             }
         }
     }

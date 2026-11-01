@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 /// Temperature unit the forecast is requested and shown in.
 enum TemperatureUnit: String, CaseIterable, Identifiable {
@@ -76,6 +77,32 @@ enum WeatherCondition: Equatable {
         case .thunderstorm: return "cloud.bolt.rain.fill"
         }
     }
+}
+
+extension WeatherCondition {
+    /// A two-color wash for the condition, used behind the weather page so the
+    /// sky it describes carries its own color rather than reading as plain white.
+    var skyColors: [Color] {
+        switch self {
+        case .clear:
+            return [Color(red: 0.16, green: 0.45, blue: 0.9), Color(red: 0.35, green: 0.68, blue: 1.0)]
+        case .partlyCloudy:
+            return [Color(red: 0.26, green: 0.44, blue: 0.7), Color(red: 0.48, green: 0.62, blue: 0.82)]
+        case .cloudy:
+            return [Color(red: 0.34, green: 0.4, blue: 0.5), Color(red: 0.5, green: 0.56, blue: 0.64)]
+        case .fog:
+            return [Color(red: 0.42, green: 0.45, blue: 0.5), Color(red: 0.58, green: 0.6, blue: 0.64)]
+        case .drizzle, .rain, .showers:
+            return [Color(red: 0.2, green: 0.4, blue: 0.56), Color(red: 0.33, green: 0.55, blue: 0.68)]
+        case .snow:
+            return [Color(red: 0.4, green: 0.55, blue: 0.78), Color(red: 0.62, green: 0.74, blue: 0.9)]
+        case .thunderstorm:
+            return [Color(red: 0.33, green: 0.27, blue: 0.55), Color(red: 0.5, green: 0.42, blue: 0.72)]
+        }
+    }
+
+    /// The leading color of the wash, for small accents.
+    var tint: Color { skyColors.last ?? .blue }
 }
 
 /// A snapshot of the current weather for the place the Mac is in.
