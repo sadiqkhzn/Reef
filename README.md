@@ -4,7 +4,7 @@
 
 ![platform](https://img.shields.io/badge/platform-macOS%2014%2B-blue)
 ![license](https://img.shields.io/badge/license-MIT-green)
-![tests](https://img.shields.io/badge/tests-160%20passing-brightgreen)
+![tests](https://img.shields.io/badge/tests-153%20passing-brightgreen)
 
 Reef sits quietly along the top edge of the screen. On a MacBook with a notch
 it wraps around the notch; on any other Mac it shows a small rounded pill just
