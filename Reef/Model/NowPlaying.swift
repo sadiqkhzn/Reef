@@ -65,6 +65,12 @@ struct NowPlaying: Equatable {
             && lhs.repeatMode == rhs.repeatMode
     }
 
+    /// The title to show, optionally with source noise (video/lyrics tags)
+    /// trimmed off.
+    func displayTitle(cleaned: Bool) -> String {
+        cleaned ? TitleCleaner.clean(title) : title
+    }
+
     /// The position to show right now, advancing `elapsed` by the time passed
     /// since it was sampled when playing. Clamped to the track length.
     func position(at now: TimeInterval) -> TimeInterval? {

@@ -42,7 +42,8 @@ struct LockScreenView: View {
                     }
                     Spacer()
                     if isLocked, settings.ambientShowsNowPlaying, let track = media.current {
-                        NowPlayingHeroCard(track: track, style: settings.lockCardStyle)
+                        NowPlayingHeroCard(track: track, style: settings.lockCardStyle,
+                            cleanTitle: settings.hideMediaTitleExtras)
                             .frame(width: 460)
                             .transition(.opacity.combined(with: .move(edge: .bottom)))
                     }
@@ -237,6 +238,7 @@ private struct LockIslandPill: View {
 private struct NowPlayingHeroCard: View {
     let track: NowPlaying
     var style: LockCardStyle = .glass
+    var cleanTitle: Bool = false
 
     @EnvironmentObject private var media: NowPlayingController
 
@@ -252,7 +254,7 @@ private struct NowPlayingHeroCard: View {
                 VStack(alignment: .leading, spacing: 3) {
                     header
                     MarqueeText(
-                        text: track.title,
+                        text: track.displayTitle(cleaned: cleanTitle),
                         color: .white,
                         font: .system(size: 16, weight: .semibold),
                         alignment: .leading)

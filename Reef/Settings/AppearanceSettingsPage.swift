@@ -87,6 +87,7 @@ struct AppearanceSettingsPage: View {
 
                 Toggle("Hide while its app is frontmost", isOn: $settings.hidesMediaWhenSourceFrontmost)
                 Toggle("Live waveform", isOn: $settings.useLiveWaveform)
+                Toggle("Clean up track titles", isOn: $settings.hideMediaTitleExtras)
             } header: {
                 Text("Now Playing")
             } footer: {
