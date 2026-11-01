@@ -62,6 +62,9 @@ struct OverlayRootView: View {
         return EventSchedule.next(calendar.events, now: Date())
     }
 
+    /// True briefly to play a celebratory confetti burst.
+    @State private var celebrating = false
+
     /// The weather to show on the resting island when idle and there's no event.
     private var restingWeather: WeatherSnapshot? {
         guard settings.showsWeatherAtRest, shownTrack == nil, restingEvent == nil else { return nil }
@@ -511,6 +514,18 @@ struct OverlayRootView: View {
         .onReceive(calendar.$events) { _ in updateNowPlayingActive() }
         .onReceive(weather.$snapshot) { _ in updateNowPlayingActive() }
         .onChange(of: settings.showsWeatherAtRest) { _, _ in updateNowPlayingActive() }
+        .onChange(of: state.liveActivity) { _, new in
+            guard settings.particleEffects, case .fullyCharged = new else { return }
+            celebrating = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3) { celebrating = false }
+        }
+        .overlay {
+            if celebrating {
+                CelebrationView()
+                    .frame(width: 320, height: 220)
+                    .allowsHitTesting(false)
+            }
+        }
         .onChange(of: settings.showsEventAtRest) { _, _ in updateNowPlayingActive() }
         .onChange(of: settings.useLiveWaveform) { _, _ in updateAudioMonitor() }
         .onChange(of: isOpen) { _, open in
