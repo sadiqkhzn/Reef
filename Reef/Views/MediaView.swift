@@ -1,29 +1,29 @@
 import AppKit
 import SwiftUI
 
-/// The open media panel: artwork, track details, the source app, a scrubbable
-/// progress bar, and the full control row. Artwork comes straight from the
-/// player when available; otherwise a tinted tile with a glyph stands in.
+/// The open media hero: large artwork with an album-color glow and a source-app
+/// badge, the track details, a scrubbable progress bar, and a circular transport
+/// row with a dominant play control. Artwork comes straight from the player when
+/// available; otherwise a tinted tile with a glyph stands in.
 struct MediaView: View {
     let nowPlaying: NowPlaying
     @ObservedObject var media: NowPlayingController
     /// Trim video/lyrics noise from the title.
     var cleanTitle: Bool = false
+    /// Accent used for the dominant play control.
+    var accent: Color = .white
     /// How the panel is colored behind the track details.
     var colorStyle: PlayerTint = .bloom
 
     /// Vivid color drawn from the cover, falling back to white.
     private var tint: Color { nowPlaying.tint ?? .white }
 
-    /// Bring the playing app to the front.
     private func showInApp() {
         guard let id = nowPlaying.bundleIdentifier else { return }
         NSRunningApplication.runningApplications(withBundleIdentifier: id).first?
             .activate(options: [.activateAllWindows])
     }
 
-    /// Put the track on the clipboard as "Title - Artist", or just the title
-    /// when there is no artist.
     private func copyTrack() {
         let artist = nowPlaying.artist.trimmingCharacters(in: .whitespaces)
         let title = nowPlaying.displayTitle(cleaned: cleanTitle)
@@ -40,47 +40,34 @@ struct MediaView: View {
                 .transition(.artworkFlip)
                 .animation(.easeInOut(duration: 0.4), value: nowPlaying.artworkToken)
 
-            VStack(alignment: .leading, spacing: 4) {
-                if let appName = nowPlaying.appName {
-                    Button(action: showInApp) {
-                        HStack(spacing: 3) {
-                            Text(appName.uppercased())
-                            if nowPlaying.bundleIdentifier != nil {
-                                Image(systemName: "arrow.up.forward")
-                            }
-                        }
-                        .font(.system(size: 9, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.45))
-                        .lineLimit(1)
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(nowPlaying.bundleIdentifier == nil)
-                }
-
+            VStack(alignment: .leading, spacing: 5) {
                 MarqueeText(
                     text: nowPlaying.displayTitle(cleaned: cleanTitle),
                     color: .white,
-                    font: .system(size: 14, weight: .semibold),
+                    font: .system(size: 15, weight: .semibold, design: .rounded),
                     alignment: .leading)
-                    .frame(height: 18)
+                    .frame(height: 19)
 
                 Text(nowPlaying.artist)
-                    .font(.system(size: 11))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.7))
                     .lineLimit(1)
 
+                Spacer(minLength: 6)
+
                 ScrubBar(track: nowPlaying, tint: tint) { media.seek(to: $0) }
-                    .padding(.top, 2)
 
                 controls
-                    .padding(.top, 4)
+                    .padding(.top, 6)
             }
+            .frame(height: 96)
 
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        // Center vertically so the hero clears the top notch band and reads as a
+        // balanced card.
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(playerWash)
         .contextMenu {
             Button("Copy", systemImage: "doc.on.doc", action: copyTrack)
@@ -90,7 +77,79 @@ struct MediaView: View {
         }
     }
 
-    /// The color laid behind the panel, following the chosen player style.
+    // MARK: - Artwork + glow + source badge
+
+    @ViewBuilder
+    private var artwork: some View {
+        cover
+            .frame(width: 96, height: 96)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .background(glow)
+            .overlay(alignment: .bottomTrailing) { sourceBadge }
+    }
+
+    @ViewBuilder
+    private var cover: some View {
+        if let image = nowPlaying.artwork {
+            Image(nsImage: image).resizable().aspectRatio(contentMode: .fill)
+        } else {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [.white.opacity(0.18), .white.opacity(0.06)],
+                        startPoint: .topLeading, endPoint: .bottomTrailing))
+                .overlay(
+                    Image(systemName: "music.note")
+                        .font(.system(size: 30, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.8)))
+        }
+    }
+
+    /// Soft mood lighting pulled from the cover, behind the artwork.
+    @ViewBuilder
+    private var glow: some View {
+        if let image = nowPlaying.artwork {
+            Image(nsImage: image)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: 96, height: 96)
+                .blur(radius: 26)
+                .scaleEffect(1.3)
+                .opacity(nowPlaying.isPlaying ? 0.55 : 0.32)
+                .allowsHitTesting(false)
+        } else {
+            tint.opacity(0.4).blur(radius: 26).allowsHitTesting(false)
+        }
+    }
+
+    /// The playing app's icon, tucked into the artwork's corner.
+    @ViewBuilder
+    private var sourceBadge: some View {
+        if let icon = Self.appIcon(nowPlaying.bundleIdentifier) {
+            Button(action: showInApp) {
+                Image(nsImage: icon)
+                    .resizable()
+                    .frame(width: 20, height: 20)
+                    .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 5, style: .continuous)
+                            .strokeBorder(.white.opacity(0.35), lineWidth: 0.5))
+                    .shadow(color: .black.opacity(0.35), radius: 2, y: 1)
+            }
+            .buttonStyle(.plain)
+            .padding(5)
+        }
+    }
+
+    private static func appIcon(_ bundleID: String?) -> NSImage? {
+        guard let bundleID,
+            let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID)
+        else { return nil }
+        return NSWorkspace.shared.icon(forFile: url.path)
+    }
+
+    // MARK: - Wash
+
     @ViewBuilder
     private var playerWash: some View {
         switch colorStyle {
@@ -99,64 +158,38 @@ struct MediaView: View {
                 Image(nsImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
-                    .blur(radius: 36)
-                    .opacity(0.5)
-                    .overlay(Color.black.opacity(0.28))
+                    .blur(radius: 40)
+                    .opacity(0.45)
+                    .overlay(Color.black.opacity(0.3))
                     .allowsHitTesting(false)
             } else {
-                solidWash
+                tint.opacity(0.22).allowsHitTesting(false)
             }
         case .solid:
-            solidWash
+            tint.opacity(0.22).allowsHitTesting(false)
         case .gradient:
             LinearGradient(
-                colors: [tint.opacity(0.42), tint.opacity(0.04)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing)
+                colors: [tint.opacity(0.4), tint.opacity(0.04)],
+                startPoint: .topLeading, endPoint: .bottomTrailing)
                 .allowsHitTesting(false)
         case .minimal:
             Color.clear
         }
     }
 
-    private var solidWash: some View {
-        tint.opacity(0.24).allowsHitTesting(false)
-    }
-
-    @ViewBuilder
-    private var artwork: some View {
-        if let image = nowPlaying.artwork {
-            Image(nsImage: image)
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .frame(width: 72, height: 72)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        } else {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [Color.white.opacity(0.18), Color.white.opacity(0.06)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing))
-                .frame(width: 72, height: 72)
-                .overlay(
-                    Image(systemName: "music.note")
-                        .font(.system(size: 26, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.8)))
-        }
-    }
+    // MARK: - Transport
 
     private var controls: some View {
         HStack(spacing: 0) {
-            toggle("shuffle", on: nowPlaying.shuffleOn) { media.toggleShuffle() }
+            transportToggle("shuffle", on: nowPlaying.shuffleOn) { media.toggleShuffle() }
             Spacer(minLength: 0)
-            button("backward.fill", size: 14) { media.previous() }
+            transportButton("backward.fill", size: 15, diameter: 30) { media.previous() }
             Spacer(minLength: 0)
-            button(nowPlaying.isPlaying ? "pause.fill" : "play.fill", size: 19) { media.playPause() }
+            playButton
             Spacer(minLength: 0)
-            button("forward.fill", size: 14) { media.next() }
+            transportButton("forward.fill", size: 15, diameter: 30) { media.next() }
             Spacer(minLength: 0)
-            toggle(repeatSymbol, on: nowPlaying.repeatMode != .off) { media.cycleRepeat() }
+            transportToggle(repeatSymbol, on: nowPlaying.repeatMode != .off) { media.cycleRepeat() }
         }
     }
 
@@ -164,45 +197,79 @@ struct MediaView: View {
         nowPlaying.repeatMode == .one ? "repeat.1" : "repeat"
     }
 
-    private func button(_ symbol: String, size: CGFloat, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: symbol)
-                .font(.system(size: size, weight: .medium))
-                .foregroundStyle(.white)
-                .contentTransition(.symbolEffect(.replace))
-                .frame(width: 26, height: 22)
-                .contentShape(Rectangle())
+    private var playButton: some View {
+        Button(action: { media.playPause() }) {
+            ZStack {
+                Circle().fill(accent.opacity(0.9)).frame(width: 38, height: 38)
+                Image(systemName: nowPlaying.isPlaying ? "pause.fill" : "play.fill")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(.white)
+                    .contentTransition(.symbolEffect(.replace))
+            }
+            .contentShape(Circle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(HoverScaleStyle())
     }
 
-    /// A smaller control that lights up in the cover tint when its mode is on.
-    private func toggle(_ symbol: String, on: Bool, action: @escaping () -> Void) -> some View {
+    private func transportButton(
+        _ symbol: String, size: CGFloat, diameter: CGFloat, action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: size, weight: .semibold))
+                .foregroundStyle(.white)
+                .contentTransition(.symbolEffect(.replace))
+                .frame(width: diameter, height: diameter)
+                .contentShape(Circle())
+        }
+        .buttonStyle(HoverScaleStyle())
+    }
+
+    private func transportToggle(
+        _ symbol: String, on: Bool, action: @escaping () -> Void
+    ) -> some View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(on ? tint : .white.opacity(0.4))
+                .foregroundStyle(on ? tint : .white.opacity(0.45))
                 .contentTransition(.symbolEffect(.replace))
-                .frame(width: 24, height: 22)
-                .contentShape(Rectangle())
+                .frame(width: 26, height: 26)
+                .contentShape(Circle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(HoverScaleStyle())
     }
 }
 
-/// A thin progress bar that advances on its own and can be dragged to seek.
-///
-/// The reported position is sampled with a timestamp, so the fill is computed
-/// live from the clock rather than waiting for the player to send every tick.
-/// Dragging shows the pending position until the finger lifts, then seeks.
+/// A button style that lifts slightly on hover and dips on press — the circular
+/// transport feel without a filled background.
+private struct HoverScaleStyle: ButtonStyle {
+    @State private var hovering = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background(
+                Circle()
+                    .fill(.white.opacity(hovering ? 0.12 : 0))
+                    .scaleEffect(0.92))
+            .scaleEffect(configuration.isPressed ? 0.9 : (hovering ? 1.08 : 1))
+            .animation(.spring(response: 0.25, dampingFraction: 0.7), value: hovering)
+            .animation(.spring(response: 0.2, dampingFraction: 0.6), value: configuration.isPressed)
+            .onHover { hovering = $0 }
+    }
+}
+
+/// A progress bar that advances on its own and can be dragged to seek. It swells
+/// from 4pt to 8pt while hovered or dragged, and shows elapsed / −remaining.
 private struct ScrubBar: View {
     let track: NowPlaying
     var tint: Color
     var onSeek: (TimeInterval) -> Void
 
     @State private var dragFraction: Double?
+    @State private var hovering = false
 
     private var duration: TimeInterval { track.duration ?? 0 }
+    private var active: Bool { hovering || dragFraction != nil }
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 0.5)) { timeline in
@@ -210,17 +277,16 @@ private struct ScrubBar: View {
             let fraction = dragFraction ?? (duration > 0 ? live / duration : 0)
             let shown = dragFraction.map { $0 * duration } ?? live
 
-            VStack(spacing: 3) {
+            VStack(spacing: 4) {
                 rail(fraction: fraction)
                 HStack {
                     Text(Self.clock(shown))
                     Spacer()
-                    Text(Self.clock(duration))
+                    Text("-" + Self.clock(max(0, duration - shown)))
                 }
-                .font(.system(size: 9, weight: .medium).monospacedDigit())
-                .foregroundStyle(.white.opacity(0.45))
+                .font(.system(size: 10, weight: .medium).monospacedDigit())
+                .foregroundStyle(.white.opacity(0.5))
             }
-            // Redraw ties to the timeline tick so the parent is left alone.
             .id(timeline.date.timeIntervalSinceReferenceDate)
         }
     }
@@ -230,13 +296,17 @@ private struct ScrubBar: View {
             let width = geo.size.width
             let clamped = min(max(0, fraction), 1)
             ZStack(alignment: .leading) {
-                Capsule()
-                    .fill(.white.opacity(0.18))
-                Capsule()
-                    .fill(tint.opacity(0.9))
-                    .frame(width: width * clamped)
+                Capsule().fill(.white.opacity(0.18))
+                Capsule().fill(tint.opacity(0.95)).frame(width: width * clamped)
+                if active {
+                    Circle()
+                        .fill(.white)
+                        .frame(width: 10, height: 10)
+                        .shadow(color: .black.opacity(0.3), radius: 2)
+                        .offset(x: width * clamped - 5)
+                }
             }
-            .contentShape(Rectangle())
+            .contentShape(Rectangle().inset(by: -6))
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in
@@ -250,10 +320,11 @@ private struct ScrubBar: View {
                         onSeek(f * duration)
                     })
         }
-        .frame(height: 4)
+        .frame(height: active ? 8 : 4)
+        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: active)
+        .onHover { hovering = $0 }
     }
 
-    /// Seconds as m:ss, or -:-- when the length is unknown.
     private static func clock(_ seconds: TimeInterval) -> String {
         guard seconds.isFinite, seconds > 0 else { return "0:00" }
         let total = Int(seconds.rounded())
