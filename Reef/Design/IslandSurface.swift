@@ -22,6 +22,9 @@ struct IslandSurface: View {
     /// Draws a clear, solid edge for legibility, as the system Increase Contrast
     /// setting does, but on request.
     var contrastOutline: Bool = false
+    /// Adds a soft, graduated backdrop blur that intensifies toward the bottom
+    /// edge, so the island melts into what's behind it.
+    var progressiveBlur: Bool = false
 
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
@@ -33,10 +36,20 @@ struct IslandSurface: View {
     }
 
     var body: some View {
-        fill
-            .overlay(alignment: .top) { band }
-            .clipShape(shape)
-            .overlay(rim)
+        ZStack {
+            fill
+            if progressiveBlur && resolved != .midnight {
+                VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
+                    .mask(
+                        LinearGradient(
+                            colors: [.clear, .black.opacity(0.9)],
+                            startPoint: .top, endPoint: .bottom))
+                    .allowsHitTesting(false)
+            }
+        }
+        .overlay(alignment: .top) { band }
+        .clipShape(shape)
+        .overlay(rim)
     }
 
     // MARK: - Fill

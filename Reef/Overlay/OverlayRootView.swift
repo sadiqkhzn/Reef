@@ -257,7 +257,8 @@ struct OverlayRootView: View {
                 material: settings.material,
                 notchBand: notchBand,
                 isHighlighted: state.isHovering,
-                contrastOutline: settings.contrastOutline)
+                contrastOutline: settings.contrastOutline,
+                progressiveBlur: settings.progressiveBlur)
                 .frame(
                     width: state.visibleSize.width + style.shoulder * 2,
                     height: state.visibleSize.height)
