@@ -20,10 +20,17 @@ struct BatteryDetailView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            header
-                .frame(height: headerHeight)
-            content
+        ZStack {
+            LinearGradient(
+                colors: [tint.opacity(0.32), tint.opacity(0.08)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing)
+                .ignoresSafeArea()
+            VStack(spacing: 0) {
+                header
+                    .frame(height: headerHeight)
+                content
+            }
         }
     }
 
@@ -50,7 +57,7 @@ struct BatteryDetailView: View {
             ring
             VStack(alignment: .leading, spacing: 4) {
                 Text(snapshot.status.title)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(ReefTheme.Typography.title)
                     .foregroundStyle(ReefTheme.Ink.primary)
                 if let estimate = snapshot.timeEstimateText {
                     Label(
@@ -69,33 +76,27 @@ struct BatteryDetailView: View {
             }
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, ReefTheme.Spacing.l)
-        .padding(.vertical, 8)
-        .frame(maxHeight: .infinity)
+        .islandCard(padding: ReefTheme.Spacing.l)
+        .padding(.horizontal, ReefTheme.Radius.islandInset)
+        .padding(.bottom, ReefTheme.Radius.islandInset)
     }
 
     private var ring: some View {
-        ZStack {
-            Circle()
-                .stroke(tint.opacity(0.22), lineWidth: 6)
-            Circle()
-                .trim(from: 0, to: CGFloat(snapshot.percent) / 100)
-                .stroke(tint, style: StrokeStyle(lineWidth: 6, lineCap: .round))
-                .rotationEffect(.degrees(-90))
-                .animation(.easeOut(duration: 0.3), value: snapshot.percent)
-            VStack(spacing: 0) {
-                if snapshot.isCharging {
-                    Image(systemName: "bolt.fill")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(tint)
+        RingGauge(progress: Double(snapshot.percent) / 100, tint: tint, lineWidth: 6)
+            .frame(width: 64, height: 64)
+            .overlay {
+                VStack(spacing: 0) {
+                    if snapshot.isCharging {
+                        Image(systemName: "bolt.fill")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(tint)
+                    }
+                    Text("\(snapshot.percent)")
+                        .font(.system(size: 20, weight: .semibold, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundStyle(ReefTheme.Ink.primary)
                 }
-                Text("\(snapshot.percent)")
-                    .font(.system(size: 20, weight: .semibold))
-                    .monospacedDigit()
-                    .foregroundStyle(ReefTheme.Ink.primary)
             }
-        }
-        .frame(width: 64, height: 64)
     }
 
     private var powerSourceText: String {

@@ -17,20 +17,33 @@ struct TimerPageView: View {
     private enum Mode { case timer, stopwatch }
     @State private var mode: Mode = .timer
 
+    /// Color of the page's background wash: warning while a finished timer rings,
+    /// the accent otherwise.
+    private var washTint: Color {
+        mode == .timer && timer.isFinished ? ReefTheme.Status.warning : accent
+    }
+
     /// Preset lengths in minutes.
     private let presets: [Int] = [1, 3, 5, 10, 15, 25]
 
     var body: some View {
-        VStack(spacing: 0) {
-            header
-                .frame(height: headerHeight)
+        ZStack {
+            LinearGradient(
+                colors: [washTint.opacity(0.3), washTint.opacity(0.06)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing)
+                .ignoresSafeArea()
+            VStack(spacing: 0) {
+                header
+                    .frame(height: headerHeight)
 
-            if mode == .stopwatch {
-                stopwatchView
-            } else if timer.isActive {
-                running
-            } else {
-                presetGrid
+                if mode == .stopwatch {
+                    stopwatchView
+                } else if timer.isActive {
+                    running
+                } else {
+                    presetGrid
+                }
             }
         }
         .onAppear {
@@ -102,16 +115,19 @@ struct TimerPageView: View {
                             .foregroundStyle(ReefTheme.Ink.secondary)
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
+                    .padding(.vertical, 9)
                     .background(
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(accent.opacity(0.14)))
-                    .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        RoundedRectangle(cornerRadius: ReefTheme.Radius.control, style: .continuous)
+                            .fill(accent.opacity(0.16)))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: ReefTheme.Radius.control, style: .continuous)
+                            .strokeBorder(accent.opacity(0.22), lineWidth: 0.5))
+                    .contentShape(RoundedRectangle(cornerRadius: ReefTheme.Radius.control, style: .continuous))
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(.horizontal, ReefTheme.Spacing.l)
+        .padding(.horizontal, ReefTheme.Radius.islandInset)
         .padding(.vertical, 8)
     }
 
@@ -122,9 +138,9 @@ struct TimerPageView: View {
     private var running: some View {
         HStack(spacing: ReefTheme.Spacing.l) {
             ring
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: ReefTheme.Spacing.s) {
                 Text(timer.isFinished ? "Time's up" : TimerController.label(timer.remaining))
-                    .font(.system(size: 22, weight: .semibold))
+                    .font(.system(size: 24, weight: .semibold, design: .rounded))
                     .monospacedDigit()
                     .foregroundStyle(ReefTheme.Ink.primary)
                     .contentTransition(.numericText())
@@ -132,26 +148,23 @@ struct TimerPageView: View {
             }
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, ReefTheme.Spacing.l)
-        .padding(.vertical, 8)
-        .frame(maxHeight: .infinity)
+        .islandCard(padding: ReefTheme.Spacing.l)
+        .padding(.horizontal, ReefTheme.Radius.islandInset)
+        .padding(.bottom, ReefTheme.Radius.islandInset)
     }
 
     private var ring: some View {
-        ZStack {
-            Circle()
-                .stroke(ringTint.opacity(0.22), lineWidth: 5)
-            Circle()
-                .trim(from: 0, to: timer.isFinished ? 1 : 1 - timer.progress)
-                .stroke(ringTint, style: StrokeStyle(lineWidth: 5, lineCap: .round))
-                .rotationEffect(.degrees(-90))
-                .animation(.easeOut(duration: 0.2), value: timer.progress)
-            Image(systemName: timer.isFinished ? "bell.fill" : "timer")
-                .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(ringTint)
-                .symbolEffect(.pulse, options: .repeating, isActive: timer.isFinished)
-        }
-        .frame(width: 54, height: 54)
+        RingGauge(
+            progress: timer.isFinished ? 1 : 1 - timer.progress,
+            tint: ringTint,
+            lineWidth: 5)
+            .frame(width: 58, height: 58)
+            .overlay {
+                Image(systemName: timer.isFinished ? "bell.fill" : "timer")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(ringTint)
+                    .symbolEffect(.pulse, options: .repeating, isActive: timer.isFinished)
+            }
     }
 
     private var controls: some View {
@@ -202,9 +215,14 @@ struct TimerPageView: View {
 
     private var stopwatchView: some View {
         HStack(spacing: ReefTheme.Spacing.l) {
+            Image(systemName: "stopwatch")
+                .font(.system(size: 22, weight: .medium))
+                .foregroundStyle(accent)
+                .symbolEffect(.pulse, options: .repeating, isActive: stopwatch.isRunning)
+                .frame(width: 34)
             TimelineView(.animation(minimumInterval: 0.05, paused: !stopwatch.isRunning)) { _ in
                 Text(StopwatchController.label(stopwatch.elapsed))
-                    .font(.system(size: 24, weight: .semibold))
+                    .font(.system(size: 24, weight: .semibold, design: .rounded))
                     .monospacedDigit()
                     .foregroundStyle(ReefTheme.Ink.primary)
             }
@@ -218,8 +236,8 @@ struct TimerPageView: View {
                 iconButton("arrow.counterclockwise") { stopwatch.reset() }
             }
         }
-        .padding(.horizontal, ReefTheme.Spacing.l)
-        .padding(.vertical, 8)
-        .frame(maxHeight: .infinity)
+        .islandCard(padding: ReefTheme.Spacing.l)
+        .padding(.horizontal, ReefTheme.Radius.islandInset)
+        .padding(.bottom, ReefTheme.Radius.islandInset)
     }
 }

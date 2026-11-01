@@ -37,13 +37,18 @@ struct MonthGridView: View {
         if let day {
             let isToday = calendar.isDateInToday(day)
             let hasEvent = eventDays.contains(calendar.startOfDay(for: day))
-            VStack(spacing: 1) {
+            VStack(spacing: 2) {
                 Text("\(calendar.component(.day, from: day))")
-                    .font(.system(size: 10, weight: isToday ? .bold : .regular))
+                    .font(.system(size: 10, weight: isToday ? .bold : .regular, design: .rounded))
                     .foregroundStyle(isToday ? Color.black : ReefTheme.Ink.primary)
                     .frame(width: 18, height: 18)
-                    .background(
-                        Circle().fill(isToday ? accent : .clear))
+                    .background {
+                        if isToday {
+                            Circle()
+                                .fill(accent.gradient)
+                                .shadow(color: accent.opacity(0.5), radius: 3)
+                        }
+                    }
                 Circle()
                     .fill(hasEvent ? accent : .clear)
                     .frame(width: 3, height: 3)
