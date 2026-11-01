@@ -51,17 +51,26 @@ struct AgendaView: View {
 
     private var header: some View {
         HStack(spacing: 0) {
-            Button(action: back) {
-                Label(selected == nil ? "Calendar" : "Back", systemImage: "chevron.left")
-                    .labelStyle(.titleAndIcon)
+            if selected != nil {
+                Button { selected = nil } label: {
+                    Label("Back", systemImage: "chevron.left")
+                        .labelStyle(.titleAndIcon)
+                        .font(ReefTheme.Typography.caption)
+                        .foregroundStyle(accent)
+                        .padding(.horizontal, ReefTheme.Spacing.s)
+                        .padding(.vertical, 3)
+                        .background(Capsule().fill(accent.opacity(0.18)))
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+            } else {
+                Text("Calendar")
                     .font(ReefTheme.Typography.caption)
                     .foregroundStyle(accent)
                     .padding(.horizontal, ReefTheme.Spacing.s)
                     .padding(.vertical, 3)
                     .background(Capsule().fill(accent.opacity(0.18)))
-                    .contentShape(Capsule())
             }
-            .buttonStyle(.plain)
             Spacer(minLength: notchWidth + ReefTheme.Spacing.l)
             if selected == nil {
                 modeToggle
@@ -71,13 +80,6 @@ struct AgendaView: View {
     }
 
     /// Step back from a detail to the list, or leave the island from the list.
-    private func back() {
-        if selected != nil {
-            selected = nil
-        } else {
-            onClose()
-        }
-    }
 
     /// Switches the page between the agenda list and the month grid.
     private var modeToggle: some View {
