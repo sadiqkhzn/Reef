@@ -22,6 +22,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let calendar = CalendarMonitor()
     private let weather = WeatherProvider()
     private let shelf = ShelfModel()
+    private let focus = FocusMonitor()
     private let onboarding = OnboardingWindowController()
     private let keepAwake = KeepAwakeManager()
     private var screenLock: ScreenLockMonitor?
@@ -42,8 +43,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.accessory)
 
         let battery = BatteryModel()
+        focus.start()
         let activities = LiveActivityCenter(
-            state: state, settings: settings, battery: battery, calendar: calendar)
+            state: state, settings: settings, battery: battery, calendar: calendar,
+            focus: focus)
         self.battery = battery
         self.activities = activities
 
@@ -89,13 +92,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         lockOverlay.start()
         self.lockOverlay = lockOverlay
 
-        settingsWindow = SettingsWindowController { [settings, calendar, weather, ambient] in
+        settingsWindow = SettingsWindowController { [settings, calendar, weather, ambient, focus] in
             SettingsView()
                 .environmentObject(settings)
                 .environmentObject(activities)
                 .environmentObject(calendar)
                 .environmentObject(weather)
                 .environmentObject(ambient)
+                .environmentObject(focus)
         }
 
         installMenuBarItem()
