@@ -19,7 +19,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var systemHUD: SystemHUDController?
     private var media: NowPlayingController?
     private var ambient: AmbientController?
-    private var lockWidgetBridge: LockWidgetBridge?
     private let calendar = CalendarMonitor()
     private let weather = WeatherProvider()
     private let shelf = ShelfModel()
@@ -86,12 +85,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         lockOverlay.start()
         self.lockOverlay = lockOverlay
-
-        // Share a small state file for the lock-screen widget, if it is
-        // installed. Harmless (writes nothing) when it is not.
-        let lockWidgetBridge = LockWidgetBridge(media: media, weather: weather, battery: battery)
-        lockWidgetBridge.start()
-        self.lockWidgetBridge = lockWidgetBridge
 
         settingsWindow = SettingsWindowController { [settings, calendar, weather, ambient] in
             SettingsView()
