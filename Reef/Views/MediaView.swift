@@ -7,6 +7,8 @@ import SwiftUI
 struct MediaView: View {
     let nowPlaying: NowPlaying
     @ObservedObject var media: NowPlayingController
+    /// Trim video/lyrics noise from the title.
+    var cleanTitle: Bool = false
     /// How the panel is colored behind the track details.
     var colorStyle: PlayerTint = .bloom
 
@@ -24,7 +26,8 @@ struct MediaView: View {
     /// when there is no artist.
     private func copyTrack() {
         let artist = nowPlaying.artist.trimmingCharacters(in: .whitespaces)
-        let text = artist.isEmpty ? nowPlaying.title : "\(nowPlaying.title) - \(artist)"
+        let title = nowPlaying.displayTitle(cleaned: cleanTitle)
+        let text = artist.isEmpty ? title : "\(title) - \(artist)"
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)
@@ -56,7 +59,7 @@ struct MediaView: View {
                 }
 
                 MarqueeText(
-                    text: nowPlaying.title,
+                    text: nowPlaying.displayTitle(cleaned: cleanTitle),
                     color: .white,
                     font: .system(size: 14, weight: .semibold),
                     alignment: .leading)

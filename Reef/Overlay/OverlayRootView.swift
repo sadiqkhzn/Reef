@@ -308,7 +308,9 @@ struct OverlayRootView: View {
                             .frame(width: state.visibleSize.width, height: state.visibleSize.height)
                             .transition(.islandOpen)
                     } else if let nowPlaying = shownTrack, !showsHome {
-                        MediaView(nowPlaying: nowPlaying, media: media, colorStyle: settings.playerTint)
+                        MediaView(nowPlaying: nowPlaying, media: media,
+                            cleanTitle: settings.hideMediaTitleExtras,
+                            colorStyle: settings.playerTint)
                             .frame(width: state.visibleSize.width, height: state.visibleSize.height)
                             .overlay(alignment: .topTrailing) { pageSwitch }
                             .transition(.islandOpen)
@@ -363,7 +365,10 @@ struct OverlayRootView: View {
                                 animating: !state.isRelocating,
                                 liveLevels: liveLevels,
                                 onControlHover: { state.isOverControl = $0 },
-                                onResume: { state.announce(nowPlaying.title) })
+                                onResume: {
+                                    state.announce(nowPlaying.displayTitle(
+                                        cleaned: settings.hideMediaTitleExtras))
+                                })
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                             if state.announcingTitle != nil {
                                 MarqueeText(

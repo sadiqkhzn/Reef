@@ -16,6 +16,7 @@ final class ReefSettings: ObservableObject {
         static let motion = "motionStyle"
         static let playerTint = "playerTint"
         static let liveWaveform = "nowPlaying.liveWaveform"
+        static let hideTitleExtras = "nowPlaying.hideTitleExtras"
         static let mediaSource = "mediaSource"
         static let hideMediaWhenSourceFrontmost = "media.hideWhenSourceFrontmost"
         static let swipeGestures = "gestures.swipe"
@@ -164,6 +165,11 @@ final class ReefSettings: ObservableObject {
     /// Drive the equalizer from the real system audio instead of a canned motion.
     @Published var useLiveWaveform: Bool {
         didSet { defaults.set(useLiveWaveform, forKey: Key.liveWaveform) }
+    }
+
+    /// Trim "(Official Video)", "[Lyrics]", and similar noise from track titles.
+    @Published var hideMediaTitleExtras: Bool {
+        didSet { defaults.set(hideMediaTitleExtras, forKey: Key.hideTitleExtras) }
     }
 
     /// Which player the island follows.
@@ -437,6 +443,7 @@ final class ReefSettings: ObservableObject {
         keepAwake = defaults.object(forKey: Key.keepAwake) as? Bool ?? false
         playerTint = Self.value(defaults, Key.playerTint) ?? Self.defaultPlayerTint
         useLiveWaveform = defaults.object(forKey: Key.liveWaveform) as? Bool ?? false
+        hideMediaTitleExtras = defaults.object(forKey: Key.hideTitleExtras) as? Bool ?? false
         mediaSource = Self.value(defaults, Key.mediaSource) ?? Self.defaultMediaSource
         hidesMediaWhenSourceFrontmost = defaults.object(forKey: Key.hideMediaWhenSourceFrontmost) as? Bool ?? false
         swipeGesturesEnabled = defaults.object(forKey: Key.swipeGestures) as? Bool ?? true
@@ -507,6 +514,7 @@ final class ReefSettings: ObservableObject {
         keepAwake = false
         playerTint = Self.defaultPlayerTint
         useLiveWaveform = false
+        hideMediaTitleExtras = false
         mediaSource = Self.defaultMediaSource
         hidesMediaWhenSourceFrontmost = false
         swipeGesturesEnabled = true
