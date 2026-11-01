@@ -327,6 +327,7 @@ struct OverlayRootView: View {
                     } else if let nowPlaying = shownTrack, !showsHome {
                         MediaView(nowPlaying: nowPlaying, media: media,
                             cleanTitle: settings.hideMediaTitleExtras,
+                            accent: settings.accent.color,
                             colorStyle: settings.playerTint)
                             .frame(width: state.visibleSize.width, height: state.visibleSize.height)
                             .overlay(alignment: .topTrailing) { pageSwitch }
@@ -479,6 +480,12 @@ struct OverlayRootView: View {
                     handleDrag(value.translation)
                 })
         .onHover { hovering in
+            // A light trackpad tap the moment the pointer arrives and the island
+            // peeks, when haptics are on.
+            if hovering && !state.isHovering && settings.haptics && state.peekOnHover {
+                NSHapticFeedbackManager.defaultPerformer.perform(
+                    .levelChange, performanceTime: .now)
+            }
             state.isHovering = hovering
         }
         .animation(sizeAnimation, value: state.phase)

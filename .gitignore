@@ -45,3 +45,6 @@ docs/
 # Python bytecode
 __pycache__/
 *.pyc
+
+# Local design/analysis docs (not part of the repo)
+claudedocs/
