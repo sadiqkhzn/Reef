@@ -97,6 +97,22 @@ struct GeneralSettingsPage: View {
             }
 
             Section {
+                HStack {
+                    Toggle("Hourly chime", isOn: $settings.hourlyChime)
+                    if settings.hourlyChime {
+                        Button { ChimeController.play() } label: {
+                            Image(systemName: "play.circle")
+                        }
+                        .buttonStyle(.borderless)
+                    }
+                }
+                Toggle("Play sound on Focus change", isOn: $settings.focusSound)
+                Toggle("Play sound on Low Power Mode", isOn: $settings.lowPowerSound)
+            } header: {
+                Text("Sounds")
+            }
+
+            Section {
                 Toggle("Show overlay on lock screen", isOn: $settings.lockScreenOverlay)
                 if settings.lockScreenOverlay {
                     Picker("Card style", selection: $settings.lockCardStyle) {
