@@ -4,6 +4,7 @@ import SwiftUI
 /// Where the island sits and whether Reef starts at login.
 struct GeneralSettingsPage: View {
     @EnvironmentObject private var settings: ReefSettings
+    @EnvironmentObject private var updates: UpdateController
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
     @State private var loginError: String?
 
@@ -58,6 +59,18 @@ struct GeneralSettingsPage: View {
                 }
             } header: {
                 Text("Startup")
+            }
+
+            Section {
+                Toggle("Automatically check for updates", isOn: $updates.automaticallyChecks)
+                HStack {
+                    Button("Check for Updates…") { updates.checkForUpdates() }
+                    Spacer()
+                    Text("Version \(UpdateController.appVersion)")
+                        .foregroundStyle(.secondary)
+                }
+            } header: {
+                Text("Software Update")
             }
 
             Section {

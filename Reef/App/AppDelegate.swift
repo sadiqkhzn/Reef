@@ -23,6 +23,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let weather = WeatherProvider()
     private let shelf = ShelfModel()
     private let focus = FocusMonitor()
+    private let updates = UpdateController()
     private let onboarding = OnboardingWindowController()
     private let keepAwake = KeepAwakeManager()
     private var screenLock: ScreenLockMonitor?
@@ -92,7 +93,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         lockOverlay.start()
         self.lockOverlay = lockOverlay
 
-        settingsWindow = SettingsWindowController { [settings, calendar, weather, ambient, focus] in
+        settingsWindow = SettingsWindowController { [settings, calendar, weather, ambient, focus, updates] in
             SettingsView()
                 .environmentObject(settings)
                 .environmentObject(activities)
@@ -100,6 +101,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 .environmentObject(weather)
                 .environmentObject(ambient)
                 .environmentObject(focus)
+                .environmentObject(updates)
         }
 
         installMenuBarItem()
@@ -238,6 +240,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         menu.addItem(.separator())
 
+        let checkUpdates = menu.addItem(
+            withTitle: "Check for Updates…",
+            action: #selector(checkForUpdates),
+            keyEquivalent: "")
+        checkUpdates.target = self
+
         let about = menu.addItem(
             withTitle: "About Reef",
             action: #selector(openAbout),
@@ -295,6 +303,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func showAmbient() {
         ambient?.showNow()
+    }
+
+    @objc private func checkForUpdates() {
+        updates.checkForUpdates()
     }
 
     /// Copy the Mac's hardware UUID, handy when reporting an issue.
