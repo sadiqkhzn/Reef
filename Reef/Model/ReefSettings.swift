@@ -32,6 +32,7 @@ final class ReefSettings: ObservableObject {
         static let hiddenCalendars = "calendar.hidden"
         static let lowBatteryThreshold = "battery.lowThreshold"
         static let lowPowerModeActivity = "liveActivity.lowPowerMode"
+        static let focusActivity = "liveActivity.focus"
         static let batteryActivitiesEnabled = "battery.activitiesEnabled"
         static let batteryActivityDuration = "battery.activityDuration"
         static let lowBatterySound = "battery.lowSound"
@@ -219,6 +220,11 @@ final class ReefSettings: ObservableObject {
         didSet { defaults.set(showsLowPowerModeActivity, forKey: Key.lowPowerModeActivity) }
     }
 
+    /// Show the wings when a macOS Focus turns on or off.
+    @Published var showsFocusActivity: Bool {
+        didSet { defaults.set(showsFocusActivity, forKey: Key.focusActivity) }
+    }
+
     /// Replace the system volume overlay with Reef's HUD in the notch when the
     /// volume keys are pressed. Needs Accessibility permission to take effect.
     @Published var replacesVolumeHUD: Bool {
@@ -395,6 +401,7 @@ final class ReefSettings: ObservableObject {
         showsLowBatteryActivity = defaults.object(forKey: Key.lowBatteryActivity) as? Bool ?? true
         lowBatteryThreshold = defaults.object(forKey: Key.lowBatteryThreshold) as? Int ?? 20
         showsLowPowerModeActivity = defaults.object(forKey: Key.lowPowerModeActivity) as? Bool ?? true
+        showsFocusActivity = defaults.object(forKey: Key.focusActivity) as? Bool ?? true
         replacesVolumeHUD = defaults.object(forKey: Key.replaceVolumeHUD) as? Bool ?? false
         replacesBrightnessHUD = defaults.object(forKey: Key.replaceBrightnessHUD) as? Bool ?? false
         hudPlaysSound = defaults.object(forKey: Key.hudSound) as? Bool ?? false
@@ -456,6 +463,7 @@ final class ReefSettings: ObservableObject {
         showsLowBatteryActivity = true
         lowBatteryThreshold = 20
         showsLowPowerModeActivity = true
+        showsFocusActivity = true
         replacesVolumeHUD = false
         replacesBrightnessHUD = false
         hudPlaysSound = false

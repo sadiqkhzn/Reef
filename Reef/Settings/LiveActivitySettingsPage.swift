@@ -58,6 +58,16 @@ struct LiveActivitySettingsPage: View {
                     }
 
                     ActivityRow(
+                        title: "Show Focus changes",
+                        detail: "When a macOS Focus turns on or off.",
+                        symbol: "moon.fill",
+                        tint: ReefTheme.Ink.primary,
+                        isOn: $settings.showsFocusActivity
+                    ) {
+                        activities.present(.focus(name: "Work", symbol: "moon.fill", on: true))
+                    }
+
+                    ActivityRow(
                         title: "Warn on low battery",
                         detail: "At the chosen level and again at "
                             + "\(BatteryActivityPolicy.criticalThreshold)% while on battery.",

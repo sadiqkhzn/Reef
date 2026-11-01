@@ -62,6 +62,8 @@ struct LiveActivityWings: View {
             return ReefTheme.Ink.primary
         case .lowPowerMode:
             return ReefTheme.Status.warning
+        case .focus(_, _, let on):
+            return on ? ReefTheme.Ink.primary : ReefTheme.Ink.secondary
         case .volume, .brightness:
             return ReefTheme.Ink.primary
         }
@@ -104,6 +106,11 @@ struct LiveActivityWings: View {
             Image(systemName: "bolt.fill")
                 .font(.system(size: 12, weight: .bold))
                 .foregroundStyle(tint)
+        case .focus(_, let symbol, let on):
+            Image(systemName: symbol)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(tint)
+                .opacity(on ? 1 : 0.7)
         case .volume(let level, let muted):
             Image(systemName: LiveActivity.volumeSymbol(level: level, muted: muted))
                 .font(.system(size: 13, weight: .medium))
@@ -187,6 +194,10 @@ struct LiveActivityWings: View {
                 .foregroundStyle(tint)
         case .lowPowerMode:
             Image(systemName: "leaf.fill")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(tint)
+        case .focus(_, _, let on):
+            Image(systemName: on ? "checkmark" : "xmark")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(tint)
         case .volume(let level, _):

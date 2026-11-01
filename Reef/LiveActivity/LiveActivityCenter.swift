@@ -12,6 +12,8 @@ final class LiveActivityCenter: ObservableObject {
     private let state: NotchState
     private let settings: ReefSettings
     private var lastBattery: BatterySnapshot
+    /// Last known Focus, so turning one off can still name it.
+    private var lastFocus: FocusStatus?
     private var dismissWork: DispatchWorkItem?
     private var peekWork: DispatchWorkItem?
     private var cancellables: Set<AnyCancellable> = []
@@ -22,10 +24,14 @@ final class LiveActivityCenter: ObservableObject {
     private var warnedDevices: Set<String> = []
     private var deviceBatteryTimer: Timer?
 
-    init(state: NotchState, settings: ReefSettings, battery: BatteryModel, calendar: CalendarMonitor) {
+    init(
+        state: NotchState, settings: ReefSettings, battery: BatteryModel,
+        calendar: CalendarMonitor, focus: FocusMonitor
+    ) {
         self.state = state
         self.settings = settings
         self.lastBattery = battery.snapshot
+        self.lastFocus = focus.current
 
         battery.$snapshot
             .dropFirst()
@@ -37,6 +43,13 @@ final class LiveActivityCenter: ObservableObject {
         calendar.$events
             .sink { [weak self] events in
                 self?.calendarChanged(events)
+            }
+            .store(in: &cancellables)
+
+        focus.$current
+            .dropFirst()
+            .sink { [weak self] next in
+                self?.focusChanged(to: next)
             }
             .store(in: &cancellables)
 
@@ -225,6 +238,20 @@ final class LiveActivityCenter: ObservableObject {
         present(activity)
     }
 
+    /// A Focus turned on, off, or switched to another — show it in the wings.
+    private func focusChanged(to next: FocusStatus?) {
+        defer { lastFocus = next }
+        guard settings.showsFocusActivity else { return }
+
+        if let next {
+            // Turned on or switched.
+            present(.focus(name: next.name, symbol: next.symbol, on: true))
+        } else if let previous = lastFocus {
+            // Turned off; name the one that just ended.
+            present(.focus(name: previous.name, symbol: previous.symbol, on: false))
+        }
+    }
+
     private func isEnabled(_ activity: LiveActivity) -> Bool {
         // The battery master switch gates every battery activity.
         if activity.isBattery && !settings.batteryActivitiesEnabled { return false }
@@ -237,6 +264,7 @@ final class LiveActivityCenter: ObservableObject {
         case .audioOutput: return settings.showsAudioOutputActivity
         case .calendarEvent: return settings.showsCalendarActivity
         case .lowPowerMode: return settings.showsLowPowerModeActivity
+        case .focus: return settings.showsFocusActivity
         // HUDs are gated by the key handler, not the battery/activity path, and
         // are shown directly through `presentHUD`.
         case .volume, .brightness: return true
