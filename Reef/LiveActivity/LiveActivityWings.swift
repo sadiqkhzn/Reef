@@ -64,6 +64,8 @@ struct LiveActivityWings: View {
             return ReefTheme.Status.warning
         case .focus(_, _, let on):
             return on ? ReefTheme.Ink.primary : ReefTheme.Ink.secondary
+        case .timeToLeave:
+            return ReefTheme.Status.warning
         case .volume, .brightness:
             return ReefTheme.Ink.primary
         }
@@ -111,6 +113,10 @@ struct LiveActivityWings: View {
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(tint)
                 .opacity(on ? 1 : 0.7)
+        case .timeToLeave:
+            Image(systemName: "figure.walk")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(tint)
         case .volume(let level, let muted):
             Image(systemName: LiveActivity.volumeSymbol(level: level, muted: muted))
                 .font(.system(size: 13, weight: .medium))
@@ -198,6 +204,10 @@ struct LiveActivityWings: View {
                 .foregroundStyle(tint)
         case .focus(_, _, let on):
             Image(systemName: on ? "checkmark" : "xmark")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(tint)
+        case .timeToLeave:
+            Image(systemName: "arrow.right")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(tint)
         case .volume(let level, _):

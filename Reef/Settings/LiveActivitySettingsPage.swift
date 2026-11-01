@@ -263,6 +263,20 @@ struct LiveActivitySettingsPage: View {
                             .buttonStyle(.borderless)
                         }
                     }
+                    Toggle("Alert when it's time to leave", isOn: $settings.notifyTimeToLeave)
+                    if settings.notifyTimeToLeave {
+                        Picker("Leave buffer", selection: $settings.travelBufferMinutes) {
+                            Text("On time").tag(0)
+                            Text("5 min early").tag(5)
+                            Text("10 min early").tag(10)
+                            Text("15 min early").tag(15)
+                        }
+                        Text("For events with a location, uses driving time from where "
+                            + "you are. Needs Location access; events without a location "
+                            + "are skipped.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
             } header: {

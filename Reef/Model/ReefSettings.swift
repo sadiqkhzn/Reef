@@ -29,6 +29,8 @@ final class ReefSettings: ObservableObject {
         static let calendarActivity = "liveActivity.calendar"
         static let calendarLeadMinutes = "calendar.leadMinutes"
         static let calendarEventSound = "calendar.eventSound"
+        static let notifyTimeToLeave = "calendar.timeToLeave"
+        static let travelBufferMinutes = "calendar.travelBuffer"
         static let eventAtRest = "calendar.eventAtRest"
         static let hiddenCalendars = "calendar.hidden"
         static let lowBatteryThreshold = "battery.lowThreshold"
@@ -328,6 +330,16 @@ final class ReefSettings: ObservableObject {
         didSet { defaults.set(calendarEventSound, forKey: Key.calendarEventSound) }
     }
 
+    /// Alert when it's time to leave for an event with a location (uses driving ETA).
+    @Published var notifyTimeToLeave: Bool {
+        didSet { defaults.set(notifyTimeToLeave, forKey: Key.notifyTimeToLeave) }
+    }
+
+    /// Extra minutes to leave before the computed departure time.
+    @Published var travelBufferMinutes: Int {
+        didSet { defaults.set(travelBufferMinutes, forKey: Key.travelBufferMinutes) }
+    }
+
     /// Show the next event on the resting island while nothing is playing.
     @Published var showsEventAtRest: Bool {
         didSet { defaults.set(showsEventAtRest, forKey: Key.eventAtRest) }
@@ -428,6 +440,8 @@ final class ReefSettings: ObservableObject {
         showsCalendarActivity = defaults.object(forKey: Key.calendarActivity) as? Bool ?? true
         calendarLeadMinutes = defaults.object(forKey: Key.calendarLeadMinutes) as? Int ?? 10
         calendarEventSound = defaults.object(forKey: Key.calendarEventSound) as? Bool ?? false
+        notifyTimeToLeave = defaults.object(forKey: Key.notifyTimeToLeave) as? Bool ?? false
+        travelBufferMinutes = defaults.object(forKey: Key.travelBufferMinutes) as? Int ?? 5
         showsEventAtRest = defaults.object(forKey: Key.eventAtRest) as? Bool ?? false
         hiddenCalendarIDs = Set(defaults.stringArray(forKey: Key.hiddenCalendars) ?? [])
         opensOnHover = defaults.object(forKey: Key.opensOnHover) as? Bool ?? true
@@ -491,6 +505,8 @@ final class ReefSettings: ObservableObject {
         showsCalendarActivity = true
         calendarLeadMinutes = 10
         calendarEventSound = false
+        notifyTimeToLeave = false
+        travelBufferMinutes = 5
         showsEventAtRest = false
         hiddenCalendarIDs = []
         opensOnHover = true

@@ -24,6 +24,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let shelf = ShelfModel()
     private let focus = FocusMonitor()
     private let updates = UpdateController()
+    private var travelTime: TravelTimeMonitor?
     private let onboarding = OnboardingWindowController()
     private let keepAwake = KeepAwakeManager()
     private var screenLock: ScreenLockMonitor?
@@ -50,6 +51,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             focus: focus)
         self.battery = battery
         self.activities = activities
+
+        let travelTime = TravelTimeMonitor(settings: settings, calendar: calendar)
+        travelTime.onLeaveNow = { [weak activities] event, leaveText in
+            activities?.present(.timeToLeave(title: event.title, leaveText: leaveText))
+        }
+        travelTime.start()
+        self.travelTime = travelTime
 
         startAudioOutput(activities: activities)
         startSystemHUD(activities: activities)

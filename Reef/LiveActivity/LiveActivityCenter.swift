@@ -273,6 +273,7 @@ final class LiveActivityCenter: ObservableObject {
         case .calendarEvent: return settings.showsCalendarActivity
         case .lowPowerMode: return settings.showsLowPowerModeActivity
         case .focus: return settings.showsFocusActivity
+        case .timeToLeave: return settings.notifyTimeToLeave
         // HUDs are gated by the key handler, not the battery/activity path, and
         // are shown directly through `presentHUD`.
         case .volume, .brightness: return true
