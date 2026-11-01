@@ -73,6 +73,15 @@ struct GeneralSettingsPage: View {
 
             Section {
                 Toggle("Show overlay on lock screen", isOn: $settings.lockScreenOverlay)
+                if settings.lockScreenOverlay {
+                    Picker("Card style", selection: $settings.lockCardStyle) {
+                        ForEach(LockCardStyle.allCases) { style in
+                            Text(style.title).tag(style)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    Toggle("Show island on lock screen", isOn: $settings.lockShowsIsland)
+                }
                 HStack {
                     Toggle("Play sound on lock", isOn: $settings.soundOnLock)
                     if settings.soundOnLock {

@@ -119,9 +119,11 @@ struct OverlayRootView: View {
         updateAudioMonitor()
     }
 
-    /// Run the audio tap only while the live waveform is on and a track is on.
+    /// Run the audio tap only while the live waveform is on and a track is
+    /// actively playing. Pausing stops the tap, so the macOS recording
+    /// indicator clears whenever music is not actually playing.
     private func updateAudioMonitor() {
-        if settings.useLiveWaveform, shownTrack != nil {
+        if settings.useLiveWaveform, shownTrack?.isPlaying == true {
             audio.start()
         } else {
             audio.stop()
