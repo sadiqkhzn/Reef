@@ -15,6 +15,7 @@ final class ReefSettings: ObservableObject {
         static let accent = "accent"
         static let motion = "motionStyle"
         static let playerTint = "playerTint"
+        static let liveWaveform = "nowPlaying.liveWaveform"
         static let mediaSource = "mediaSource"
         static let hideMediaWhenSourceFrontmost = "media.hideWhenSourceFrontmost"
         static let swipeGestures = "gestures.swipe"
@@ -94,6 +95,11 @@ final class ReefSettings: ObservableObject {
     /// How the open now-playing panel is colored.
     @Published var playerTint: PlayerTint {
         didSet { defaults.set(playerTint.rawValue, forKey: Key.playerTint) }
+    }
+
+    /// Drive the equalizer from the real system audio instead of a canned motion.
+    @Published var useLiveWaveform: Bool {
+        didSet { defaults.set(useLiveWaveform, forKey: Key.liveWaveform) }
     }
 
     /// Which player the island follows.
@@ -246,6 +252,7 @@ final class ReefSettings: ObservableObject {
         hideFromScreenCapture = defaults.object(forKey: Key.hideFromCapture) as? Bool ?? false
         keepAwake = defaults.object(forKey: Key.keepAwake) as? Bool ?? false
         playerTint = Self.value(defaults, Key.playerTint) ?? Self.defaultPlayerTint
+        useLiveWaveform = defaults.object(forKey: Key.liveWaveform) as? Bool ?? false
         mediaSource = Self.value(defaults, Key.mediaSource) ?? Self.defaultMediaSource
         hidesMediaWhenSourceFrontmost = defaults.object(forKey: Key.hideMediaWhenSourceFrontmost) as? Bool ?? false
         swipeGesturesEnabled = defaults.object(forKey: Key.swipeGestures) as? Bool ?? true
@@ -286,6 +293,7 @@ final class ReefSettings: ObservableObject {
         hideFromScreenCapture = false
         keepAwake = false
         playerTint = Self.defaultPlayerTint
+        useLiveWaveform = false
         mediaSource = Self.defaultMediaSource
         hidesMediaWhenSourceFrontmost = false
         swipeGesturesEnabled = true

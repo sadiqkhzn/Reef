@@ -37,6 +37,8 @@ struct OverlayRootView: View {
     @StateObject private var timer = TimerController()
     /// The island's stopwatch, run from the timer page.
     @StateObject private var stopwatch = StopwatchController()
+    /// Live audio levels for the resting waveform.
+    @StateObject private var audio = SystemAudioMonitor()
     /// True while a file drag is hovering the island, so it can open the shelf.
     @State private var dropTargeted = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -114,6 +116,21 @@ struct OverlayRootView: View {
         state.stopwatchRestingActive = stopwatch.isActive && !active && !timer.isActive
         state.eventRestingActive =
             restingEvent != nil && !state.timerRestingActive && !state.stopwatchRestingActive
+        updateAudioMonitor()
+    }
+
+    /// Run the audio tap only while the live waveform is on and a track is on.
+    private func updateAudioMonitor() {
+        if settings.useLiveWaveform, shownTrack != nil {
+            audio.start()
+        } else {
+            audio.stop()
+        }
+    }
+
+    /// Live levels to feed the equalizer, or nil when the waveform is off.
+    private var liveLevels: [Float]? {
+        settings.useLiveWaveform ? audio.levels : nil
     }
 
     /// Turn a finished drag on the island into an open/close, a track skip, or a
@@ -341,6 +358,7 @@ struct OverlayRootView: View {
                                 height: state.collapsedSize.height,
                                 notchWidth: notchClearance,
                                 animating: !state.isRelocating,
+                                liveLevels: liveLevels,
                                 onControlHover: { state.isOverControl = $0 },
                                 onResume: { state.announce(nowPlaying.title) })
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -462,6 +480,7 @@ struct OverlayRootView: View {
         .onReceive(stopwatch.$isRunning) { _ in updateNowPlayingActive() }
         .onReceive(calendar.$events) { _ in updateNowPlayingActive() }
         .onChange(of: settings.showsEventAtRest) { _, _ in updateNowPlayingActive() }
+        .onChange(of: settings.useLiveWaveform) { _, _ in updateAudioMonitor() }
         .onChange(of: isOpen) { _, open in
             if !open { resetOpenPage() }
             if settings.haptics {

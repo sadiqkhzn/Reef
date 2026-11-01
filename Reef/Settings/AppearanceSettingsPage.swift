@@ -86,11 +86,13 @@ struct AppearanceSettingsPage: View {
                 }
 
                 Toggle("Hide while its app is frontmost", isOn: $settings.hidesMediaWhenSourceFrontmost)
+                Toggle("Live waveform", isOn: $settings.useLiveWaveform)
             } header: {
                 Text("Now Playing")
             } footer: {
                 Text(settings.playerTint.summary
-                    + " Source picks which player the island follows.")
+                    + " Source picks which player the island follows. Live waveform moves "
+                    + "the equalizer with the real audio, and asks to record system audio.")
                     .foregroundStyle(.secondary)
             }
         }

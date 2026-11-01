@@ -17,6 +17,8 @@ struct MediaWingView: View {
     var notchWidth: CGFloat = 0
     /// False while hopping screens, so the motion stops.
     var animating: Bool = true
+    /// Real audio loudness for the equalizer, when the live waveform is on.
+    var liveLevels: [Float]? = nil
     /// Reports when the pointer is over the trailing control, so the island
     /// knows not to open while a button is hovered.
     var onControlHover: (Bool) -> Void = { _ in }
@@ -88,7 +90,10 @@ struct MediaWingView: View {
                     .scaleEffect(controlPressed ? 0.78 : 1)
                     .transition(.opacity)
             } else {
-                MediaEqualizer(tint: tint, active: animating && nowPlaying.isPlaying)
+                MediaEqualizer(
+                    tint: tint,
+                    active: animating && nowPlaying.isPlaying,
+                    levels: liveLevels)
                     .transition(.opacity)
             }
         }
@@ -139,15 +144,45 @@ struct MediaEqualizer: View {
     var tint: Color
     var active: Bool
     var barCount: Int = 4
+    /// Recent real audio loudness, newest last. When present (and active), the
+    /// bars follow it instead of the canned motion.
+    var levels: [Float]? = nil
 
     var body: some View {
-        if active {
+        if active, let levels, !levels.isEmpty {
+            liveBars(levels)
+        } else if active {
             TimelineView(.animation) { timeline in
                 bars(time: timeline.date.timeIntervalSinceReferenceDate)
             }
         } else {
             bars(time: 0, quiet: true)
         }
+    }
+
+    /// Bars driven by the real audio: the most recent loudness values scroll
+    /// across the bars, so the equalizer tracks the music.
+    private func liveBars(_ levels: [Float]) -> some View {
+        HStack(alignment: .center, spacing: 2.5) {
+            ForEach(0..<barCount, id: \.self) { index in
+                Capsule()
+                    .fill(
+                        LinearGradient(
+                            colors: [tint, tint.opacity(0.5)],
+                            startPoint: .top,
+                            endPoint: .bottom))
+                    .frame(width: 3, height: liveHeight(levels, index: index))
+            }
+        }
+        .frame(height: 16)
+        .animation(.easeOut(duration: 0.08), value: levels)
+    }
+
+    private func liveHeight(_ levels: [Float], index: Int) -> CGFloat {
+        // Map each bar to one of the most recent loudness values.
+        let offset = barCount - 1 - index
+        let value = levels.count > offset ? levels[levels.count - 1 - offset] : 0
+        return 3 + CGFloat(max(0, min(1, value))) * 13
     }
 
     private func bars(time: TimeInterval, quiet: Bool = false) -> some View {
