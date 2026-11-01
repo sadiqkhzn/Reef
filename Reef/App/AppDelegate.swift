@@ -17,6 +17,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var bluetooth: BluetoothMonitor?
     private var audioOutput: AudioOutputMonitor?
     private var systemHUD: SystemHUDController?
+    private var media: NowPlayingController?
+    private var ambient: AmbientController?
+    private var lockWidgetBridge: LockWidgetBridge?
     private let calendar = CalendarMonitor()
     private let weather = WeatherProvider()
     private let shelf = ShelfModel()
@@ -46,18 +49,42 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         startAudioOutput(activities: activities)
         startSystemHUD(activities: activities)
 
+        // One now-playing reader, shared by the overlay and the ambient display,
+        // so only a single media stream runs.
+        let media = NowPlayingController()
+        self.media = media
+
         let controller = NotchWindowController(
             state: state, settings: settings, battery: battery,
-            calendar: calendar, weather: weather, shelf: shelf)
+            calendar: calendar, weather: weather, shelf: shelf, media: media)
         controller.show()
         self.controller = controller
 
-        settingsWindow = SettingsWindowController { [settings, calendar, weather] in
+        let ambient = AmbientController(settings: settings) { [settings, media, weather, battery, calendar] in
+            AnyView(
+                AmbientView()
+                    .environmentObject(settings)
+                    .environmentObject(media)
+                    .environmentObject(weather)
+                    .environmentObject(battery)
+                    .environmentObject(calendar))
+        }
+        ambient.start()
+        self.ambient = ambient
+
+        // Share a small state file for the lock-screen widget, if it is
+        // installed. Harmless (writes nothing) when it is not.
+        let lockWidgetBridge = LockWidgetBridge(media: media, weather: weather, battery: battery)
+        lockWidgetBridge.start()
+        self.lockWidgetBridge = lockWidgetBridge
+
+        settingsWindow = SettingsWindowController { [settings, calendar, weather, ambient] in
             SettingsView()
                 .environmentObject(settings)
                 .environmentObject(activities)
                 .environmentObject(calendar)
                 .environmentObject(weather)
+                .environmentObject(ambient)
         }
 
         installMenuBarItem()
@@ -184,6 +211,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         keepAwakeItem.state = settings.keepAwake ? .on : .off
         self.keepAwakeItem = keepAwakeItem
 
+        let ambientItem = menu.addItem(
+            withTitle: "Show Ambient Display",
+            action: #selector(showAmbient),
+            keyEquivalent: "")
+        ambientItem.target = self
+
         menu.addItem(.separator())
 
         let about = menu.addItem(
@@ -239,6 +272,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func toggleKeepAwake() {
         settings.keepAwake.toggle()
+    }
+
+    @objc private func showAmbient() {
+        ambient?.showNow()
     }
 
     /// Copy the Mac's hardware UUID, handy when reporting an issue.

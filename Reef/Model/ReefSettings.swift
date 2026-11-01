@@ -35,6 +35,12 @@ final class ReefSettings: ObservableObject {
         static let replaceVolumeHUD = "hud.replaceVolume"
         static let replaceBrightnessHUD = "hud.replaceBrightness"
         static let hudSound = "hud.sound"
+        static let ambientEnabled = "ambient.enabled"
+        static let ambientIdleMinutes = "ambient.idleMinutes"
+        static let ambientNowPlaying = "ambient.nowPlaying"
+        static let ambientWeather = "ambient.weather"
+        static let ambientBattery = "ambient.battery"
+        static let ambientNextEvent = "ambient.nextEvent"
         static let hideBatteryPercentage = "battery.hidePercentage"
         static let opensOnHover = "open.onHover"
         static let hoverOpenSeconds = "open.hoverSeconds"
@@ -169,6 +175,36 @@ final class ReefSettings: ObservableObject {
         didSet { defaults.set(hudPlaysSound, forKey: Key.hudSound) }
     }
 
+    /// Show the full-screen ambient display when the Mac is idle and unlocked.
+    @Published var ambientEnabled: Bool {
+        didSet { defaults.set(ambientEnabled, forKey: Key.ambientEnabled) }
+    }
+
+    /// Minutes of inactivity before the ambient display appears.
+    @Published var ambientIdleMinutes: Int {
+        didSet { defaults.set(ambientIdleMinutes, forKey: Key.ambientIdleMinutes) }
+    }
+
+    /// Show the playing track on the ambient display.
+    @Published var ambientShowsNowPlaying: Bool {
+        didSet { defaults.set(ambientShowsNowPlaying, forKey: Key.ambientNowPlaying) }
+    }
+
+    /// Show the weather on the ambient display.
+    @Published var ambientShowsWeather: Bool {
+        didSet { defaults.set(ambientShowsWeather, forKey: Key.ambientWeather) }
+    }
+
+    /// Show the battery on the ambient display.
+    @Published var ambientShowsBattery: Bool {
+        didSet { defaults.set(ambientShowsBattery, forKey: Key.ambientBattery) }
+    }
+
+    /// Show the next calendar event on the ambient display.
+    @Published var ambientShowsNextEvent: Bool {
+        didSet { defaults.set(ambientShowsNextEvent, forKey: Key.ambientNextEvent) }
+    }
+
     /// Hide the battery number on the badge and the home card.
     @Published var hidesBatteryPercentage: Bool {
         didSet { defaults.set(hidesBatteryPercentage, forKey: Key.hideBatteryPercentage) }
@@ -266,6 +302,12 @@ final class ReefSettings: ObservableObject {
         replacesVolumeHUD = defaults.object(forKey: Key.replaceVolumeHUD) as? Bool ?? false
         replacesBrightnessHUD = defaults.object(forKey: Key.replaceBrightnessHUD) as? Bool ?? false
         hudPlaysSound = defaults.object(forKey: Key.hudSound) as? Bool ?? false
+        ambientEnabled = defaults.object(forKey: Key.ambientEnabled) as? Bool ?? false
+        ambientIdleMinutes = defaults.object(forKey: Key.ambientIdleMinutes) as? Int ?? 5
+        ambientShowsNowPlaying = defaults.object(forKey: Key.ambientNowPlaying) as? Bool ?? true
+        ambientShowsWeather = defaults.object(forKey: Key.ambientWeather) as? Bool ?? true
+        ambientShowsBattery = defaults.object(forKey: Key.ambientBattery) as? Bool ?? true
+        ambientShowsNextEvent = defaults.object(forKey: Key.ambientNextEvent) as? Bool ?? true
         hidesBatteryPercentage = defaults.object(forKey: Key.hideBatteryPercentage) as? Bool ?? false
         showsDeviceActivity = defaults.object(forKey: Key.deviceActivity) as? Bool ?? true
         showsAudioOutputActivity = defaults.object(forKey: Key.audioOutputActivity) as? Bool ?? true
@@ -307,6 +349,12 @@ final class ReefSettings: ObservableObject {
         replacesVolumeHUD = false
         replacesBrightnessHUD = false
         hudPlaysSound = false
+        ambientEnabled = false
+        ambientIdleMinutes = 5
+        ambientShowsNowPlaying = true
+        ambientShowsWeather = true
+        ambientShowsBattery = true
+        ambientShowsNextEvent = true
         hidesBatteryPercentage = false
         showsDeviceActivity = true
         showsAudioOutputActivity = true

@@ -32,7 +32,7 @@ struct OverlayRootView: View {
     @EnvironmentObject private var calendar: CalendarMonitor
     @EnvironmentObject private var weather: WeatherProvider
     @EnvironmentObject private var shelf: ShelfModel
-    @StateObject private var media = NowPlayingController()
+    @EnvironmentObject private var media: NowPlayingController
     /// The island's countdown timer, started from the timer page.
     @StateObject private var timer = TimerController()
     /// The island's stopwatch, run from the timer page.
