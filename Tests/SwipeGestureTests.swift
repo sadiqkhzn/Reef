@@ -7,11 +7,22 @@ final class SwipeGestureTests: XCTestCase {
 
     private func action(
         _ dx: CGFloat, _ dy: CGFloat,
-        isOpen: Bool = false, hasMedia: Bool = true, natural: Bool = true
+        isOpen: Bool = false, hasMedia: Bool = true, natural: Bool = true,
+        hasActivity: Bool = false
     ) -> SwipeGesture.Action {
         SwipeGesture.action(
             translation: CGSize(width: dx, height: dy),
-            isOpen: isOpen, hasMedia: hasMedia, naturalDirection: natural)
+            isOpen: isOpen, hasMedia: hasMedia, naturalDirection: natural,
+            hasActivity: hasActivity)
+    }
+
+    func testSwipeUpDismissesActivityWhenResting() {
+        // Swipe up while resting with an activity showing dismisses it.
+        XCTAssertEqual(action(0, -40, isOpen: false, hasActivity: true), .dismissActivity)
+        // No activity: swipe up while resting does nothing.
+        XCTAssertEqual(action(0, -40, isOpen: false, hasActivity: false), .none)
+        // Open island: swipe up still closes, regardless of an activity.
+        XCTAssertEqual(action(0, -40, isOpen: true, hasActivity: true), .close)
     }
 
     func testTinyMovementIsTap() {

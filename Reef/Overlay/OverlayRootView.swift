@@ -165,7 +165,8 @@ struct OverlayRootView: View {
             translation: translation,
             isOpen: isOpen,
             hasMedia: shownTrack != nil,
-            naturalDirection: settings.naturalSwipeDirection) {
+            naturalDirection: settings.naturalSwipeDirection,
+            hasActivity: state.liveActivity != nil) {
         case .tap:
             tapOpen()
         // A sideways swipe flips the page while open, or skips tracks while resting.
@@ -177,6 +178,9 @@ struct OverlayRootView: View {
             state.phase = .expanded
         case .close:
             state.phase = .collapsed
+        case .dismissActivity:
+            state.isPeeking = false
+            state.liveActivity = nil
         case .none:
             break
         }

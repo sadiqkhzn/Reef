@@ -9,6 +9,8 @@ enum SwipeGesture {
         case previousTrack
         case open
         case close
+        /// Swipe up on a resting island showing a live activity to dismiss it.
+        case dismissActivity
         case none
     }
 
@@ -28,7 +30,8 @@ enum SwipeGesture {
         translation: CGSize,
         isOpen: Bool,
         hasMedia: Bool,
-        naturalDirection: Bool
+        naturalDirection: Bool,
+        hasActivity: Bool = false
     ) -> Action {
         let dx = translation.width
         let dy = translation.height
@@ -48,6 +51,7 @@ enum SwipeGesture {
         if dy > 0 {
             return isOpen ? .none : .open
         }
-        return isOpen ? .close : .none
+        // Swipe up: close when open, else dismiss a showing activity.
+        return isOpen ? .close : (hasActivity ? .dismissActivity : .none)
     }
 }
