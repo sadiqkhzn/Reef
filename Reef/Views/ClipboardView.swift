@@ -18,10 +18,15 @@ struct ClipboardView: View {
     var body: some View {
         VStack(spacing: ReefTheme.Spacing.s) {
             Color.clear.frame(height: topInset - ReefTheme.Spacing.s)
-            searchRow
             HStack(alignment: .top, spacing: ReefTheme.Spacing.s) {
-                stream
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                // Left column owns the search row so the right inspector keeps the
+                // full pane height for multi-line previews.
+                VStack(spacing: ReefTheme.Spacing.s) {
+                    searchRow
+                    stream
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 inspector
                     .frame(width: 176)
             }
@@ -129,7 +134,7 @@ struct ClipboardView: View {
             .padding(.vertical, 6)
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(.white.opacity(isSelected ? 0.08 : 0)))
+                    .fill(.white.opacity(isSelected ? 0.08 : 0.025)))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

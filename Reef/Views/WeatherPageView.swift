@@ -166,7 +166,10 @@ struct WeatherPageView: View {
     }
 
     private func dayList(_ days: [DayForecast]) -> some View {
-        VStack(spacing: 3) {
+        // Shared temperature domain so each row's range bar is comparable.
+        let lo = days.map(\.low).min() ?? 0
+        let hi = days.map(\.high).max() ?? 1
+        return VStack(spacing: 3) {
             ForEach(days) { day in
                 HStack(spacing: ReefTheme.Spacing.s) {
                     Text(Self.dayLabel(day.date))
@@ -180,8 +183,11 @@ struct WeatherPageView: View {
                     Spacer(minLength: 0)
                     Text(day.lowText)
                         .foregroundStyle(ReefTheme.Ink.secondary)
+                        .frame(width: 30, alignment: .trailing)
+                    rangeBar(low: day.low, high: day.high, min: lo, max: hi)
                     Text(day.highText)
                         .foregroundStyle(ReefTheme.Ink.primary)
+                        .frame(width: 30, alignment: .leading)
                 }
                 .font(.system(size: 11, design: .rounded))
                 .monospacedDigit()
@@ -192,6 +198,25 @@ struct WeatherPageView: View {
                         .fill(ReefTheme.Ink.fill))
             }
         }
+    }
+
+    /// A small cool-to-warm bar showing where this day's low–high range sits
+    /// within the week's overall span.
+    private func rangeBar(low: Double, high: Double, min lo: Double, max hi: Double) -> some View {
+        let span = max(hi - lo, 1)
+        let barWidth: CGFloat = 44
+        let startX = CGFloat((low - lo) / span) * barWidth
+        let fillWidth = max(4, CGFloat((high - low) / span) * barWidth)
+        return ZStack(alignment: .leading) {
+            Capsule().fill(.white.opacity(0.1))
+            Capsule()
+                .fill(LinearGradient(
+                    colors: [Color.cyan.opacity(0.75), Color.orange.opacity(0.85)],
+                    startPoint: .leading, endPoint: .trailing))
+                .frame(width: fillWidth)
+                .offset(x: startX)
+        }
+        .frame(width: barWidth, height: 4)
     }
 
     private var empty: some View {

@@ -31,7 +31,10 @@ struct MonthGridView: View {
             }
         }
         .padding(.horizontal, ReefTheme.Spacing.s)
-        .padding(.vertical, 2)
+        .padding(.top, 2)
+        // Extra bottom clearance so the last row's event dot isn't clipped by the
+        // card edge.
+        .padding(.bottom, 6)
     }
 
     @ViewBuilder

@@ -173,17 +173,21 @@ struct AgendaView: View {
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(ReefTheme.Ink.primary)
                     .lineLimit(1)
-                Text(Self.when(event))
-                    .font(.system(size: 10))
-                    .foregroundStyle(ReefTheme.Ink.secondary)
-                    .lineLimit(1)
+                // Time and the video-call marker share one line, so the title gets
+                // the full row width before it truncates.
+                HStack(spacing: 4) {
+                    Text(Self.when(event))
+                        .font(.system(size: 10))
+                        .foregroundStyle(ReefTheme.Ink.secondary)
+                        .lineLimit(1)
+                    if event.meetingURL != nil {
+                        Image(systemName: "video.fill")
+                            .font(.system(size: 8))
+                            .foregroundStyle(accent)
+                    }
+                }
             }
             Spacer(minLength: 0)
-            if event.meetingURL != nil {
-                Image(systemName: "video.fill")
-                    .font(.system(size: 9))
-                    .foregroundStyle(accent)
-            }
             Image(systemName: "chevron.right")
                 .font(.system(size: 9, weight: .semibold))
                 .foregroundStyle(ReefTheme.Ink.tertiary)
