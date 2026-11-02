@@ -42,6 +42,8 @@ struct IslandHomeView: View {
     var isAwake: Bool = false
     /// Flip keep-awake from the header toggle.
     var onToggleAwake: () -> Void = {}
+    /// Open the Settings window from the header gear.
+    var onOpenSettings: () -> Void = {}
 
     /// Low Power Mode, read from the system and kept live by the notification.
     @State private var lowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
@@ -123,6 +125,15 @@ struct IslandHomeView: View {
             }
             .buttonStyle(.plain)
             .help(isAwake ? "Keeping the Mac awake" : "Keep the Mac awake")
+            Button(action: onOpenSettings) {
+                Image(systemName: "gearshape")
+                    .font(ReefTheme.Typography.caption)
+                    .foregroundStyle(ReefTheme.Ink.secondary)
+                    .padding(.leading, ReefTheme.Spacing.s)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help("Open Reef settings")
 
             Spacer(minLength: notchWidth + ReefTheme.Spacing.l)
 

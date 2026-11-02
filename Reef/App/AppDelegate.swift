@@ -107,6 +107,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         lockOverlay.start()
         self.lockOverlay = lockOverlay
 
+        // The island's header gear opens Settings through this notification, so
+        // the overlay stays decoupled from the window it does not own.
+        NotificationCenter.default
+            .publisher(for: .reefOpenSettings)
+            .sink { [weak self] _ in self?.settingsWindow?.show() }
+            .store(in: &cancellables)
+
         settingsWindow = SettingsWindowController { [settings, calendar, weather, ambient, focus, updates] in
             SettingsView()
                 .environmentObject(settings)
