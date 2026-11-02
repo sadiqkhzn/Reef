@@ -14,12 +14,17 @@ struct WeatherPageView: View {
     var body: some View {
         ZStack {
             if let snapshot {
-                // A soft wash of the current sky, so the page reads as weather at
-                // a glance rather than a plain list.
-                LinearGradient(
-                    colors: snapshot.condition.skyColors.map { $0.opacity(0.42) },
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing)
+                // A corner glow of the current sky, not a full flood — keeps the
+                // dark obsidian island while hinting the weather in the top-left.
+                RadialGradient(
+                    colors: [
+                        (snapshot.condition.skyColors.first ?? accent).opacity(0.55),
+                        .clear,
+                    ],
+                    center: .topLeading,
+                    startRadius: 0,
+                    endRadius: 240)
+                    .blur(radius: 24)
                     .ignoresSafeArea()
             }
             VStack(spacing: 0) {

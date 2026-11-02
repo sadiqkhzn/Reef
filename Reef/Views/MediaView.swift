@@ -282,10 +282,10 @@ struct MediaView: View {
     private var playButton: some View {
         Button(action: { media.playPause() }) {
             ZStack {
-                Circle().fill(accent.opacity(0.9)).frame(width: 32, height: 32)
+                Circle().fill(accent.opacity(0.95)).frame(width: 32, height: 32)
                 Image(systemName: nowPlaying.isPlaying ? "pause.fill" : "play.fill")
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(accent.contrastingInk)
                     .contentTransition(.symbolEffect(.replace))
             }
             .contentShape(Circle())

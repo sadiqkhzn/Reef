@@ -34,7 +34,7 @@ struct IslandTabBar: View {
                                 .fixedSize()
                         }
                     }
-                    .foregroundStyle(selected ? .white : .white.opacity(0.5))
+                    .foregroundStyle(selected ? accent.contrastingInk : .white.opacity(0.5))
                     .padding(.horizontal, selected ? 10 : 7)
                     .frame(height: 22)
                     .background {

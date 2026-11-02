@@ -17,10 +17,12 @@ struct MonthGridView: View {
                 .foregroundStyle(ReefTheme.Ink.primary)
 
             LazyVGrid(columns: columns, spacing: 1) {
-                ForEach(weekdaySymbols, id: \.self) { symbol in
+                // Keyed by position: weekday initials repeat (S, T), so keying by
+                // the letter would drop the duplicates.
+                ForEach(Array(weekdaySymbols.enumerated()), id: \.offset) { _, symbol in
                     Text(symbol)
-                        .font(.system(size: 8, weight: .semibold))
-                        .foregroundStyle(ReefTheme.Ink.secondary)
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundStyle(ReefTheme.Ink.tertiary)
                         .frame(maxWidth: .infinity)
                 }
                 ForEach(Array(days.enumerated()), id: \.offset) { _, day in
@@ -40,13 +42,11 @@ struct MonthGridView: View {
             // The event dot is an overlay so it adds no row height.
             Text("\(calendar.component(.day, from: day))")
                 .font(.system(size: 10, weight: isToday ? .bold : .regular, design: .rounded))
-                .foregroundStyle(isToday ? Color.black : ReefTheme.Ink.primary)
+                .foregroundStyle(isToday ? accent.contrastingInk : ReefTheme.Ink.primary)
                 .frame(width: 15, height: 15)
                 .background {
                     if isToday {
-                        Circle()
-                            .fill(accent.gradient)
-                            .shadow(color: accent.opacity(0.5), radius: 2)
+                        Circle().fill(accent)
                     }
                 }
                 .overlay(alignment: .bottom) {
