@@ -33,6 +33,7 @@ struct OverlayRootView: View {
     @EnvironmentObject private var weather: WeatherProvider
     @EnvironmentObject private var shelf: ShelfModel
     @EnvironmentObject private var media: NowPlayingController
+    @EnvironmentObject private var focus: FocusMonitor
     /// The island's countdown timer, started from the timer page.
     @StateObject private var timer = TimerController()
     /// The island's stopwatch, run from the timer page.
@@ -357,7 +358,10 @@ struct OverlayRootView: View {
                             onOpenTimer: { openPage = .timer },
                             onOpenWeather: { openPage = .weather },
                             onOpenBattery: { openPage = .battery },
-                            hidesBatteryPercentage: settings.hidesBatteryPercentage)
+                            hidesBatteryPercentage: settings.hidesBatteryPercentage,
+                            focus: focus.current,
+                            isAwake: settings.keepAwake,
+                            onToggleAwake: { settings.keepAwake.toggle() })
                             .frame(width: state.visibleSize.width, height: pageHeight, alignment: .top)
                             .transition(.islandOpen)
                     }
