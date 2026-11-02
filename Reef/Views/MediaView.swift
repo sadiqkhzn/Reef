@@ -56,6 +56,16 @@ struct MediaView: View {
                         font: .system(size: 14, weight: .semibold, design: .rounded),
                         alignment: .leading)
                         .frame(height: 18)
+                        // Soft trailing fade so the title dissolves into the ↗
+                        // arrow instead of clipping hard against it.
+                        .mask(
+                            HStack(spacing: 0) {
+                                Rectangle().fill(.black)
+                                LinearGradient(
+                                    colors: [.black, .clear],
+                                    startPoint: .leading, endPoint: .trailing)
+                                    .frame(width: 16)
+                            })
                     if nowPlaying.bundleIdentifier != nil {
                         Button(action: showInApp) {
                             Image(systemName: "arrow.up.forward")

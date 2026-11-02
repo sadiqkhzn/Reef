@@ -70,11 +70,18 @@ final class ColorPickerModel: ObservableObject {
     private let key = "colorPicker.recents"
     private let maxRecents = 10
 
+    /// Shown before the first pick so the orb glows and every format row carries a
+    /// real, copyable value (Reef's sky accent, #38BDF8).
+    private static let seed = PickedColor(red: 0.22, green: 0.74, blue: 0.97)
+
     init() {
         if let data = UserDefaults.standard.data(forKey: key),
-            let saved = try? JSONDecoder().decode([PickedColor].self, from: data) {
+            let saved = try? JSONDecoder().decode([PickedColor].self, from: data),
+            !saved.isEmpty {
             recents = saved
             selected = saved.first
+        } else {
+            selected = Self.seed
         }
     }
 
