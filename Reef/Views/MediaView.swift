@@ -1,4 +1,5 @@
 import AppKit
+import CoreAudio
 import SwiftUI
 
 /// The open media hero: large artwork with an album-color glow and a source-app
@@ -16,6 +17,11 @@ struct MediaView: View {
     var liveLevels: [Float]? = nil
     /// How the panel is colored behind the track details.
     var colorStyle: PlayerTint = .bloom
+
+    /// The output devices for the picker, and the current default, refreshed
+    /// whenever the picker opens so the list and checkmark stay honest.
+    @State private var outputs: [OutputDevice] = []
+    @State private var currentOutputID: AudioObjectID?
 
     /// Vivid color drawn from the cover, falling back to white.
     private var tint: Color { nowPlaying.tint ?? .white }
@@ -197,6 +203,8 @@ struct MediaView: View {
 
     private var controls: some View {
         HStack(spacing: 0) {
+            outputPicker
+            Spacer(minLength: 0)
             transportToggle("shuffle", on: nowPlaying.shuffleOn) { media.toggleShuffle() }
             Spacer(minLength: 0)
             transportButton("backward.fill", size: 15, diameter: 30) { media.previous() }
@@ -207,6 +215,47 @@ struct MediaView: View {
             Spacer(minLength: 0)
             transportToggle(repeatSymbol, on: nowPlaying.repeatMode != .off) { media.cycleRepeat() }
         }
+    }
+
+    // MARK: - Output picker
+
+    /// A pull-down of the output devices, routing system audio when one is
+    /// picked. Its icon shows where audio is currently going.
+    private var outputPicker: some View {
+        Menu {
+            ForEach(outputs) { device in
+                Button {
+                    AudioOutputDevices.setDefault(device.id)
+                    refreshOutputs()
+                } label: {
+                    Label(
+                        device.name,
+                        systemImage: device.id == currentOutputID ? "checkmark" : device.symbol)
+                }
+            }
+        } label: {
+            Image(systemName: currentOutputSymbol)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.55))
+                .frame(width: 26, height: 26)
+                .contentShape(Circle())
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help("Output device")
+        .onAppear(perform: refreshOutputs)
+        .onReceive(media.$current) { _ in refreshOutputs() }
+    }
+
+    /// The symbol of the current route, defaulting to a speaker.
+    private var currentOutputSymbol: String {
+        outputs.first { $0.id == currentOutputID }?.symbol ?? "speaker.wave.2.fill"
+    }
+
+    private func refreshOutputs() {
+        outputs = AudioOutputDevices.available()
+        currentOutputID = AudioOutputDevices.currentDefaultID()
     }
 
     private var repeatSymbol: String {
