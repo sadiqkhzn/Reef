@@ -48,3 +48,7 @@ __pycache__/
 
 # Local design/analysis docs (not part of the repo)
 claudedocs/
+
+# DMG build output
+dist/
+.dmgbuild/
