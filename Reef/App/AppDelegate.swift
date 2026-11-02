@@ -74,7 +74,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let controller = NotchWindowController(
             state: state, settings: settings, battery: battery,
-            calendar: calendar, weather: weather, shelf: shelf, media: media)
+            calendar: calendar, weather: weather, shelf: shelf, media: media,
+            focus: focus)
         controller.show()
         self.controller = controller
 

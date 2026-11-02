@@ -36,6 +36,15 @@ struct IslandHomeView: View {
     var onOpenBattery: () -> Void = {}
     /// Hide the battery number, showing only the glyph and ring.
     var hidesBatteryPercentage: Bool = false
+    /// The active macOS Focus, shown as a status chip when one is on.
+    var focus: FocusStatus? = nil
+    /// Whether keep-awake (caffeinate) is on, lighting its toggle.
+    var isAwake: Bool = false
+    /// Flip keep-awake from the header toggle.
+    var onToggleAwake: () -> Void = {}
+
+    /// Low Power Mode, read from the system and kept live by the notification.
+    @State private var lowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
 
     /// Inset from the island's rounded edge for the cards, wide enough that they
     /// do not crowd the corners.
@@ -105,7 +114,19 @@ struct IslandHomeView: View {
             }
             .buttonStyle(.plain)
             .help("Open the timer")
+            Button(action: onToggleAwake) {
+                Image(systemName: isAwake ? "cup.and.saucer.fill" : "cup.and.saucer")
+                    .font(ReefTheme.Typography.caption)
+                    .foregroundStyle(isAwake ? accent : ReefTheme.Ink.secondary)
+                    .padding(.leading, ReefTheme.Spacing.s)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help(isAwake ? "Keeping the Mac awake" : "Keep the Mac awake")
+
             Spacer(minLength: notchWidth + ReefTheme.Spacing.l)
+
+            statusCluster
             if battery.isPresent {
                 Button(action: onOpenBattery) {
                     BatteryBadge(snapshot: battery, showsPercentage: !hidesBatteryPercentage)
@@ -116,6 +137,34 @@ struct IslandHomeView: View {
             }
         }
         .padding(.horizontal, ReefTheme.Spacing.l)
+        .onReceive(NotificationCenter.default.publisher(
+            for: .NSProcessInfoPowerStateDidChange)) { _ in
+            lowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
+        }
+    }
+
+    /// The right-wing status glance: the active Focus and Low Power Mode, each
+    /// shown only while on. Quiet chips that sit just left of the battery badge.
+    @ViewBuilder
+    private var statusCluster: some View {
+        HStack(spacing: 5) {
+            if let focus {
+                statusChip(symbol: focus.symbol, tint: accent, help: "Focus · \(focus.name)")
+            }
+            if lowPower {
+                statusChip(symbol: "bolt.fill", tint: ReefTheme.Status.warning, help: "Low Power Mode")
+            }
+        }
+        .padding(.trailing, focus != nil || lowPower ? ReefTheme.Spacing.s : 0)
+    }
+
+    private func statusChip(symbol: String, tint: Color, help: String) -> some View {
+        Image(systemName: symbol)
+            .font(.system(size: 10, weight: .semibold))
+            .foregroundStyle(tint)
+            .frame(width: 20, height: 20)
+            .background(Circle().fill(tint.opacity(0.16)))
+            .help(help)
     }
 
     /// The page pill. Shows the current page, and on the home page becomes a
