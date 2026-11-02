@@ -1,14 +1,15 @@
 import SwiftUI
 
-/// A compact month grid for the calendar page. Today is ringed in the accent
-/// color, and days with an event carry a small dot.
+/// A compact month grid for the calendar page. Today is filled in the accent
+/// color; days with an event read brighter and heavier than free days, instead
+/// of carrying dots that turn the grid into a barcode.
 struct MonthGridView: View {
     /// Start-of-day dates in the month that have events.
     var eventDays: Set<Date>
     var accent: Color
 
     private let calendar = Calendar.current
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 1), count: 7)
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 2), count: 7)
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
@@ -16,7 +17,7 @@ struct MonthGridView: View {
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(ReefTheme.Ink.primary)
 
-            LazyVGrid(columns: columns, spacing: 1) {
+            LazyVGrid(columns: columns, spacing: 2) {
                 // Keyed by position: weekday initials repeat (S, T), so keying by
                 // the letter would drop the duplicates.
                 ForEach(Array(weekdaySymbols.enumerated()), id: \.offset) { _, symbol in
@@ -31,10 +32,7 @@ struct MonthGridView: View {
             }
         }
         .padding(.horizontal, ReefTheme.Spacing.s)
-        .padding(.top, 2)
-        // Extra bottom clearance so the last row's event dot isn't clipped by the
-        // card edge.
-        .padding(.bottom, 6)
+        .padding(.vertical, 4)
     }
 
     @ViewBuilder
@@ -42,25 +40,28 @@ struct MonthGridView: View {
         if let day {
             let isToday = calendar.isDateInToday(day)
             let hasEvent = eventDays.contains(calendar.startOfDay(for: day))
-            // The event dot is an overlay so it adds no row height.
             Text("\(calendar.component(.day, from: day))")
-                .font(.system(size: 10, weight: isToday ? .bold : .regular, design: .rounded))
-                .foregroundStyle(isToday ? accent.contrastingInk : ReefTheme.Ink.primary)
+                .font(.system(
+                    size: 10,
+                    weight: isToday ? .bold : (hasEvent ? .semibold : .regular),
+                    design: .rounded))
+                .foregroundStyle(dayColor(isToday: isToday, hasEvent: hasEvent))
                 .frame(width: 15, height: 15)
                 .background {
                     if isToday {
                         Circle().fill(accent)
                     }
                 }
-                .overlay(alignment: .bottom) {
-                    if hasEvent {
-                        Circle().fill(accent).frame(width: 3, height: 3).offset(y: 3)
-                    }
-                }
                 .frame(maxWidth: .infinity)
         } else {
             Color.clear.frame(height: 15)
         }
+    }
+
+    /// Busy days read bright, free days recede — no dots.
+    private func dayColor(isToday: Bool, hasEvent: Bool) -> Color {
+        if isToday { return accent.contrastingInk }
+        return hasEvent ? ReefTheme.Ink.primary : ReefTheme.Ink.tertiary
     }
 
     /// Localized one-letter weekday headers, starting on the locale's first day.

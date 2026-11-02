@@ -42,9 +42,34 @@ struct SystemMonitorView: View {
                 .foregroundStyle(ReefTheme.Ink.primary)
             sparkline
                 .frame(maxHeight: .infinity)
+            if model.gpuAvailable {
+                gpuRow
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .islandCard(padding: ReefTheme.Spacing.m)
+    }
+
+    /// A slim GPU utilization bar tucked under the CPU sparkline.
+    private var gpuRow: some View {
+        HStack(spacing: ReefTheme.Spacing.s) {
+            metricHeader("GPU")
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(.white.opacity(0.08))
+                    Capsule()
+                        .fill(accent.opacity(0.7))
+                        .frame(width: geo.size.width * CGFloat(min(1, model.gpu)))
+                }
+            }
+            .frame(height: 4)
+            Text("\(Int((model.gpu * 100).rounded()))%")
+                .font(.system(size: 10, weight: .semibold, design: .rounded))
+                .monospacedDigit()
+                .foregroundStyle(ReefTheme.Ink.secondary)
+                .frame(width: 32, alignment: .trailing)
+        }
+        .padding(.top, 2)
     }
 
     private var sparkline: some View {

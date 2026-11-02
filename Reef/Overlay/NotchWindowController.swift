@@ -289,9 +289,9 @@ final class NotchWindowController {
                     self.phaseWork = work
                     let delay = max(0.1, self.settings.hoverOpenSeconds)
                     DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: work)
-                } else if !hovering {
+                } else if !hovering && !self.state.keepsOpen {
                     let work = DispatchWorkItem { [weak self] in
-                        guard let self, !self.state.isHovering else { return }
+                        guard let self, !self.state.isHovering, !self.state.keepsOpen else { return }
                         self.state.phase = .collapsed
                     }
                     self.phaseWork = work

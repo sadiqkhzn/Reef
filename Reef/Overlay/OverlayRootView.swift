@@ -457,7 +457,9 @@ struct OverlayRootView: View {
                             cleanTitle: settings.hideMediaTitleExtras,
                             accent: settings.accent.color,
                             liveLevels: liveLevels,
-                            colorStyle: settings.playerTint)
+                            colorStyle: settings.playerTint,
+                            lyricsEnabled: settings.showsLyrics,
+                            onInteractionChange: { state.keepsOpen = $0 })
                             .frame(width: state.visibleSize.width, height: pageHeight)
                             .transition(.islandOpen)
                     } else {

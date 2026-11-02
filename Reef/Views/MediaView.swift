@@ -17,14 +17,28 @@ struct MediaView: View {
     var liveLevels: [Float]? = nil
     /// How the panel is colored behind the track details.
     var colorStyle: PlayerTint = .bloom
+    /// Whether to fetch and offer synced lyrics for the current track.
+    var lyricsEnabled: Bool = false
 
-    /// The output devices for the picker, and the current default, refreshed
-    /// whenever the picker opens so the list and checkmark stay honest.
+    /// Called when an in-island panel (volume) or the lyrics overlay opens or
+    /// closes, so the host can pin the island open while the user interacts.
+    var onInteractionChange: (Bool) -> Void = { _ in }
+
+    /// The current output device, for the speaker icon. The volume panel manages
+    /// its own copy so dragging the slider never re-renders the hero.
     @State private var outputs: [OutputDevice] = []
     @State private var currentOutputID: AudioObjectID?
+    /// Whether the volume/device panel is open.
+    @State private var showOutput = false
+    /// Synced lyrics for the current track, and whether the overlay is showing.
+    @StateObject private var lyrics = LyricsModel()
+    @State private var showLyrics = false
 
     /// Vivid color drawn from the cover, falling back to white.
     private var tint: Color { nowPlaying.tint ?? .white }
+
+    /// Identity of the current track, so lyrics reload only when the song changes.
+    private var trackKey: String { "\(nowPlaying.title)|\(nowPlaying.artist)" }
 
     private func showInApp() {
         guard let id = nowPlaying.bundleIdentifier else { return }
@@ -66,6 +80,16 @@ struct MediaView: View {
                                     startPoint: .leading, endPoint: .trailing)
                                     .frame(width: 16)
                             })
+                    if lyricsEnabled && lyrics.hasLyrics {
+                        Button { showLyrics.toggle() } label: {
+                            Image(systemName: "quote.bubble")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(showLyrics ? tint : .white.opacity(0.55))
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .help("Lyrics")
+                    }
                     if nowPlaying.bundleIdentifier != nil {
                         Button(action: showInApp) {
                             Image(systemName: "arrow.up.forward")
@@ -95,10 +119,52 @@ struct MediaView: View {
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 16)
+        // Hide the hero entirely under the lyrics overlay so nothing shows
+        // through (no double-vision of the art, scrubber, or transport).
+        .opacity(showLyrics ? 0 : 1)
+        .allowsHitTesting(!showLyrics)
         // Center vertically so the hero clears the top notch band and reads as a
         // balanced card.
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(playerWash)
+        .overlay {
+            if showLyrics {
+                LyricsView(
+                    model: lyrics, nowPlaying: nowPlaying, media: media,
+                    cleanTitle: cleanTitle, accent: tint,
+                    onClose: { showLyrics = false })
+                    .transition(.opacity)
+            }
+        }
+        .overlay(alignment: .bottomLeading) {
+            if showOutput {
+                ZStack(alignment: .bottomLeading) {
+                    // A tap outside the panel dismisses it, while staying inside
+                    // the island so the panel doesn't vanish on mouse-move.
+                    Color.black.opacity(0.001)
+                        .contentShape(Rectangle())
+                        .onTapGesture { showOutput = false }
+                    MediaOutputPanel(media: media)
+                        .padding(.leading, 12)
+                        .padding(.bottom, 40)
+                }
+                .transition(.opacity)
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: showLyrics)
+        .animation(.easeInOut(duration: 0.15), value: showOutput)
+        .onChange(of: showOutput) { _, _ in onInteractionChange(showOutput || showLyrics) }
+        .onChange(of: showLyrics) { _, _ in onInteractionChange(showOutput || showLyrics) }
+        .onDisappear { onInteractionChange(false) }
+        .task(id: trackKey) {
+            guard lyricsEnabled else { return }
+            showLyrics = false
+            lyrics.load(
+                title: nowPlaying.displayTitle(cleaned: cleanTitle),
+                artist: nowPlaying.artist,
+                album: nowPlaying.album,
+                duration: nowPlaying.duration)
+        }
         .contextMenu {
             Button("Copy", systemImage: "doc.on.doc", action: copyTrack)
             if nowPlaying.bundleIdentifier != nil {
@@ -246,31 +312,18 @@ struct MediaView: View {
 
     // MARK: - Output picker
 
-    /// A pull-down of the output devices, routing system audio when one is
-    /// picked. Its icon shows where audio is currently going.
+    /// A speaker button that opens the in-island volume + output panel. Its icon
+    /// shows where audio is going.
     private var outputPicker: some View {
-        Menu {
-            ForEach(outputs) { device in
-                Button {
-                    AudioOutputDevices.setDefault(device.id)
-                    refreshOutputs()
-                } label: {
-                    Label(
-                        device.name,
-                        systemImage: device.id == currentOutputID ? "checkmark" : device.symbol)
-                }
-            }
-        } label: {
+        Button { showOutput.toggle() } label: {
             Image(systemName: currentOutputSymbol)
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.55))
                 .frame(width: 24, height: 24)
                 .contentShape(Circle())
         }
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.hidden)
-        .fixedSize()
-        .help("Output device")
+        .buttonStyle(.plain)
+        .help("Volume & output")
         .onAppear(perform: refreshOutputs)
         .onReceive(media.$current) { _ in refreshOutputs() }
     }
@@ -280,6 +333,8 @@ struct MediaView: View {
         outputs.first { $0.id == currentOutputID }?.symbol ?? "speaker.wave.2.fill"
     }
 
+    /// Only refreshes the icon's device info — never volume, so nothing here
+    /// changes while the slider is being dragged in the panel.
     private func refreshOutputs() {
         outputs = AudioOutputDevices.available()
         currentOutputID = AudioOutputDevices.currentDefaultID()
@@ -421,5 +476,99 @@ private struct ScrubBar: View {
         guard seconds.isFinite, seconds > 0 else { return "0:00" }
         let total = Int(seconds.rounded())
         return String(format: "%d:%02d", total / 60, total % 60)
+    }
+}
+
+/// The in-island volume + output panel. It owns its own volume/mute/device state
+/// so dragging the slider re-renders only this small panel — never the media
+/// hero — which keeps the scrubber behind it from flickering.
+private struct MediaOutputPanel: View {
+    @ObservedObject var media: NowPlayingController
+
+    @State private var outputs: [OutputDevice] = []
+    @State private var currentOutputID: AudioObjectID?
+    @State private var volume: Double = 0.5
+    @State private var muted = false
+    @State private var volumeSupported = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if volumeSupported {
+                HStack(spacing: 8) {
+                    Button { toggleMute() } label: {
+                        Image(systemName: muted ? "speaker.slash.fill" : "speaker.fill")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(muted ? .secondary : .primary)
+                            .frame(width: 18)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    Slider(value: $volume, in: 0...1)
+                        .controlSize(.small)
+                        .onChange(of: volume) { _, newValue in
+                            guard let id = currentOutputID else { return }
+                            AudioOutputDevices.setVolume(Float(newValue), on: id)
+                            if muted, newValue > 0 { muted = false }
+                        }
+                }
+                Divider()
+            }
+            ForEach(outputs) { device in
+                Button {
+                    AudioOutputDevices.setDefault(device.id)
+                    refresh()
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: device.id == currentOutputID ? "checkmark" : device.symbol)
+                            .font(.system(size: 11))
+                            .frame(width: 16)
+                            .foregroundStyle(device.id == currentOutputID ? Color.accentColor : .secondary)
+                        Text(device.name)
+                            .font(.system(size: 12))
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                        Spacer(minLength: 0)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(12)
+        .frame(width: 210)
+        .background(
+            RoundedRectangle(cornerRadius: ReefTheme.Radius.card, style: .continuous)
+                .fill(.black.opacity(0.9))
+                .overlay(
+                    RoundedRectangle(cornerRadius: ReefTheme.Radius.card, style: .continuous)
+                        .strokeBorder(.white.opacity(0.12), lineWidth: 0.5))
+                .shadow(color: .black.opacity(0.45), radius: 12, y: 4))
+        .onAppear(perform: refresh)
+        .onReceive(media.$current) { _ in refresh() }
+    }
+
+    private func refresh() {
+        outputs = AudioOutputDevices.available()
+        currentOutputID = AudioOutputDevices.currentDefaultID()
+        if let id = currentOutputID, let level = AudioOutputDevices.volume(of: id) {
+            volumeSupported = true
+            volume = Double(level)
+            muted = AudioOutputDevices.isMuted(id)
+        } else {
+            volumeSupported = false
+        }
+    }
+
+    private func toggleMute() {
+        guard let id = currentOutputID else { return }
+        let next = !muted
+        if AudioOutputDevices.setMuted(next, on: id) {
+            muted = next
+        } else if next {
+            // No mute property: drop volume to zero as a soft mute.
+            AudioOutputDevices.setVolume(0, on: id)
+            volume = 0
+            muted = true
+        }
     }
 }
