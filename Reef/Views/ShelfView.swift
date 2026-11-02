@@ -160,14 +160,38 @@ struct ShelfView: View {
     }
 
     private func dashedTarget(on highlighted: Bool) -> some View {
+        // A single recessed well with one crisp dashed perimeter and a faint
+        // dot-matrix floor — no double border.
         RoundedRectangle(cornerRadius: ReefTheme.Radius.card, style: .continuous)
-            .fill(accent.opacity(highlighted ? 0.1 : 0))
+            .fill(highlighted ? accent.opacity(0.12) : Color.black.opacity(0.22))
+            .overlay(dotMatrix.opacity(highlighted ? 0 : 1))
             .overlay(
                 RoundedRectangle(cornerRadius: ReefTheme.Radius.card, style: .continuous)
                     .strokeBorder(
-                        (highlighted ? accent : ReefTheme.Ink.secondary)
-                            .opacity(highlighted ? 0.8 : 0.3),
-                        style: StrokeStyle(lineWidth: 1, dash: [4])))
+                        (highlighted ? accent : Color.white).opacity(highlighted ? 0.85 : 0.14),
+                        style: StrokeStyle(lineWidth: 1, dash: [5, 5])))
+            .clipShape(RoundedRectangle(cornerRadius: ReefTheme.Radius.card, style: .continuous))
+    }
+
+    /// A faint dot grid that gives the empty well a physical "pegboard" floor.
+    private var dotMatrix: some View {
+        Canvas { context, size in
+            let spacing: CGFloat = 14
+            let radius: CGFloat = 0.75
+            var y = spacing / 2
+            while y < size.height {
+                var x = spacing / 2
+                while x < size.width {
+                    context.fill(
+                        Path(ellipseIn: CGRect(
+                            x: x - radius, y: y - radius, width: radius * 2, height: radius * 2)),
+                        with: .color(.white.opacity(0.06)))
+                    x += spacing
+                }
+                y += spacing
+            }
+        }
+        .allowsHitTesting(false)
     }
 }
 

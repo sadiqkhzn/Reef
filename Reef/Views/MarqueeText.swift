@@ -31,6 +31,16 @@ struct MarqueeText: View {
                         }
                         .offset(x: -CGFloat(progress) * (textWidth + gap))
                     }
+                    // Soft edges so the scroll dissolves in and out instead of
+                    // hard-clipping where the text wraps.
+                    .mask(
+                        HStack(spacing: 0) {
+                            LinearGradient(colors: [.clear, .black], startPoint: .leading, endPoint: .trailing)
+                                .frame(width: 10)
+                            Rectangle().fill(.black)
+                            LinearGradient(colors: [.black, .clear], startPoint: .leading, endPoint: .trailing)
+                                .frame(width: 10)
+                        })
                 } else {
                     label.frame(width: geo.size.width, alignment: alignment)
                 }
