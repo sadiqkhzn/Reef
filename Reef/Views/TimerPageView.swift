@@ -132,13 +132,14 @@ struct TimerPageView: View {
     private func stepper(_ symbol: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: symbol)
-                .font(.system(size: 11, weight: .bold))
+                .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(accent)
-                .frame(width: 28, height: 22)
-                .background(Capsule().fill(accent.opacity(0.16)))
-                .contentShape(Capsule())
+                .frame(width: 30, height: 30)
+                .background(Circle().fill(accent.opacity(0.16)))
+                .overlay(Circle().strokeBorder(accent.opacity(0.22), lineWidth: 1))
+                .contentShape(Circle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(ControlPressStyle())
     }
 
     // MARK: - Running
@@ -190,11 +191,11 @@ struct TimerPageView: View {
             Image(systemName: symbol)
                 .font(.system(size: 11, weight: .bold))
                 .foregroundStyle(accent)
-                .frame(width: 26, height: 22)
-                .background(Capsule().fill(accent.opacity(0.16)))
-                .contentShape(Capsule())
+                .frame(width: 28, height: 28)
+                .background(Circle().fill(accent.opacity(0.16)))
+                .contentShape(Circle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(ControlPressStyle())
     }
 
     private func pillButton(
@@ -312,5 +313,20 @@ struct TimerPageView: View {
             RoundedRectangle(cornerRadius: ReefTheme.Radius.control, style: .continuous)
                 .fill(ReefTheme.Ink.fill))
         .contentShape(Rectangle())
+    }
+}
+
+/// A round control feel: a gentle lift on hover and a dip on press, with no
+/// filled background of its own.
+private struct ControlPressStyle: ButtonStyle {
+    @State private var hovering = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .brightness(hovering ? 0.06 : 0)
+            .scaleEffect(configuration.isPressed ? 0.88 : (hovering ? 1.08 : 1))
+            .animation(.spring(response: 0.25, dampingFraction: 0.7), value: hovering)
+            .animation(.spring(response: 0.2, dampingFraction: 0.6), value: configuration.isPressed)
+            .onHover { hovering = $0 }
     }
 }
