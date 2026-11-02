@@ -33,6 +33,8 @@ struct PanesSettingsPage: View {
         case "colorPicker": return $settings.showsColorPicker
         case "clipboard": return $settings.showsClipboard
         case "downloads": return $settings.showsDownloads
+        case "monitor": return $settings.showsMonitor
+        case "webcam": return $settings.showsWebcam
         default: return .constant(true)
         }
     }
@@ -53,6 +55,10 @@ struct PaneOption: Identifiable {
             blurb: "Searchable, pinnable copy history.", tint: .orange),
         PaneOption(id: "downloads", title: "Downloads", symbol: "arrow.down.circle",
             blurb: "Live progress + recent files to drag out.", tint: .green),
+        PaneOption(id: "monitor", title: "System Monitor", symbol: "waveform.path.ecg",
+            blurb: "Live CPU, memory, and network telemetry.", tint: .red),
+        PaneOption(id: "webcam", title: "Mirror", symbol: "web.camera",
+            blurb: "A quick front-camera check before a call.", tint: .blue),
     ]
 }
 
