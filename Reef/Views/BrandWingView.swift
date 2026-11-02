@@ -12,6 +12,8 @@ struct BrandWingView: View {
     let opacity: Double
     let tinted: Bool
     let size: BrandImageSize
+    /// Grows the mark a touch while the island is peeking on hover.
+    var peeking: Bool = false
 
     private var targetHeight: CGFloat {
         max(12, (rowHeight - 6) * size.scale)
@@ -44,5 +46,9 @@ struct BrandWingView: View {
             .foregroundStyle(ReefTheme.Ink.primary)
             .padding(.horizontal, 6)
             .opacity(opacity)
+            // Lift slightly while the island peeks, so the mark feels alive rather
+            // than stuck.
+            .scaleEffect(peeking ? 1.08 : 1)
+            .animation(.spring(response: 0.3, dampingFraction: 0.72), value: peeking)
     }
 }

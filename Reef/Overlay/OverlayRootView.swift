@@ -582,8 +582,9 @@ struct OverlayRootView: View {
                         notched: notchClearance > 0,
                         opacity: settings.brandImageOpacity,
                         tinted: settings.brandImageTinted,
-                        size: settings.brandImageSize)
-                        .frame(height: state.restingSize.height, alignment: .top)
+                        size: settings.brandImageSize,
+                        peeking: state.isHovering && state.peekOnHover)
+                        .frame(height: state.visibleSize.height, alignment: .top)
                         .transition(.islandWing)
                 }
             }
