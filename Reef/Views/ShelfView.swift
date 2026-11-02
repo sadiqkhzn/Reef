@@ -1,8 +1,12 @@
 import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
-/// The shelf page: files stashed on the island, each able to be dragged back
-/// out to Finder or another app. Empty, it invites a drop.
+/// The shelf page in a wide two-pane layout.
+///
+/// Left pane: an AirDrop target — drop files on it to send them. Right pane: the
+/// shelf itself, where dropped files are stashed and can be dragged back out to
+/// Finder or another app.
 struct ShelfView: View {
     @ObservedObject var shelf: ShelfModel
     var accent: Color
@@ -11,38 +15,82 @@ struct ShelfView: View {
     /// Leave the open island (back to home).
     var onClose: () -> Void
 
+    @State private var airdropTargeted = false
+    @State private var shelfTargeted = false
+
+    /// Top clearance: the full header height to clear the notch in the attached
+    /// style, or a small inset when floating so there is no dead space.
+    private var topInset: CGFloat {
+        notchWidth > 0 ? headerHeight : ReefTheme.Spacing.s
+    }
+
+    private let columns = [GridItem(.adaptive(minimum: 68), spacing: ReefTheme.Spacing.s)]
+
     var body: some View {
         VStack(spacing: 0) {
-            header
-                .frame(height: headerHeight)
-                .padding(.top, 8)
-
-            if shelf.isEmpty {
-                empty
-            } else {
-                files
+            Color.clear.frame(height: topInset)
+            HStack(alignment: .top, spacing: ReefTheme.Spacing.s) {
+                airdropPane
+                    .frame(width: 168)
+                shelfPane
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+            .padding(.horizontal, ReefTheme.Spacing.s)
+            .padding(.bottom, ReefTheme.Spacing.s)
         }
     }
 
-    private var header: some View {
-        // The bottom tab bar labels the page; the header keeps only the clear
-        // action when the shelf has items.
-        HStack(spacing: 0) {
-            Spacer(minLength: notchWidth + ReefTheme.Spacing.l)
+    // MARK: - AirDrop pane
+
+    private var airdropPane: some View {
+        VStack(spacing: 6) {
+            Image(systemName: "dot.radiowaves.left.and.right")
+                .font(.system(size: 24, weight: .medium))
+                .foregroundStyle(airdropTargeted ? accent : ReefTheme.Ink.primary)
+            Text("AirDrop")
+                .font(ReefTheme.Typography.caption)
+                .foregroundStyle(ReefTheme.Ink.primary)
+            Text("Drop to send")
+                .font(.system(size: 9))
+                .foregroundStyle(ReefTheme.Ink.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(dashedTarget(on: airdropTargeted))
+        .onDrop(of: [UTType.fileURL], isTargeted: $airdropTargeted) { providers in
+            airdrop(providers)
+        }
+    }
+
+    // MARK: - Shelf pane
+
+    private var shelfPane: some View {
+        ZStack(alignment: .topTrailing) {
+            Group {
+                if shelf.isEmpty {
+                    empty
+                } else {
+                    files
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             if !shelf.isEmpty {
                 Button(action: shelf.clear) {
                     Image(systemName: "trash")
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(ReefTheme.Ink.secondary)
+                        .padding(6)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .help("Clear the shelf")
+                .padding(6)
             }
         }
-        .padding(.horizontal, ReefTheme.Spacing.l)
+        .background(dashedTarget(on: shelfTargeted))
+        .onDrop(of: [UTType.fileURL], isTargeted: $shelfTargeted) { providers in
+            addToShelf(providers)
+        }
     }
 
     private var empty: some View {
@@ -58,16 +106,67 @@ struct ShelfView: View {
     }
 
     private var files: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: ReefTheme.Spacing.s) {
+        ScrollView(showsIndicators: false) {
+            LazyVGrid(columns: columns, alignment: .leading, spacing: ReefTheme.Spacing.s) {
                 ForEach(shelf.items) { item in
                     FileChip(item: item) { shelf.remove(item.id) }
                 }
             }
-            .padding(.horizontal, ReefTheme.Spacing.l)
-            .padding(.vertical, 6)
+            .padding(ReefTheme.Spacing.s)
         }
-        .frame(maxHeight: .infinity)
+    }
+
+    // MARK: - Drop handling
+
+    /// Send the dropped files via the system AirDrop sheet.
+    private func airdrop(_ providers: [NSItemProvider]) -> Bool {
+        let fileProviders = providers.filter {
+            $0.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier)
+        }
+        guard !fileProviders.isEmpty else { return false }
+
+        var urls: [URL] = []
+        let group = DispatchGroup()
+        for provider in fileProviders {
+            group.enter()
+            _ = provider.loadObject(ofClass: URL.self) { url, _ in
+                if let url, url.isFileURL { urls.append(url) }
+                group.leave()
+            }
+        }
+        group.notify(queue: .main) {
+            guard !urls.isEmpty,
+                let service = NSSharingService(named: .sendViaAirDrop) else { return }
+            service.perform(withItems: urls)
+        }
+        return true
+    }
+
+    /// Stash the dropped files on the shelf.
+    private func addToShelf(_ providers: [NSItemProvider]) -> Bool {
+        let fileProviders = providers.filter {
+            $0.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier)
+        }
+        guard !fileProviders.isEmpty else { return false }
+
+        for provider in fileProviders {
+            _ = provider.loadObject(ofClass: URL.self) { url, _ in
+                guard let url, url.isFileURL else { return }
+                Task { @MainActor in shelf.add([url]) }
+            }
+        }
+        return true
+    }
+
+    private func dashedTarget(on highlighted: Bool) -> some View {
+        RoundedRectangle(cornerRadius: ReefTheme.Radius.card, style: .continuous)
+            .fill(accent.opacity(highlighted ? 0.1 : 0))
+            .overlay(
+                RoundedRectangle(cornerRadius: ReefTheme.Radius.card, style: .continuous)
+                    .strokeBorder(
+                        (highlighted ? accent : ReefTheme.Ink.secondary)
+                            .opacity(highlighted ? 0.8 : 0.3),
+                        style: StrokeStyle(lineWidth: 1, dash: [4])))
     }
 }
 
