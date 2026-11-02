@@ -19,6 +19,8 @@ enum OpenPage {
     case colorPicker
     case clipboard
     case downloads
+    case monitor
+    case webcam
 }
 
 /// The SwiftUI root hosted inside the overlay panel.
@@ -50,6 +52,10 @@ struct OverlayRootView: View {
     @StateObject private var clipboard = ClipboardModel()
     /// The Downloads-folder watcher.
     @StateObject private var downloads = DownloadsModel()
+    /// Live CPU / memory / network telemetry.
+    @StateObject private var monitor = SystemMonitorModel()
+    /// The front-camera mirror session.
+    @StateObject private var webcam = WebcamModel()
     /// The island's stopwatch, run from the timer page.
     @StateObject private var stopwatch = StopwatchController()
     /// Live audio levels for the resting waveform.
@@ -301,6 +307,12 @@ struct OverlayRootView: View {
         if settings.showsDownloads {
             tabs.append(IslandTab(page: .downloads, symbol: "arrow.down.circle", title: "Downloads"))
         }
+        if settings.showsMonitor {
+            tabs.append(IslandTab(page: .monitor, symbol: "waveform.path.ecg", title: "Monitor"))
+        }
+        if settings.showsWebcam {
+            tabs.append(IslandTab(page: .webcam, symbol: "web.camera", title: "Mirror"))
+        }
         return tabs
     }
 
@@ -401,6 +413,24 @@ struct OverlayRootView: View {
                     } else if openPage == .downloads {
                         DownloadsView(
                             model: downloads,
+                            accent: settings.accent.color,
+                            headerHeight: state.collapsedSize.height,
+                            notchWidth: notchClearance,
+                            onClose: { openPage = shownTrack != nil ? .nowPlaying : .home })
+                            .frame(width: state.visibleSize.width, height: pageHeight, alignment: .top)
+                            .transition(.islandOpen)
+                    } else if openPage == .monitor {
+                        SystemMonitorView(
+                            model: monitor,
+                            accent: settings.accent.color,
+                            headerHeight: state.collapsedSize.height,
+                            notchWidth: notchClearance,
+                            onClose: { openPage = shownTrack != nil ? .nowPlaying : .home })
+                            .frame(width: state.visibleSize.width, height: pageHeight, alignment: .top)
+                            .transition(.islandOpen)
+                    } else if openPage == .webcam {
+                        WebcamView(
+                            model: webcam,
                             accent: settings.accent.color,
                             headerHeight: state.collapsedSize.height,
                             notchWidth: notchClearance,
@@ -678,6 +708,7 @@ struct OverlayRootView: View {
             updateNowPlayingActive()
             if settings.showsClipboard { clipboard.start() }
             if settings.showsDownloads { downloads.start() }
+            if settings.showsMonitor { monitor.start() }
         }
         .onChange(of: settings.quickPeek) { _, peek in state.peekOnHover = peek }
         .onChange(of: settings.showsClipboard) { _, on in
@@ -685,6 +716,9 @@ struct OverlayRootView: View {
         }
         .onChange(of: settings.showsDownloads) { _, on in
             if on { downloads.start() } else { downloads.stop() }
+        }
+        .onChange(of: settings.showsMonitor) { _, on in
+            if on { monitor.start() } else { monitor.stop() }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         // Hopping to another screen: shrink and fade out, then pop back in on the

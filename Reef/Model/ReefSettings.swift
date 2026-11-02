@@ -25,6 +25,8 @@ final class ReefSettings: ObservableObject {
         static let colorPicker = "panes.colorPicker"
         static let clipboard = "panes.clipboard"
         static let downloads = "panes.downloads"
+        static let monitor = "panes.monitor"
+        static let webcam = "panes.webcam"
         static let temperatureUnit = "weather.unit"
         static let chargingActivity = "liveActivity.charging"
         static let lowBatteryActivity = "liveActivity.lowBattery"
@@ -222,6 +224,12 @@ final class ReefSettings: ObservableObject {
     }
     @Published var showsDownloads: Bool {
         didSet { defaults.set(showsDownloads, forKey: Key.downloads) }
+    }
+    @Published var showsMonitor: Bool {
+        didSet { defaults.set(showsMonitor, forKey: Key.monitor) }
+    }
+    @Published var showsWebcam: Bool {
+        didSet { defaults.set(showsWebcam, forKey: Key.webcam) }
     }
 
     /// Unit the weather is shown in.
@@ -486,6 +494,8 @@ final class ReefSettings: ObservableObject {
         showsColorPicker = defaults.object(forKey: Key.colorPicker) as? Bool ?? true
         showsClipboard = defaults.object(forKey: Key.clipboard) as? Bool ?? true
         showsDownloads = defaults.object(forKey: Key.downloads) as? Bool ?? true
+        showsMonitor = defaults.object(forKey: Key.monitor) as? Bool ?? false
+        showsWebcam = defaults.object(forKey: Key.webcam) as? Bool ?? false
         temperatureUnit = Self.value(defaults, Key.temperatureUnit) ?? .celsius
         batteryActivitiesEnabled = defaults.object(forKey: Key.batteryActivitiesEnabled) as? Bool ?? true
         batteryActivityDuration = defaults.object(forKey: Key.batteryActivityDuration) as? Double ?? 5

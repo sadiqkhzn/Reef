@@ -28,6 +28,8 @@
 	<string>Reef shows a live activity when AirPods, headphones, or other Bluetooth devices connect.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>Reef shows your next event in the island and a reminder before it starts.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Reef shows a quick camera mirror so you can check your framing before a call.</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2026 Sadiq Khan. GNU GPLv3 or commercial license.</string>
 	<key>NSLocationUsageDescription</key>

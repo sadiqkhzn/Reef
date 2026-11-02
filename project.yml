@@ -54,6 +54,7 @@ targets:
         NSLocationUsageDescription: "Reef uses your approximate location to show local weather in the island."
         NSLocationWhenInUseUsageDescription: "Reef uses your approximate location to show local weather in the island."
         NSAudioCaptureUsageDescription: "Reef reads the audio levels of what is playing to draw a live waveform."
+        NSCameraUsageDescription: "Reef shows a quick camera mirror so you can check your framing before a call."
         NSSupportsAutomaticTermination: true
         NSSupportsSuddenTermination: true
     settings:
