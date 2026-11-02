@@ -1,8 +1,11 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// Material, accent color, and motion, with a live preview at the top.
 struct AppearanceSettingsPage: View {
     @EnvironmentObject private var settings: ReefSettings
+
+    @State private var showingBrandImporter = false
 
     var body: some View {
         Form {
@@ -100,9 +103,83 @@ struct AppearanceSettingsPage: View {
                     + "Synced lyrics are fetched from LRCLIB when a match is found.")
                     .foregroundStyle(.secondary)
             }
+
+            brandSection
         }
         .formStyle(.grouped)
         .navigationTitle("Appearance")
+        .fileImporter(
+            isPresented: $showingBrandImporter,
+            allowedContentTypes: [.image, .pdf],
+            allowsMultipleSelection: false
+        ) { result in
+            if case .success(let urls) = result, let url = urls.first {
+                settings.importBrandImage(from: url)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var brandSection: some View {
+        Section {
+            if let image = settings.brandImage {
+                HStack(spacing: 12) {
+                    BrandSwatch(image: image, tinted: settings.brandImageTinted)
+                    Spacer()
+                    Button("Replace…") { showingBrandImporter = true }
+                    Button("Remove", role: .destructive) { settings.clearBrandImage() }
+                }
+                Toggle("Show in the resting island", isOn: $settings.brandImageEnabled)
+                Picker("Size", selection: $settings.brandImageSize) {
+                    ForEach(BrandImageSize.allCases) { Text($0.title).tag($0) }
+                }
+                HStack {
+                    Text("Opacity")
+                    Slider(value: $settings.brandImageOpacity, in: 0.3...1)
+                    Text("\(Int(settings.brandImageOpacity * 100))%")
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                        .frame(width: 40, alignment: .trailing)
+                }
+                Toggle("Tint to match the theme", isOn: $settings.brandImageTinted)
+            } else {
+                Button {
+                    showingBrandImporter = true
+                } label: {
+                    Label("Choose Image…", systemImage: "photo.badge.plus")
+                }
+            }
+        } header: {
+            Text("Brand Image")
+        } footer: {
+            Text("Shown in the resting island when nothing else is there. On a notched Mac it sits beside the notch; otherwise it's centered. Use a transparent PNG wordmark designed to read at about 24pt tall (export @3×, long edge ≤ 512px).")
+                .foregroundStyle(.secondary)
+        }
+    }
+}
+
+/// A small dark swatch that previews the brand image the way the island draws it.
+private struct BrandSwatch: View {
+    let image: NSImage
+    let tinted: Bool
+
+    var body: some View {
+        Image(nsImage: image)
+            .renderingMode(tinted ? .template : .original)
+            .resizable()
+            .interpolation(.high)
+            .aspectRatio(contentMode: .fit)
+            .frame(height: 22)
+            .foregroundStyle(.white)
+            .padding(.horizontal, 10)
+            .frame(height: 34)
+            .frame(minWidth: 80)
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(Color.black))
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .strokeBorder(.white.opacity(0.1), lineWidth: 0.5))
     }
 }
 

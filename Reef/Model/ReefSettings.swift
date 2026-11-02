@@ -1,3 +1,4 @@
+import AppKit
 import Combine
 import Foundation
 
@@ -34,6 +35,10 @@ final class ReefSettings: ObservableObject {
         static let timerTab = "panes.timer"
         static let shelfTab = "panes.shelf"
         static let paneOrder = "panes.order"
+        static let brandEnabled = "brand.enabled"
+        static let brandOpacity = "brand.opacity"
+        static let brandTinted = "brand.tinted"
+        static let brandSize = "brand.size"
         static let temperatureUnit = "weather.unit"
         static let chargingActivity = "liveActivity.charging"
         static let lowBatteryActivity = "liveActivity.lowBattery"
@@ -264,6 +269,37 @@ final class ReefSettings: ObservableObject {
     /// appended, so the list survives catalog changes.
     @Published var paneOrder: [String] {
         didSet { defaults.set(paneOrder, forKey: Key.paneOrder) }
+    }
+
+    // MARK: - Brand image
+
+    /// Show a custom image in the resting island when nothing else is there.
+    @Published var brandImageEnabled: Bool {
+        didSet { defaults.set(brandImageEnabled, forKey: Key.brandEnabled) }
+    }
+    @Published var brandImageOpacity: Double {
+        didSet { defaults.set(brandImageOpacity, forKey: Key.brandOpacity) }
+    }
+    @Published var brandImageTinted: Bool {
+        didSet { defaults.set(brandImageTinted, forKey: Key.brandTinted) }
+    }
+    @Published var brandImageSize: BrandImageSize {
+        didSet { defaults.set(brandImageSize.rawValue, forKey: Key.brandSize) }
+    }
+    /// The loaded image, or nil when none is set. The PNG on disk is the source
+    /// of truth; this is the in-memory copy the island draws.
+    @Published private(set) var brandImage: NSImage?
+
+    /// Import a user-chosen image file, store it, and show it from now on.
+    func importBrandImage(from url: URL) {
+        guard let image = BrandImageStore.importImage(from: url) else { return }
+        brandImage = image
+        brandImageEnabled = true
+    }
+
+    func clearBrandImage() {
+        BrandImageStore.remove()
+        brandImage = nil
     }
 
     /// Whether a pane (by `PaneCatalog` id) is enabled as a tab.
@@ -570,6 +606,12 @@ final class ReefSettings: ObservableObject {
         showsTimerTab = defaults.object(forKey: Key.timerTab) as? Bool ?? true
         showsShelfTab = defaults.object(forKey: Key.shelfTab) as? Bool ?? true
         paneOrder = (defaults.array(forKey: Key.paneOrder) as? [String]) ?? PaneCatalog.defaultOrder
+        brandImageEnabled = defaults.object(forKey: Key.brandEnabled) as? Bool ?? false
+        brandImageOpacity = defaults.object(forKey: Key.brandOpacity) as? Double ?? 1.0
+        brandImageTinted = defaults.object(forKey: Key.brandTinted) as? Bool ?? false
+        brandImageSize = (defaults.string(forKey: Key.brandSize)
+            .flatMap(BrandImageSize.init(rawValue:))) ?? .medium
+        brandImage = BrandImageStore.load()
         temperatureUnit = Self.value(defaults, Key.temperatureUnit) ?? .celsius
         batteryActivitiesEnabled = defaults.object(forKey: Key.batteryActivitiesEnabled) as? Bool ?? true
         batteryActivityDuration = defaults.object(forKey: Key.batteryActivityDuration) as? Double ?? 5

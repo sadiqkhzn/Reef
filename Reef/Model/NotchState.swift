@@ -154,6 +154,10 @@ final class NotchState: ObservableObject {
     /// option is on). Drives the resting size.
     @Published var weatherRestingActive: Bool = false
 
+    /// True while the resting island shows the user's brand image (idle, nothing
+    /// else, and the option is on). Lowest-priority resting content.
+    @Published var brandRestingActive: Bool = false
+
     /// Whether hovering grows the island a touch (the quick peek). Set from the
     /// person's setting.
     @Published var peekOnHover: Bool = true
@@ -182,6 +186,14 @@ final class NotchState: ObservableObject {
             return CGSize(
                 width: collapsedSize.width + Self.wingWidth * 2,
                 height: collapsedSize.height)
+        }
+        if brandRestingActive {
+            // Beside the notch on a notched screen; a steady pill otherwise so the
+            // mark has room to sit centered.
+            let width = hasNotch
+                ? collapsedSize.width + Self.wingWidth * 2
+                : max(collapsedSize.width, Self.mediaRestingWidth)
+            return CGSize(width: width, height: collapsedSize.height)
         }
         return collapsedSize
     }
