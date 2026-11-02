@@ -1,10 +1,11 @@
 import SwiftUI
 
-/// The timer page of the open island.
+/// The timer page of the open island, in a wide two-pane layout.
 ///
-/// With no timer running it offers a row of presets to start one. While a timer
-/// is going it shows a large ring with the time left and controls to pause,
-/// resume, add a minute, or cancel.
+/// Left pane: the running timer (a ring with the time left and controls) or,
+/// when idle, a large time with steppers and a Start button. Right pane: a list
+/// of named presets that start a timer at a tap. A segmented control at the top
+/// of the left pane switches to a full-width stopwatch.
 struct TimerPageView: View {
     @ObservedObject var timer: TimerController
     @ObservedObject var stopwatch: StopwatchController
@@ -16,15 +17,30 @@ struct TimerPageView: View {
 
     private enum Mode { case timer, stopwatch }
     @State private var mode: Mode = .timer
+    /// The length the idle left pane will start, in minutes.
+    @State private var selectedMinutes: Int = 25
+
+    /// Named presets for the right pane.
+    private let presets: [(name: String, minutes: Int)] = [
+        ("Focus", 25),
+        ("Short Break", 5),
+        ("Long Break", 15),
+        ("Deep Work", 50),
+        ("Quick", 1),
+        ("Tea", 3),
+    ]
+
+    /// Top clearance: the full header height to clear the notch in the attached
+    /// style, or a small inset when floating so there is no dead space.
+    private var topInset: CGFloat {
+        notchWidth > 0 ? headerHeight : ReefTheme.Spacing.s
+    }
 
     /// Color of the page's background wash: warning while a finished timer rings,
     /// the accent otherwise.
     private var washTint: Color {
         mode == .timer && timer.isFinished ? ReefTheme.Status.warning : accent
     }
-
-    /// Preset lengths in minutes.
-    private let presets: [Int] = [1, 3, 5, 10, 15, 25]
 
     var body: some View {
         ZStack {
@@ -34,16 +50,11 @@ struct TimerPageView: View {
                 endPoint: .bottomTrailing)
                 .ignoresSafeArea()
             VStack(spacing: 0) {
-                header
-                    .frame(height: headerHeight)
-                    .padding(.top, 8)
-
+                Color.clear.frame(height: topInset)
                 if mode == .stopwatch {
-                    stopwatchView
-                } else if timer.isActive {
-                    running
+                    stopwatchPane
                 } else {
-                    presetGrid
+                    timerPanes
                 }
             }
         }
@@ -57,15 +68,118 @@ struct TimerPageView: View {
         }
     }
 
-    private var header: some View {
-        // The bottom tab bar labels the page; the header keeps only the
-        // timer/stopwatch toggle.
-        HStack(spacing: ReefTheme.Spacing.s) {
-            modeToggle
-            Spacer(minLength: notchWidth + ReefTheme.Spacing.s)
+    // MARK: - Panes
+
+    private var timerPanes: some View {
+        HStack(alignment: .top, spacing: ReefTheme.Spacing.s) {
+            VStack(spacing: ReefTheme.Spacing.s) {
+                modeToggle
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                leftControl
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            presetList
+                .frame(width: 208)
         }
-        .padding(.horizontal, ReefTheme.Spacing.l)
+        .padding(.horizontal, ReefTheme.Spacing.s)
+        .padding(.bottom, ReefTheme.Spacing.s)
     }
+
+    @ViewBuilder
+    private var leftControl: some View {
+        if timer.isActive {
+            running
+        } else {
+            idleControl
+        }
+    }
+
+    /// Idle: the chosen length, steppers to adjust it, and Start.
+    private var idleControl: some View {
+        VStack(spacing: ReefTheme.Spacing.m) {
+            Spacer(minLength: 0)
+            Text(TimerController.label(TimeInterval(selectedMinutes * 60)))
+                .font(.system(size: 40, weight: .semibold, design: .rounded))
+                .monospacedDigit()
+                .foregroundStyle(ReefTheme.Ink.primary)
+                .contentTransition(.numericText())
+            HStack(spacing: ReefTheme.Spacing.m) {
+                stepper("minus") { selectedMinutes = max(1, selectedMinutes - 1) }
+                stepper("plus") { selectedMinutes = min(180, selectedMinutes + 1) }
+            }
+            Button {
+                timer.start(TimeInterval(selectedMinutes * 60))
+            } label: {
+                Label("Start", systemImage: "play.fill")
+                    .labelStyle(.titleAndIcon)
+                    .font(ReefTheme.Typography.caption)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, ReefTheme.Spacing.l)
+                    .padding(.vertical, 7)
+                    .background(Capsule().fill(accent))
+                    .contentShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .islandCard(padding: ReefTheme.Spacing.m)
+    }
+
+    private func stepper(_ symbol: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(accent)
+                .frame(width: 32, height: 28)
+                .background(Capsule().fill(accent.opacity(0.16)))
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var presetList: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: ReefTheme.Spacing.s) {
+                ForEach(presets, id: \.name) { preset in
+                    Button {
+                        timer.start(TimeInterval(preset.minutes * 60))
+                    } label: {
+                        presetRow(preset)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    private func presetRow(_ preset: (name: String, minutes: Int)) -> some View {
+        HStack(spacing: ReefTheme.Spacing.s) {
+            VStack(alignment: .leading, spacing: 1) {
+                Text(preset.name)
+                    .font(ReefTheme.Typography.caption)
+                    .foregroundStyle(ReefTheme.Ink.primary)
+                Text(String(format: "%02d:00", preset.minutes))
+                    .font(.system(size: 10, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(ReefTheme.Ink.secondary)
+            }
+            Spacer(minLength: 0)
+            Image(systemName: "play.fill")
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(accent)
+                .frame(width: 24, height: 24)
+                .background(Circle().fill(accent.opacity(0.16)))
+        }
+        .padding(.horizontal, ReefTheme.Spacing.m)
+        .padding(.vertical, ReefTheme.Spacing.s)
+        .background(
+            RoundedRectangle(cornerRadius: ReefTheme.Radius.control, style: .continuous)
+                .fill(ReefTheme.Ink.fill))
+        .contentShape(Rectangle())
+    }
+
+    // MARK: - Mode toggle
 
     /// A small segmented control to switch between the timer and the stopwatch.
     private var modeToggle: some View {
@@ -90,40 +204,6 @@ struct TimerPageView: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: - Presets
-
-    private var presetGrid: some View {
-        let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 3)
-        return LazyVGrid(columns: columns, spacing: 8) {
-            ForEach(presets, id: \.self) { minutes in
-                Button {
-                    timer.start(TimeInterval(minutes) * 60)
-                } label: {
-                    VStack(spacing: 1) {
-                        Text("\(minutes)")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(ReefTheme.Ink.primary)
-                        Text("min")
-                            .font(.system(size: 9))
-                            .foregroundStyle(ReefTheme.Ink.secondary)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 9)
-                    .background(
-                        RoundedRectangle(cornerRadius: ReefTheme.Radius.control, style: .continuous)
-                            .fill(accent.opacity(0.16)))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: ReefTheme.Radius.control, style: .continuous)
-                            .strokeBorder(accent.opacity(0.22), lineWidth: 0.5))
-                    .contentShape(RoundedRectangle(cornerRadius: ReefTheme.Radius.control, style: .continuous))
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(.horizontal, ReefTheme.Radius.islandInset)
-        .padding(.vertical, 8)
-    }
-
     // MARK: - Running
 
     private var ringTint: Color { timer.isFinished ? ReefTheme.Status.warning : accent }
@@ -141,9 +221,8 @@ struct TimerPageView: View {
             }
             Spacer(minLength: 0)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .islandCard(padding: ReefTheme.Spacing.l)
-        .padding(.horizontal, ReefTheme.Radius.islandInset)
-        .padding(.bottom, ReefTheme.Radius.islandInset)
     }
 
     private var ring: some View {
@@ -206,6 +285,16 @@ struct TimerPageView: View {
 
     // MARK: - Stopwatch
 
+    private var stopwatchPane: some View {
+        VStack(spacing: ReefTheme.Spacing.s) {
+            modeToggle
+                .frame(maxWidth: .infinity, alignment: .leading)
+            stopwatchView
+        }
+        .padding(.horizontal, ReefTheme.Spacing.s)
+        .padding(.bottom, ReefTheme.Spacing.s)
+    }
+
     private var stopwatchView: some View {
         HStack(spacing: ReefTheme.Spacing.l) {
             Image(systemName: "stopwatch")
@@ -229,8 +318,7 @@ struct TimerPageView: View {
                 iconButton("arrow.counterclockwise") { stopwatch.reset() }
             }
         }
+        .frame(maxWidth: .infinity)
         .islandCard(padding: ReefTheme.Spacing.l)
-        .padding(.horizontal, ReefTheme.Radius.islandInset)
-        .padding(.bottom, ReefTheme.Radius.islandInset)
     }
 }
