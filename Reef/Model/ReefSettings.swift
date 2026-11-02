@@ -29,6 +29,11 @@ final class ReefSettings: ObservableObject {
         static let monitor = "panes.monitor"
         static let webcam = "panes.webcam"
         static let notes = "panes.notes"
+        static let calendarTab = "panes.calendar"
+        static let weatherTab = "panes.weatherTab"
+        static let timerTab = "panes.timer"
+        static let shelfTab = "panes.shelf"
+        static let paneOrder = "panes.order"
         static let temperatureUnit = "weather.unit"
         static let chargingActivity = "liveActivity.charging"
         static let lowBatteryActivity = "liveActivity.lowBattery"
@@ -240,6 +245,58 @@ final class ReefSettings: ObservableObject {
     }
     @Published var showsNotes: Bool {
         didSet { defaults.set(showsNotes, forKey: Key.notes) }
+    }
+    @Published var showsCalendarTab: Bool {
+        didSet { defaults.set(showsCalendarTab, forKey: Key.calendarTab) }
+    }
+    @Published var showsWeatherTab: Bool {
+        didSet { defaults.set(showsWeatherTab, forKey: Key.weatherTab) }
+    }
+    @Published var showsTimerTab: Bool {
+        didSet { defaults.set(showsTimerTab, forKey: Key.timerTab) }
+    }
+    @Published var showsShelfTab: Bool {
+        didSet { defaults.set(showsShelfTab, forKey: Key.shelfTab) }
+    }
+
+    /// The order the orderable panes appear as tabs in the open island. Holds
+    /// pane ids from `PaneCatalog`; unknown ids are ignored and missing ones are
+    /// appended, so the list survives catalog changes.
+    @Published var paneOrder: [String] {
+        didSet { defaults.set(paneOrder, forKey: Key.paneOrder) }
+    }
+
+    /// Whether a pane (by `PaneCatalog` id) is enabled as a tab.
+    func isPaneEnabled(_ id: String) -> Bool {
+        switch id {
+        case "calendar": return showsCalendarTab
+        case "weather": return showsWeatherTab
+        case "timer": return showsTimerTab
+        case "shelf": return showsShelfTab
+        case "colorPicker": return showsColorPicker
+        case "clipboard": return showsClipboard
+        case "downloads": return showsDownloads
+        case "monitor": return showsMonitor
+        case "webcam": return showsWebcam
+        case "notes": return showsNotes
+        default: return false
+        }
+    }
+
+    func setPaneEnabled(_ id: String, _ on: Bool) {
+        switch id {
+        case "calendar": showsCalendarTab = on
+        case "weather": showsWeatherTab = on
+        case "timer": showsTimerTab = on
+        case "shelf": showsShelfTab = on
+        case "colorPicker": showsColorPicker = on
+        case "clipboard": showsClipboard = on
+        case "downloads": showsDownloads = on
+        case "monitor": showsMonitor = on
+        case "webcam": showsWebcam = on
+        case "notes": showsNotes = on
+        default: break
+        }
     }
 
     /// Unit the weather is shown in.
@@ -508,6 +565,11 @@ final class ReefSettings: ObservableObject {
         showsMonitor = defaults.object(forKey: Key.monitor) as? Bool ?? false
         showsWebcam = defaults.object(forKey: Key.webcam) as? Bool ?? false
         showsNotes = defaults.object(forKey: Key.notes) as? Bool ?? false
+        showsCalendarTab = defaults.object(forKey: Key.calendarTab) as? Bool ?? true
+        showsWeatherTab = defaults.object(forKey: Key.weatherTab) as? Bool ?? true
+        showsTimerTab = defaults.object(forKey: Key.timerTab) as? Bool ?? true
+        showsShelfTab = defaults.object(forKey: Key.shelfTab) as? Bool ?? true
+        paneOrder = (defaults.array(forKey: Key.paneOrder) as? [String]) ?? PaneCatalog.defaultOrder
         temperatureUnit = Self.value(defaults, Key.temperatureUnit) ?? .celsius
         batteryActivitiesEnabled = defaults.object(forKey: Key.batteryActivitiesEnabled) as? Bool ?? true
         batteryActivityDuration = defaults.object(forKey: Key.batteryActivityDuration) as? Double ?? 5

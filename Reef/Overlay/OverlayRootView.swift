@@ -291,33 +291,16 @@ struct OverlayRootView: View {
     /// an extra tab only while a track is on, so the home dashboard stays
     /// reachable during playback.
     private var islandTabs: [IslandTab] {
+        // Home is always pinned first; Now Playing follows only while a track is
+        // on. The rest come from the user's saved order, each shown if enabled.
         var tabs = [IslandTab(page: .home, symbol: "house.fill", title: "Home")]
         if shownTrack != nil {
             tabs.append(IslandTab(page: .nowPlaying, symbol: "music.note", title: "Playing"))
         }
-        tabs += [
-            IslandTab(page: .calendar, symbol: "calendar", title: "Calendar"),
-            IslandTab(page: .weather, symbol: "cloud.sun.fill", title: "Weather"),
-            IslandTab(page: .timer, symbol: "timer", title: "Timer"),
-            IslandTab(page: .shelf, symbol: "tray.fill", title: "Shelf"),
-        ]
-        if settings.showsColorPicker {
-            tabs.append(IslandTab(page: .colorPicker, symbol: "eyedropper", title: "Color"))
-        }
-        if settings.showsClipboard {
-            tabs.append(IslandTab(page: .clipboard, symbol: "doc.on.clipboard", title: "Clipboard"))
-        }
-        if settings.showsDownloads {
-            tabs.append(IslandTab(page: .downloads, symbol: "arrow.down.circle", title: "Downloads"))
-        }
-        if settings.showsMonitor {
-            tabs.append(IslandTab(page: .monitor, symbol: "waveform.path.ecg", title: "Monitor"))
-        }
-        if settings.showsWebcam {
-            tabs.append(IslandTab(page: .webcam, symbol: "web.camera", title: "Mirror"))
-        }
-        if settings.showsNotes {
-            tabs.append(IslandTab(page: .notes, symbol: "note.text", title: "Notes"))
+        for id in PaneCatalog.resolvedOrder(settings.paneOrder)
+        where settings.isPaneEnabled(id) {
+            guard let spec = PaneCatalog.byID[id] else { continue }
+            tabs.append(IslandTab(page: spec.page, symbol: spec.symbol, title: spec.title))
         }
         return tabs
     }
