@@ -291,7 +291,7 @@ struct OverlayRootView: View {
                             headerHeight: state.collapsedSize.height,
                             notchWidth: notchClearance,
                             onClose: { openPage = shownTrack != nil ? .nowPlaying : .home })
-                            .frame(width: state.visibleSize.width, height: pageHeight)
+                            .frame(width: state.visibleSize.width, height: pageHeight, alignment: .top)
                             .transition(.islandOpen)
                     } else if openPage == .calendar {
                         AgendaView(
@@ -301,7 +301,7 @@ struct OverlayRootView: View {
                             notchWidth: notchClearance,
                             eventDays: calendar.monthEventDays,
                             onClose: { openPage = shownTrack != nil ? .nowPlaying : .home })
-                            .frame(width: state.visibleSize.width, height: pageHeight)
+                            .frame(width: state.visibleSize.width, height: pageHeight, alignment: .top)
                             .transition(.islandOpen)
                     } else if openPage == .timer {
                         TimerPageView(
@@ -311,7 +311,7 @@ struct OverlayRootView: View {
                             headerHeight: state.collapsedSize.height,
                             notchWidth: notchClearance,
                             onClose: { openPage = shownTrack != nil ? .nowPlaying : .home })
-                            .frame(width: state.visibleSize.width, height: pageHeight)
+                            .frame(width: state.visibleSize.width, height: pageHeight, alignment: .top)
                             .transition(.islandOpen)
                     } else if openPage == .weather {
                         WeatherPageView(
@@ -321,7 +321,7 @@ struct OverlayRootView: View {
                             headerHeight: state.collapsedSize.height,
                             notchWidth: notchClearance,
                             onClose: { openPage = shownTrack != nil ? .nowPlaying : .home })
-                            .frame(width: state.visibleSize.width, height: pageHeight)
+                            .frame(width: state.visibleSize.width, height: pageHeight, alignment: .top)
                             .transition(.islandOpen)
                     } else if openPage == .battery {
                         BatteryDetailView(
@@ -331,7 +331,7 @@ struct OverlayRootView: View {
                             notchWidth: notchClearance,
                             deviceArtwork: settings.deviceArtwork,
                             onClose: { openPage = shownTrack != nil ? .nowPlaying : .home })
-                            .frame(width: state.visibleSize.width, height: pageHeight)
+                            .frame(width: state.visibleSize.width, height: pageHeight, alignment: .top)
                             .transition(.islandOpen)
                     } else if let nowPlaying = shownTrack, !showsHome {
                         MediaView(nowPlaying: nowPlaying, media: media,
@@ -358,7 +358,7 @@ struct OverlayRootView: View {
                             onOpenWeather: { openPage = .weather },
                             onOpenBattery: { openPage = .battery },
                             hidesBatteryPercentage: settings.hidesBatteryPercentage)
-                            .frame(width: state.visibleSize.width, height: pageHeight)
+                            .frame(width: state.visibleSize.width, height: pageHeight, alignment: .top)
                             .transition(.islandOpen)
                     }
                 } else if let activity = state.liveActivity {

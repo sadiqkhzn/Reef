@@ -27,6 +27,7 @@ struct AgendaView: View {
         VStack(spacing: 0) {
             header
                 .frame(height: headerHeight)
+                .padding(.top, 8)
 
             if let selected {
                 EventDetailView(event: selected, accent: accent)

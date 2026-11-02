@@ -25,6 +25,7 @@ struct WeatherPageView: View {
             VStack(spacing: 0) {
                 header
                     .frame(height: headerHeight)
+                    .padding(.top, 8)
 
                 if let snapshot {
                     content(snapshot)
@@ -49,18 +50,21 @@ struct WeatherPageView: View {
     }
 
     private func content(_ snapshot: WeatherSnapshot) -> some View {
-        VStack(alignment: .leading, spacing: ReefTheme.Spacing.s) {
-            current(snapshot)
-            if let hours = forecast?.upcomingHours(), !hours.isEmpty {
-                hourStrip(hours)
+        // Scrolls when the forecast is taller than the body, so the current
+        // conditions stay pinned at the top and nothing clips at the edges.
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: ReefTheme.Spacing.s) {
+                current(snapshot)
+                if let hours = forecast?.upcomingHours(), !hours.isEmpty {
+                    hourStrip(hours)
+                }
+                if let days = forecast?.upcomingDays(), !days.isEmpty {
+                    dayList(days)
+                }
             }
-            if let days = forecast?.upcomingDays(), !days.isEmpty {
-                dayList(days)
-            }
-            Spacer(minLength: 0)
+            .padding(.horizontal, ReefTheme.Radius.islandInset)
+            .padding(.bottom, 8)
         }
-        .padding(.horizontal, ReefTheme.Radius.islandInset)
-        .padding(.vertical, 6)
     }
 
     private func current(_ snapshot: WeatherSnapshot) -> some View {
