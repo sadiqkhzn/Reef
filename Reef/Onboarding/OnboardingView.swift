@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// The first-run welcome and permissions flow.
@@ -88,22 +89,14 @@ struct OnboardingView: View {
         }
     }
 
-    /// A gradient app-icon tile with a soft glow, standing in for the Reef mark.
+    /// The real Reef app icon, so the welcome, the Dock, and the menu bar all
+    /// read as one mark.
     private var appTile: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(LinearGradient(
-                    colors: [accent, Color(red: 0.72, green: 0.33, blue: 0.93)],
-                    startPoint: .topLeading, endPoint: .bottomTrailing))
-                .frame(width: 92, height: 92)
-                .shadow(color: accent.opacity(0.6), radius: 18, y: 6)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 22, style: .continuous)
-                        .strokeBorder(.white.opacity(0.25), lineWidth: 1))
-            Image(systemName: "water.waves")
-                .font(.system(size: 42, weight: .semibold))
-                .foregroundStyle(.white)
-        }
+        Image(nsImage: NSApplication.shared.applicationIconImage)
+            .resizable()
+            .interpolation(.high)
+            .frame(width: 96, height: 96)
+            .shadow(color: .black.opacity(0.4), radius: 16, y: 6)
     }
 
     /// The three island gestures, on the glowing sub-card.
