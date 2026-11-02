@@ -136,6 +136,12 @@ struct OverlayRootView: View {
         state.weatherRestingActive =
             restingWeather != nil && !state.eventRestingActive
             && !state.timerRestingActive && !state.stopwatchRestingActive
+        // Lowest priority: only when the island would otherwise be the bare pill.
+        state.brandRestingActive =
+            settings.brandImageEnabled && settings.brandImage != nil
+            && !active && state.liveActivity == nil
+            && !state.timerRestingActive && !state.stopwatchRestingActive
+            && !state.eventRestingActive && !state.weatherRestingActive
         updateAudioMonitor()
     }
 
@@ -567,6 +573,18 @@ struct OverlayRootView: View {
                         showsLabel: notchClearance == 0)
                         .frame(height: state.restingSize.height, alignment: .top)
                         .transition(.islandWing)
+                } else if settings.brandImageEnabled, let brand = settings.brandImage {
+                    // Fully idle, nothing else to show: the user's brand mark.
+                    BrandWingView(
+                        image: brand,
+                        centerWidth: state.collapsedSize.width,
+                        rowHeight: state.collapsedSize.height,
+                        notched: notchClearance > 0,
+                        opacity: settings.brandImageOpacity,
+                        tinted: settings.brandImageTinted,
+                        size: settings.brandImageSize)
+                        .frame(height: state.restingSize.height, alignment: .top)
+                        .transition(.islandWing)
                 }
             }
             // Keep the content inside the island so it closes with it rather than
@@ -683,6 +701,8 @@ struct OverlayRootView: View {
             }
         }
         .onChange(of: settings.showsEventAtRest) { _, _ in updateNowPlayingActive() }
+        .onChange(of: settings.brandImageEnabled) { _, _ in updateNowPlayingActive() }
+        .onChange(of: settings.brandImage != nil) { _, _ in updateNowPlayingActive() }
         .onChange(of: settings.useLiveWaveform) { _, _ in updateAudioMonitor() }
         .onChange(of: isOpen) { _, open in
             if !open { resetOpenPage() }
