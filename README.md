@@ -72,6 +72,19 @@ bright and a dark desktop.
 - It runs as a menu bar item with no Dock icon and no main window. Settings open
   from the menu bar item.
 
+## Download
+
+Grab the latest `Reef.dmg` from the
+[Releases page](https://github.com/sadiqkhzn/Reef/releases/latest), open it, and
+drag **Reef** into **Applications**.
+
+The app is self-signed, so the first time you launch it macOS will say it is
+from an unidentified developer. Right-click (or Control-click) **Reef** in
+Applications, choose **Open**, and confirm. You only need to do this once.
+
+Reef runs as a menu bar item with no Dock icon, so its icon appears at the right
+of the menu bar rather than in a window.
+
 ## Build from source
 
 You need Xcode 15 or later and [XcodeGen](https://github.com/yonaskolb/XcodeGen).
@@ -92,6 +105,16 @@ To run the tests from the command line:
 ```
 xcodebuild -project Reef.xcodeproj -scheme Reef -destination 'platform=macOS' test
 ```
+
+To build a distributable disk image yourself:
+
+```
+scripts/make-dmg.sh
+```
+
+This builds a Release `Reef.app` and writes `dist/Reef-<version>.dmg` with an
+Applications drop-link. The version comes from `MARKETING_VERSION` in
+`project.yml`.
 
 ## Principles
 
@@ -114,6 +137,7 @@ xcodebuild -project Reef.xcodeproj -scheme Reef -destination 'platform=macOS' te
 - [x] Local weather on the home page.
 - [x] A file shelf, swipe gestures, and an onboarding and permissions screen.
 - [x] A settings window covering appearance, behavior, and activities.
+- [x] A distributable `.dmg` (self-signed) and a one-command packaging script.
 - [ ] A notarized `.dmg` once a signing certificate is in place.
 - [ ] In-app updates.
 
