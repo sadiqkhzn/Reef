@@ -32,6 +32,8 @@ struct WeatherPageView: View {
                     empty
                 }
             }
+            // Keep the content above the nav bar; the gradient still fills behind it.
+            .padding(.bottom, NotchState.tabBarHeight)
         }
     }
 
@@ -51,36 +53,51 @@ struct WeatherPageView: View {
     }
 
     private func content(_ snapshot: WeatherSnapshot) -> some View {
-        // Scrolls when the forecast is taller than the body, so the current
-        // conditions stay pinned at the top and nothing clips at the edges.
-        ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: ReefTheme.Spacing.s) {
+        VStack(alignment: .leading, spacing: ReefTheme.Spacing.s) {
+            // Top row: current conditions on the left, the hourly slider on the
+            // right — each taking about half the width.
+            HStack(alignment: .top, spacing: ReefTheme.Spacing.s) {
                 current(snapshot)
+                    .frame(maxWidth: .infinity)
                 if let hours = forecast?.upcomingHours(), !hours.isEmpty {
                     hourStrip(hours)
-                }
-                if let days = forecast?.upcomingDays(), !days.isEmpty {
-                    dayList(days)
+                        .frame(maxWidth: .infinity)
                 }
             }
-            .padding(.horizontal, ReefTheme.Radius.islandInset)
-            .padding(.bottom, 8)
+            // The days scroll below, with the same slider fades top and bottom.
+            if let days = forecast?.upcomingDays(), !days.isEmpty {
+                ScrollView(showsIndicators: false) {
+                    dayList(days)
+                        // Inset so the first and last rows sit past the fades.
+                        .padding(.vertical, 12)
+                }
+                .mask(
+                    VStack(spacing: 0) {
+                        LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom)
+                            .frame(height: 12)
+                        Rectangle().fill(.black)
+                        LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom)
+                            .frame(height: 12)
+                    })
+            }
         }
+        .padding(.horizontal, ReefTheme.Radius.islandInset)
+        .padding(.top, 2)
     }
 
     private func current(_ snapshot: WeatherSnapshot) -> some View {
-        HStack(spacing: ReefTheme.Spacing.m) {
+        HStack(spacing: ReefTheme.Spacing.s) {
             Image(systemName: snapshot.condition.symbol)
-                .font(.system(size: 28))
+                .font(.system(size: 22))
                 .symbolRenderingMode(.multicolor)
-                .frame(width: 44, height: 44)
+                .frame(width: 34, height: 34)
                 .background(
                     Circle()
                         .fill(snapshot.condition.tint.opacity(0.28))
                         .blur(radius: 2))
-            VStack(alignment: .leading, spacing: 1) {
+            VStack(alignment: .leading, spacing: 0) {
                 Text(snapshot.temperatureText)
-                    .font(.system(size: 26, weight: .semibold, design: .rounded))
+                    .font(.system(size: 22, weight: .semibold, design: .rounded))
                     .foregroundStyle(ReefTheme.Ink.primary)
                 Text(snapshot.condition.label)
                     .font(ReefTheme.Typography.caption)
@@ -88,7 +105,7 @@ struct WeatherPageView: View {
             }
             Spacer(minLength: 0)
             if let high = snapshot.highText, let low = snapshot.lowText {
-                VStack(alignment: .trailing, spacing: 2) {
+                HStack(spacing: ReefTheme.Spacing.s) {
                     Label(high, systemImage: "arrow.up")
                         .foregroundStyle(ReefTheme.Ink.primary)
                     Label(low, systemImage: "arrow.down")
@@ -99,7 +116,7 @@ struct WeatherPageView: View {
                 .monospacedDigit()
             }
         }
-        .islandCard(padding: ReefTheme.Spacing.m)
+        .islandCard(padding: ReefTheme.Spacing.s)
         .fixedSize(horizontal: false, vertical: true)
     }
 
@@ -126,9 +143,21 @@ struct WeatherPageView: View {
                             .fill(ReefTheme.Ink.fill))
                 }
             }
-            .padding(.horizontal, 1)
+            // Inset by the fade width so the first and last cards sit past the
+            // fade zones (fully visible); only mid-scroll cards dissolve.
+            .padding(.horizontal, 16)
             .padding(.vertical, 1)
         }
+        // Soft fades at the left and right edges so the strip reads as a slider,
+        // dissolving as hours scroll off either side.
+        .mask(
+            HStack(spacing: 0) {
+                LinearGradient(colors: [.clear, .black], startPoint: .leading, endPoint: .trailing)
+                    .frame(width: 16)
+                Rectangle().fill(.black)
+                LinearGradient(colors: [.black, .clear], startPoint: .leading, endPoint: .trailing)
+                    .frame(width: 16)
+            })
     }
 
     private func dayList(_ days: [DayForecast]) -> some View {

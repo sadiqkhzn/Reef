@@ -36,7 +36,7 @@ struct ShelfView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .padding(.horizontal, ReefTheme.Spacing.s)
-            .padding(.bottom, ReefTheme.Spacing.s)
+            .padding(.bottom, 12)
         }
     }
 
@@ -113,6 +113,7 @@ struct ShelfView: View {
                 }
             }
             .padding(ReefTheme.Spacing.s)
+            .padding(.bottom, 12)
         }
     }
 

@@ -71,20 +71,21 @@ final class NotchState: ObservableObject {
         width: ScreenMetrics.defaultPillWidth,
         height: ScreenMetrics.fallbackPillHeight)
 
-    /// Width the overlay opens to. Every tab opens to this one width, single or
-    /// two-pane, so the island stays the same size as tabs change.
-    static let expandedMinWidth: CGFloat = 520
-    /// The open width is uniform across tabs; the wide width matches it.
-    static let expandedWideWidth: CGFloat = 520
+    /// Width a single-column tab opens to (Now Playing, Home, Weather, Battery):
+    /// compact, sized around the content rather than stretched.
+    static let expandedMinWidth: CGFloat = 440
+    /// Width a two-pane tab opens to (Calendar, Timer, Shelf): wide enough to
+    /// sit a primary control beside a list or detail.
+    static let expandedWideWidth: CGFloat = 440
 
-    /// Retained so the panel reserves the open width; the island no longer
-    /// changes width per tab, so this stays false.
+    /// True while the open page wants the wide two-pane width. Driven by the
+    /// root view from the current tab, so the island resizes as tabs change.
     @Published var openPageWide: Bool = false
     /// Height of the open body below the header row. The header row is as tall
     /// as the resting overlay, so its items sit beside the notch.
-    static let expandedBodyHeight: CGFloat = 176
+    static let expandedBodyHeight: CGFloat = 132
     /// Height reserved at the bottom of the open island for the tab bar.
-    static let tabBarHeight: CGFloat = 36
+    static let tabBarHeight: CGFloat = 32
 
     /// Width of each wing the resting overlay grows on either side to show a
     /// live activity.

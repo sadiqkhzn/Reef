@@ -97,17 +97,25 @@ struct IslandSurface: View {
         if contrast == .increased || contrastOutline {
             shape.stroke(Color.white.opacity(0.6), lineWidth: 1)
         } else {
-            switch resolved {
-            case .midnight:
-                shape.stroke(Color.white.opacity(isHighlighted ? 0.14 : 0.08), lineWidth: 0.5)
-            case .frosted:
-                shape.stroke(specularRim, lineWidth: 1)
-            case .liquid:
-                // The system glass draws its own edge light; only a faint
-                // hairline is added so the shape holds on very dark wallpapers.
-                shape.stroke(Color.white.opacity(isHighlighted ? 0.16 : 0.07), lineWidth: 0.5)
-            }
+            // A directional, top-lit rim on every material: bright where the menu
+            // bar light catches the top edge, faint in the middle, a soft bounce
+            // along the bottom — so the island reads as smoked glass, not a flat
+            // box with a gray outline.
+            shape.stroke(directionalRim, lineWidth: 1)
         }
+    }
+
+    /// Top-lit edge light that gives the silhouette dimension.
+    private var directionalRim: LinearGradient {
+        let strength = isHighlighted ? 1.35 : 1.0
+        return LinearGradient(
+            stops: [
+                .init(color: .white.opacity(0.24 * strength), location: 0),
+                .init(color: .white.opacity(0.06 * strength), location: 0.5),
+                .init(color: .white.opacity(0.13 * strength), location: 1),
+            ],
+            startPoint: .top,
+            endPoint: .bottom)
     }
 
     /// Light catching the top-leading edge and, more faintly, the bottom
