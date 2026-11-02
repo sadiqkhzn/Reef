@@ -2,6 +2,11 @@ import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
 
+extension Notification.Name {
+    /// Posted from the island to ask the app to open the Settings window.
+    static let reefOpenSettings = Notification.Name("reef.openSettings")
+}
+
 /// Which page the open island shows.
 enum OpenPage {
     case nowPlaying
@@ -361,7 +366,10 @@ struct OverlayRootView: View {
                             hidesBatteryPercentage: settings.hidesBatteryPercentage,
                             focus: focus.current,
                             isAwake: settings.keepAwake,
-                            onToggleAwake: { settings.keepAwake.toggle() })
+                            onToggleAwake: { settings.keepAwake.toggle() },
+                            onOpenSettings: {
+                                NotificationCenter.default.post(name: .reefOpenSettings, object: nil)
+                            })
                             .frame(width: state.visibleSize.width, height: pageHeight, alignment: .top)
                             .transition(.islandOpen)
                     }
