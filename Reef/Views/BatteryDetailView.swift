@@ -34,6 +34,7 @@ struct BatteryDetailView: View {
             VStack(spacing: 0) {
                 header
                     .frame(height: headerHeight)
+                    .padding(.top, 8)
                 content
             }
         }
@@ -54,6 +55,7 @@ struct BatteryDetailView: View {
 
     private var content: some View {
         VStack(spacing: ReefTheme.Spacing.s) {
+            Spacer(minLength: 0)
             macCard
             if !devices.isEmpty {
                 devicesCard

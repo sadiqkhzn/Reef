@@ -15,6 +15,7 @@ struct ShelfView: View {
         VStack(spacing: 0) {
             header
                 .frame(height: headerHeight)
+                .padding(.top, 8)
 
             if shelf.isEmpty {
                 empty

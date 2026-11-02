@@ -75,7 +75,7 @@ final class NotchState: ObservableObject {
     static let expandedMinWidth: CGFloat = 440
     /// Height of the open body below the header row. The header row is as tall
     /// as the resting overlay, so its items sit beside the notch.
-    static let expandedBodyHeight: CGFloat = 148
+    static let expandedBodyHeight: CGFloat = 176
     /// Height reserved at the bottom of the open island for the tab bar.
     static let tabBarHeight: CGFloat = 36
 
