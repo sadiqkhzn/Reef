@@ -62,6 +62,90 @@ enum AudioOutputDevices {
         return status == noErr
     }
 
+    // MARK: - Volume & mute
+
+    /// The device's output volume (0…1), from the main channel when it has one,
+    /// otherwise averaged across the stereo channels. Nil when it exposes none.
+    static func volume(of device: AudioObjectID) -> Float? {
+        if let main = scalarVolume(device, channel: kAudioObjectPropertyElementMain) {
+            return main
+        }
+        let left = scalarVolume(device, channel: 1)
+        let right = scalarVolume(device, channel: 2)
+        let channels = [left, right].compactMap { $0 }
+        guard !channels.isEmpty else { return nil }
+        return channels.reduce(0, +) / Float(channels.count)
+    }
+
+    /// Set the device's output volume (0…1) on the main channel, falling back to
+    /// the stereo channels when there is no settable main channel.
+    static func setVolume(_ value: Float, on device: AudioObjectID) {
+        let clamped = min(1, max(0, value))
+        if setScalarVolume(clamped, device, channel: kAudioObjectPropertyElementMain) { return }
+        _ = setScalarVolume(clamped, device, channel: 1)
+        _ = setScalarVolume(clamped, device, channel: 2)
+    }
+
+    static func isMuted(_ device: AudioObjectID) -> Bool {
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioDevicePropertyMute,
+            mScope: kAudioObjectPropertyScopeOutput,
+            mElement: kAudioObjectPropertyElementMain)
+        var muted: UInt32 = 0
+        var size = UInt32(MemoryLayout<UInt32>.size)
+        guard AudioObjectHasProperty(device, &address),
+            AudioObjectGetPropertyData(device, &address, 0, nil, &size, &muted) == noErr
+        else { return false }
+        return muted != 0
+    }
+
+    @discardableResult
+    static func setMuted(_ muted: Bool, on device: AudioObjectID) -> Bool {
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioDevicePropertyMute,
+            mScope: kAudioObjectPropertyScopeOutput,
+            mElement: kAudioObjectPropertyElementMain)
+        var settable = DarwinBoolean(false)
+        guard AudioObjectHasProperty(device, &address),
+            AudioObjectIsPropertySettable(device, &address, &settable) == noErr,
+            settable.boolValue
+        else { return false }
+        var value: UInt32 = muted ? 1 : 0
+        return AudioObjectSetPropertyData(
+            device, &address, 0, nil, UInt32(MemoryLayout<UInt32>.size), &value) == noErr
+    }
+
+    private static func scalarVolume(_ device: AudioObjectID, channel: UInt32) -> Float? {
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioDevicePropertyVolumeScalar,
+            mScope: kAudioObjectPropertyScopeOutput,
+            mElement: channel)
+        var value: Float = 0
+        var size = UInt32(MemoryLayout<Float>.size)
+        guard AudioObjectHasProperty(device, &address),
+            AudioObjectGetPropertyData(device, &address, 0, nil, &size, &value) == noErr
+        else { return nil }
+        return value
+    }
+
+    @discardableResult
+    private static func setScalarVolume(
+        _ value: Float, _ device: AudioObjectID, channel: UInt32
+    ) -> Bool {
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioDevicePropertyVolumeScalar,
+            mScope: kAudioObjectPropertyScopeOutput,
+            mElement: channel)
+        var settable = DarwinBoolean(false)
+        guard AudioObjectHasProperty(device, &address),
+            AudioObjectIsPropertySettable(device, &address, &settable) == noErr,
+            settable.boolValue
+        else { return false }
+        var newValue = value
+        return AudioObjectSetPropertyData(
+            device, &address, 0, nil, UInt32(MemoryLayout<Float>.size), &newValue) == noErr
+    }
+
     // MARK: - Reading
 
     private static func allDeviceIDs() -> [AudioObjectID] {

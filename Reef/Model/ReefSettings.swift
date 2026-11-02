@@ -17,6 +17,7 @@ final class ReefSettings: ObservableObject {
         static let playerTint = "playerTint"
         static let liveWaveform = "nowPlaying.liveWaveform"
         static let hideTitleExtras = "nowPlaying.hideTitleExtras"
+        static let lyrics = "nowPlaying.lyrics"
         static let mediaSource = "mediaSource"
         static let hideMediaWhenSourceFrontmost = "media.hideWhenSourceFrontmost"
         static let swipeGestures = "gestures.swipe"
@@ -189,6 +190,11 @@ final class ReefSettings: ObservableObject {
     /// Trim "(Official Video)", "[Lyrics]", and similar noise from track titles.
     @Published var hideMediaTitleExtras: Bool {
         didSet { defaults.set(hideMediaTitleExtras, forKey: Key.hideTitleExtras) }
+    }
+
+    /// Fetch time-synced lyrics (from LRCLIB) and offer them on the Now Playing hero.
+    @Published var showsLyrics: Bool {
+        didSet { defaults.set(showsLyrics, forKey: Key.lyrics) }
     }
 
     /// Which player the island follows.
@@ -490,6 +496,7 @@ final class ReefSettings: ObservableObject {
         playerTint = Self.value(defaults, Key.playerTint) ?? Self.defaultPlayerTint
         useLiveWaveform = defaults.object(forKey: Key.liveWaveform) as? Bool ?? false
         hideMediaTitleExtras = defaults.object(forKey: Key.hideTitleExtras) as? Bool ?? false
+        showsLyrics = defaults.object(forKey: Key.lyrics) as? Bool ?? true
         mediaSource = Self.value(defaults, Key.mediaSource) ?? Self.defaultMediaSource
         hidesMediaWhenSourceFrontmost = defaults.object(forKey: Key.hideMediaWhenSourceFrontmost) as? Bool ?? false
         swipeGesturesEnabled = defaults.object(forKey: Key.swipeGestures) as? Bool ?? true
@@ -570,6 +577,7 @@ final class ReefSettings: ObservableObject {
         playerTint = Self.defaultPlayerTint
         useLiveWaveform = false
         hideMediaTitleExtras = false
+        showsLyrics = true
         mediaSource = Self.defaultMediaSource
         hidesMediaWhenSourceFrontmost = false
         swipeGesturesEnabled = true

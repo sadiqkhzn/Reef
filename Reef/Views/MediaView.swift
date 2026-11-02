@@ -17,14 +17,28 @@ struct MediaView: View {
     var liveLevels: [Float]? = nil
     /// How the panel is colored behind the track details.
     var colorStyle: PlayerTint = .bloom
+    /// Whether to fetch and offer synced lyrics for the current track.
+    var lyricsEnabled: Bool = false
 
     /// The output devices for the picker, and the current default, refreshed
     /// whenever the picker opens so the list and checkmark stay honest.
     @State private var outputs: [OutputDevice] = []
     @State private var currentOutputID: AudioObjectID?
+    /// Whether the volume/device popover is open, and the live volume/mute of the
+    /// current output device.
+    @State private var showOutput = false
+    @State private var volume: Double = 0.5
+    @State private var muted = false
+    @State private var volumeSupported = false
+    /// Synced lyrics for the current track, and whether the overlay is showing.
+    @StateObject private var lyrics = LyricsModel()
+    @State private var showLyrics = false
 
     /// Vivid color drawn from the cover, falling back to white.
     private var tint: Color { nowPlaying.tint ?? .white }
+
+    /// Identity of the current track, so lyrics reload only when the song changes.
+    private var trackKey: String { "\(nowPlaying.title)|\(nowPlaying.artist)" }
 
     private func showInApp() {
         guard let id = nowPlaying.bundleIdentifier else { return }
@@ -66,6 +80,16 @@ struct MediaView: View {
                                     startPoint: .leading, endPoint: .trailing)
                                     .frame(width: 16)
                             })
+                    if lyricsEnabled && lyrics.hasLyrics {
+                        Button { showLyrics.toggle() } label: {
+                            Image(systemName: "quote.bubble")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(showLyrics ? tint : .white.opacity(0.55))
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .help("Lyrics")
+                    }
                     if nowPlaying.bundleIdentifier != nil {
                         Button(action: showInApp) {
                             Image(systemName: "arrow.up.forward")
@@ -99,6 +123,24 @@ struct MediaView: View {
         // balanced card.
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(playerWash)
+        .overlay {
+            if showLyrics {
+                LyricsView(
+                    model: lyrics, nowPlaying: nowPlaying, accent: tint,
+                    onClose: { showLyrics = false })
+                    .transition(.opacity)
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: showLyrics)
+        .task(id: trackKey) {
+            guard lyricsEnabled else { return }
+            showLyrics = false
+            lyrics.load(
+                title: nowPlaying.displayTitle(cleaned: cleanTitle),
+                artist: nowPlaying.artist,
+                album: nowPlaying.album,
+                duration: nowPlaying.duration)
+        }
         .contextMenu {
             Button("Copy", systemImage: "doc.on.doc", action: copyTrack)
             if nowPlaying.bundleIdentifier != nil {
@@ -246,33 +288,75 @@ struct MediaView: View {
 
     // MARK: - Output picker
 
-    /// A pull-down of the output devices, routing system audio when one is
-    /// picked. Its icon shows where audio is currently going.
+    /// A speaker button that opens a popover with the master volume, a mute
+    /// toggle, and the output devices. Its icon shows where audio is going.
     private var outputPicker: some View {
-        Menu {
-            ForEach(outputs) { device in
-                Button {
-                    AudioOutputDevices.setDefault(device.id)
-                    refreshOutputs()
-                } label: {
-                    Label(
-                        device.name,
-                        systemImage: device.id == currentOutputID ? "checkmark" : device.symbol)
-                }
-            }
+        Button {
+            refreshOutputs()
+            showOutput.toggle()
         } label: {
-            Image(systemName: currentOutputSymbol)
+            Image(systemName: muted ? "speaker.slash.fill" : currentOutputSymbol)
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.55))
                 .frame(width: 24, height: 24)
                 .contentShape(Circle())
         }
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.hidden)
-        .fixedSize()
-        .help("Output device")
+        .buttonStyle(.plain)
+        .help("Volume & output")
         .onAppear(perform: refreshOutputs)
         .onReceive(media.$current) { _ in refreshOutputs() }
+        .popover(isPresented: $showOutput, arrowEdge: .bottom) {
+            outputPopover
+        }
+    }
+
+    private var outputPopover: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if volumeSupported {
+                HStack(spacing: 8) {
+                    Button { toggleMute() } label: {
+                        Image(systemName: muted ? "speaker.slash.fill" : "speaker.fill")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(muted ? .secondary : .primary)
+                            .frame(width: 18)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    Slider(value: $volume, in: 0...1) { editing in
+                        if !editing { commitVolume() }
+                    }
+                    .controlSize(.small)
+                    .onChange(of: volume) { _, newValue in
+                        if let id = currentOutputID {
+                            AudioOutputDevices.setVolume(Float(newValue), on: id)
+                            if muted, newValue > 0 { muted = false }
+                        }
+                    }
+                }
+                Divider()
+            }
+            ForEach(outputs) { device in
+                Button {
+                    AudioOutputDevices.setDefault(device.id)
+                    refreshOutputs()
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: device.id == currentOutputID ? "checkmark" : device.symbol)
+                            .font(.system(size: 11))
+                            .frame(width: 16)
+                            .foregroundStyle(device.id == currentOutputID ? Color.accentColor : .secondary)
+                        Text(device.name)
+                            .font(.system(size: 12))
+                            .foregroundStyle(.primary)
+                        Spacer(minLength: 0)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(12)
+        .frame(width: 220)
     }
 
     /// The symbol of the current route, defaulting to a speaker.
@@ -283,6 +367,31 @@ struct MediaView: View {
     private func refreshOutputs() {
         outputs = AudioOutputDevices.available()
         currentOutputID = AudioOutputDevices.currentDefaultID()
+        if let id = currentOutputID, let level = AudioOutputDevices.volume(of: id) {
+            volumeSupported = true
+            volume = Double(level)
+            muted = AudioOutputDevices.isMuted(id)
+        } else {
+            volumeSupported = false
+        }
+    }
+
+    private func commitVolume() {
+        guard let id = currentOutputID else { return }
+        AudioOutputDevices.setVolume(Float(volume), on: id)
+    }
+
+    private func toggleMute() {
+        guard let id = currentOutputID else { return }
+        let next = !muted
+        if AudioOutputDevices.setMuted(next, on: id) {
+            muted = next
+        } else if next {
+            // No mute property: drop volume to zero as a soft mute.
+            AudioOutputDevices.setVolume(0, on: id)
+            volume = 0
+            muted = true
+        }
     }
 
     private var repeatSymbol: String {

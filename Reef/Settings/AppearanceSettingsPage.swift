@@ -90,12 +90,14 @@ struct AppearanceSettingsPage: View {
                 Toggle("Hide while its app is frontmost", isOn: $settings.hidesMediaWhenSourceFrontmost)
                 Toggle("Live waveform", isOn: $settings.useLiveWaveform)
                 Toggle("Clean up track titles", isOn: $settings.hideMediaTitleExtras)
+                Toggle("Synced lyrics", isOn: $settings.showsLyrics)
             } header: {
                 Text("Now Playing")
             } footer: {
                 Text(settings.playerTint.summary
                     + " Source picks which player the island follows. Live waveform moves "
-                    + "the equalizer with the real audio, and asks to record system audio.")
+                    + "the equalizer with the real audio, and asks to record system audio. "
+                    + "Synced lyrics are fetched from LRCLIB when a match is found.")
                     .foregroundStyle(.secondary)
             }
         }

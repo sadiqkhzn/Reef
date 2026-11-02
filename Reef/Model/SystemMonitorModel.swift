@@ -1,5 +1,6 @@
 import Darwin
 import Foundation
+import IOKit
 import SwiftUI
 
 /// Live CPU, memory, and network telemetry sampled from public mach/BSD APIs.
@@ -7,6 +8,8 @@ import SwiftUI
 final class SystemMonitorModel: ObservableObject {
     @Published private(set) var cpu: Double = 0            // 0…1 total load
     @Published private(set) var cpuHistory: [Double] = []  // recent samples
+    @Published private(set) var gpu: Double = 0            // 0…1 device utilization
+    @Published private(set) var gpuAvailable = false       // a readable accelerator exists
     @Published private(set) var memUsed: Double = 0        // bytes
     @Published private(set) var memTotal: Double = 0       // bytes
     @Published private(set) var netDown: Double = 0        // bytes/sec
@@ -35,8 +38,50 @@ final class SystemMonitorModel: ObservableObject {
         cpu = sampleCPU()
         cpuHistory.append(cpu)
         if cpuHistory.count > historyLength { cpuHistory.removeFirst(cpuHistory.count - historyLength) }
+        gpu = sampleGPU()
         memUsed = sampleMemoryUsed()
         sampleNetwork()
+    }
+
+    // MARK: - GPU
+
+    /// Reads GPU "Device Utilization %" straight from the IOAccelerator registry
+    /// entry's PerformanceStatistics — a public IORegistry read, no private
+    /// framework and notarization-safe.
+    private func sampleGPU() -> Double {
+        var iterator: io_iterator_t = 0
+        guard IOServiceGetMatchingServices(
+            kIOMainPortDefault, IOServiceMatching("IOAccelerator"), &iterator) == KERN_SUCCESS
+        else { return gpu }
+        defer { IOObjectRelease(iterator) }
+
+        var best: Double?
+        var service = IOIteratorNext(iterator)
+        while service != 0 {
+            defer {
+                IOObjectRelease(service)
+                service = IOIteratorNext(iterator)
+            }
+            var unmanaged: Unmanaged<CFMutableDictionary>?
+            guard IORegistryEntryCreateCFProperties(service, &unmanaged, kCFAllocatorDefault, 0)
+                == KERN_SUCCESS,
+                let props = unmanaged?.takeRetainedValue() as? [String: Any],
+                let stats = props["PerformanceStatistics"] as? [String: Any]
+            else { continue }
+
+            let util = (stats["Device Utilization %"] as? Int)
+                ?? (stats["GPU Activity(%)"] as? Int)
+                ?? (stats["Device Utilization"] as? Int)
+            if let util {
+                best = max(best ?? 0, Double(util) / 100)
+            }
+        }
+
+        if let best {
+            if !gpuAvailable { gpuAvailable = true }
+            return min(1, max(0, best))
+        }
+        return gpu
     }
 
     // MARK: - CPU
