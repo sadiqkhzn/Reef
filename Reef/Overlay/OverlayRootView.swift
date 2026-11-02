@@ -16,6 +16,9 @@ enum OpenPage {
     case timer
     case weather
     case battery
+    case colorPicker
+    case clipboard
+    case downloads
 }
 
 /// The SwiftUI root hosted inside the overlay panel.
@@ -41,6 +44,12 @@ struct OverlayRootView: View {
     @EnvironmentObject private var focus: FocusMonitor
     /// The island's countdown timer, started from the timer page.
     @StateObject private var timer = TimerController()
+    /// The color picker's eyedropper and recent swatches.
+    @StateObject private var colorPicker = ColorPickerModel()
+    /// The clipboard history watcher.
+    @StateObject private var clipboard = ClipboardModel()
+    /// The Downloads-folder watcher.
+    @StateObject private var downloads = DownloadsModel()
     /// The island's stopwatch, run from the timer page.
     @StateObject private var stopwatch = StopwatchController()
     /// Live audio levels for the resting waveform.
@@ -283,6 +292,15 @@ struct OverlayRootView: View {
             IslandTab(page: .timer, symbol: "timer", title: "Timer"),
             IslandTab(page: .shelf, symbol: "tray.fill", title: "Shelf"),
         ]
+        if settings.showsColorPicker {
+            tabs.append(IslandTab(page: .colorPicker, symbol: "eyedropper", title: "Color"))
+        }
+        if settings.showsClipboard {
+            tabs.append(IslandTab(page: .clipboard, symbol: "doc.on.clipboard", title: "Clipboard"))
+        }
+        if settings.showsDownloads {
+            tabs.append(IslandTab(page: .downloads, symbol: "arrow.down.circle", title: "Downloads"))
+        }
         return tabs
     }
 
@@ -361,6 +379,33 @@ struct OverlayRootView: View {
                             // Full island height so the sky wash fills behind the
                             // nav bar too; the view keeps its own content above it.
                             .frame(width: state.visibleSize.width, height: state.visibleSize.height, alignment: .top)
+                            .transition(.islandOpen)
+                    } else if openPage == .colorPicker {
+                        ColorPickerView(
+                            model: colorPicker,
+                            accent: settings.accent.color,
+                            headerHeight: state.collapsedSize.height,
+                            notchWidth: notchClearance,
+                            onClose: { openPage = shownTrack != nil ? .nowPlaying : .home })
+                            .frame(width: state.visibleSize.width, height: pageHeight, alignment: .top)
+                            .transition(.islandOpen)
+                    } else if openPage == .clipboard {
+                        ClipboardView(
+                            model: clipboard,
+                            accent: settings.accent.color,
+                            headerHeight: state.collapsedSize.height,
+                            notchWidth: notchClearance,
+                            onClose: { openPage = shownTrack != nil ? .nowPlaying : .home })
+                            .frame(width: state.visibleSize.width, height: pageHeight, alignment: .top)
+                            .transition(.islandOpen)
+                    } else if openPage == .downloads {
+                        DownloadsView(
+                            model: downloads,
+                            accent: settings.accent.color,
+                            headerHeight: state.collapsedSize.height,
+                            notchWidth: notchClearance,
+                            onClose: { openPage = shownTrack != nil ? .nowPlaying : .home })
+                            .frame(width: state.visibleSize.width, height: pageHeight, alignment: .top)
                             .transition(.islandOpen)
                     } else if let nowPlaying = shownTrack, !showsHome {
                         MediaView(nowPlaying: nowPlaying, media: media,
@@ -631,8 +676,16 @@ struct OverlayRootView: View {
             frontmostBundleId = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
             state.peekOnHover = settings.quickPeek
             updateNowPlayingActive()
+            if settings.showsClipboard { clipboard.start() }
+            if settings.showsDownloads { downloads.start() }
         }
         .onChange(of: settings.quickPeek) { _, peek in state.peekOnHover = peek }
+        .onChange(of: settings.showsClipboard) { _, on in
+            if on { clipboard.start() } else { clipboard.stop() }
+        }
+        .onChange(of: settings.showsDownloads) { _, on in
+            if on { downloads.start() } else { downloads.stop() }
+        }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         // Hopping to another screen: shrink and fade out, then pop back in on the
         // new screen rather than teleporting.

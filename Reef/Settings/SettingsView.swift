@@ -53,6 +53,8 @@ struct SettingsView: View {
             GeneralSettingsPage()
         case .appearance:
             AppearanceSettingsPage()
+        case .panes:
+            PanesSettingsPage()
         case .liveActivities:
             LiveActivitySettingsPage()
         case .systemHUD:

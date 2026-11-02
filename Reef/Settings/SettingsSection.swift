@@ -8,6 +8,7 @@ import SwiftUI
 enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
     case general
     case appearance
+    case panes
     case liveActivities
     case systemHUD
     case ambient
@@ -24,6 +25,7 @@ enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .general: return "General"
         case .appearance: return "Appearance"
+        case .panes: return "Panes"
         case .liveActivities: return "Live Activities"
         case .systemHUD: return "System HUD"
         case .ambient: return "Ambient Display"
@@ -35,6 +37,7 @@ enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .general: return "gearshape.fill"
         case .appearance: return "paintpalette.fill"
+        case .panes: return "rectangle.grid.2x2.fill"
         case .liveActivities: return "capsule.inset.filled"
         case .systemHUD: return "slider.horizontal.3"
         case .ambient: return "moon.stars.fill"
@@ -47,6 +50,7 @@ enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .general: return .gray
         case .appearance: return .indigo
+        case .panes: return .pink
         case .liveActivities: return .teal
         case .systemHUD: return .orange
         case .ambient: return .purple
@@ -56,7 +60,7 @@ enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
 
     var group: Group {
         switch self {
-        case .general, .appearance, .liveActivities, .systemHUD, .ambient: return .core
+        case .general, .appearance, .panes, .liveActivities, .systemHUD, .ambient: return .core
         case .about: return .info
         }
     }
@@ -69,6 +73,9 @@ enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
         case .appearance:
             return ["glass", "liquid", "frosted", "midnight", "material", "theme", "accent",
                     "color", "motion", "animation", "spring"]
+        case .panes:
+            return ["tabs", "panes", "clipboard", "color picker", "downloads", "weather",
+                    "timer", "shelf", "customize", "tiles"]
         case .liveActivities:
             return ["battery", "charging", "low", "wings", "activity", "airpods", "bluetooth", "devices", "headphones"]
         case .systemHUD:

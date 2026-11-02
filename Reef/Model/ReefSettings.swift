@@ -22,6 +22,9 @@ final class ReefSettings: ObservableObject {
         static let swipeGestures = "gestures.swipe"
         static let naturalSwipe = "gestures.naturalDirection"
         static let weather = "weather.enabled"
+        static let colorPicker = "panes.colorPicker"
+        static let clipboard = "panes.clipboard"
+        static let downloads = "panes.downloads"
         static let temperatureUnit = "weather.unit"
         static let chargingActivity = "liveActivity.charging"
         static let lowBatteryActivity = "liveActivity.lowBattery"
@@ -208,6 +211,17 @@ final class ReefSettings: ObservableObject {
     /// Show local weather in the island on days with no events.
     @Published var showsWeather: Bool {
         didSet { defaults.set(showsWeather, forKey: Key.weather) }
+    }
+
+    /// Optional panes shown as tabs in the open island.
+    @Published var showsColorPicker: Bool {
+        didSet { defaults.set(showsColorPicker, forKey: Key.colorPicker) }
+    }
+    @Published var showsClipboard: Bool {
+        didSet { defaults.set(showsClipboard, forKey: Key.clipboard) }
+    }
+    @Published var showsDownloads: Bool {
+        didSet { defaults.set(showsDownloads, forKey: Key.downloads) }
     }
 
     /// Unit the weather is shown in.
@@ -469,6 +483,9 @@ final class ReefSettings: ObservableObject {
         swipeGesturesEnabled = defaults.object(forKey: Key.swipeGestures) as? Bool ?? true
         naturalSwipeDirection = defaults.object(forKey: Key.naturalSwipe) as? Bool ?? true
         showsWeather = defaults.object(forKey: Key.weather) as? Bool ?? true
+        showsColorPicker = defaults.object(forKey: Key.colorPicker) as? Bool ?? true
+        showsClipboard = defaults.object(forKey: Key.clipboard) as? Bool ?? true
+        showsDownloads = defaults.object(forKey: Key.downloads) as? Bool ?? true
         temperatureUnit = Self.value(defaults, Key.temperatureUnit) ?? .celsius
         batteryActivitiesEnabled = defaults.object(forKey: Key.batteryActivitiesEnabled) as? Bool ?? true
         batteryActivityDuration = defaults.object(forKey: Key.batteryActivityDuration) as? Double ?? 5
