@@ -10,6 +10,8 @@ struct AgendaView: View {
     var notchWidth: CGFloat
     /// Days in the current month with events, for the month grid.
     var eventDays: Set<Date> = []
+    /// Draw the wide two-pane layout: the month grid beside the agenda.
+    var wide: Bool = false
     /// Leave the open island (back to home).
     var onClose: () -> Void
 
@@ -29,29 +31,78 @@ struct AgendaView: View {
                 .frame(height: headerHeight)
                 .padding(.top, 8)
 
-            if let selected {
-                EventDetailView(event: selected, accent: accent)
-            } else if mode == .month {
-                MonthGridView(eventDays: eventDays, accent: accent)
-            } else if upcoming.isEmpty {
-                empty
+            if wide {
+                widePanes
             } else {
-                ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        ForEach(upcoming) { event in
-                            Button { selected = event } label: { row(event) }
-                                .buttonStyle(.plain)
-                        }
+                narrowBody
+            }
+        }
+    }
+
+    /// Two panes: the month grid on the left, the agenda (or an event's detail)
+    /// on the right.
+    private var widePanes: some View {
+        HStack(alignment: .top, spacing: ReefTheme.Spacing.s) {
+            MonthGridView(eventDays: eventDays, accent: accent)
+                .islandCard(padding: ReefTheme.Spacing.s)
+                .frame(width: 236)
+            agendaPane
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .padding(.horizontal, ReefTheme.Spacing.s)
+        .padding(.bottom, ReefTheme.Spacing.s)
+    }
+
+    /// The agenda list, an event's detail when one is open, or an empty note.
+    @ViewBuilder
+    private var agendaPane: some View {
+        if let selected {
+            EventDetailView(event: selected, accent: accent)
+        } else if upcoming.isEmpty {
+            empty
+        } else {
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(upcoming) { event in
+                        Button { selected = event } label: { row(event) }
+                            .buttonStyle(.plain)
                     }
-                    .padding(.horizontal, ReefTheme.Spacing.l)
-                    .padding(.vertical, 8)
                 }
+                .padding(.horizontal, ReefTheme.Spacing.l)
+                .padding(.vertical, 8)
+            }
+        }
+    }
+
+    /// The compact single-column layout, switched between list and month by the
+    /// header toggle.
+    @ViewBuilder
+    private var narrowBody: some View {
+        if let selected {
+            EventDetailView(event: selected, accent: accent)
+        } else if mode == .month {
+            MonthGridView(eventDays: eventDays, accent: accent)
+        } else if upcoming.isEmpty {
+            empty
+        } else {
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(upcoming) { event in
+                        Button { selected = event } label: { row(event) }
+                            .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, ReefTheme.Spacing.l)
+                .padding(.vertical, 8)
             }
         }
     }
 
     private var header: some View {
         HStack(spacing: 0) {
+            // The bottom tab bar labels the page; the header keeps only the Back
+            // action when an event's detail is open, and the list/month toggle in
+            // the narrow layout.
             if selected != nil {
                 Button { selected = nil } label: {
                     Label("Back", systemImage: "chevron.left")
@@ -64,16 +115,9 @@ struct AgendaView: View {
                         .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
-            } else {
-                Text("Calendar")
-                    .font(ReefTheme.Typography.caption)
-                    .foregroundStyle(accent)
-                    .padding(.horizontal, ReefTheme.Spacing.s)
-                    .padding(.vertical, 3)
-                    .background(Capsule().fill(accent.opacity(0.18)))
             }
             Spacer(minLength: notchWidth + ReefTheme.Spacing.l)
-            if selected == nil {
+            if selected == nil && !wide {
                 modeToggle
             }
         }

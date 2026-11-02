@@ -73,17 +73,9 @@ struct IslandHomeView: View {
     // MARK: - Header
 
     private var header: some View {
+        // The bottom tab bar labels the page, so the header is just the quick
+        // controls on the left and the status cluster on the right.
         HStack(spacing: 0) {
-            if canOpenPlayer {
-                // A track is playing: offer a tap back to the player page.
-                Button(action: onOpenPlayer) {
-                    pill(title: "Now Playing", symbol: "music.note")
-                        .contentShape(Capsule())
-                }
-                .buttonStyle(.plain)
-            } else {
-                pill(title: "Home", symbol: "house.fill")
-            }
             if shelfCount > 0 {
                 Button(action: onOpenShelf) {
                     HStack(spacing: 3) {
@@ -176,18 +168,6 @@ struct IslandHomeView: View {
             .frame(width: 20, height: 20)
             .background(Circle().fill(tint.opacity(0.16)))
             .help(help)
-    }
-
-    /// The page pill. Shows the current page, and on the home page becomes a
-    /// button to the player while a track is on.
-    private func pill(title: String, symbol: String) -> some View {
-        Label(title, systemImage: symbol)
-            .labelStyle(.titleAndIcon)
-            .font(ReefTheme.Typography.caption)
-            .foregroundStyle(accent)
-            .padding(.horizontal, ReefTheme.Spacing.s)
-            .padding(.vertical, 3)
-            .background(Capsule().fill(accent.opacity(0.18)))
     }
 
     // MARK: - Cards

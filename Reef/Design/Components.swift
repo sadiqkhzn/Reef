@@ -86,6 +86,23 @@ private struct BlurFade: ViewModifier {
     }
 }
 
+/// A purely vertical blur-fade: content eases down from just above as it
+/// arrives and lifts back up as it leaves, so wide content resolves straight
+/// from the top with no sideways spread (a scale from the top would splay the
+/// two panes outward).
+private struct TopBlurFade: ViewModifier {
+    var radius: CGFloat
+    var opacity: Double
+    var yOffset: CGFloat
+
+    func body(content: Content) -> some View {
+        content
+            .blur(radius: radius)
+            .opacity(opacity)
+            .offset(y: yOffset)
+    }
+}
+
 extension AnyTransition {
     /// Content blurs and shrinks slightly toward the top as it leaves, and
     /// resolves from that state as it arrives.
@@ -109,13 +126,22 @@ extension AnyTransition {
     /// in both directions, never arriving or lingering out of time with it.
     static var islandWing: AnyTransition { .islandContent }
 
+    /// A top-origin blur-fade for the open body: it resolves straight down from
+    /// the top rather than scaling, so wide two-pane content never splays left
+    /// and right as it settles.
+    static var islandTop: AnyTransition {
+        .modifier(
+            active: TopBlurFade(radius: 8, opacity: 0, yOffset: -12),
+            identity: TopBlurFade(radius: 0, opacity: 1, yOffset: 0))
+    }
+
     /// For the open island's content. A quick, smooth blur-fade both ways, so
     /// opening feels as smooth as closing. The short timing keeps the tinted body
     /// filling in fast rather than leaving a black island for long.
     static var islandOpen: AnyTransition {
         .asymmetric(
-            insertion: AnyTransition.islandContent.animation(.easeOut(duration: 0.22)),
-            removal: AnyTransition.islandContent.animation(.easeOut(duration: 0.12)))
+            insertion: AnyTransition.islandTop.animation(.easeOut(duration: 0.22)),
+            removal: AnyTransition.islandTop.animation(.easeOut(duration: 0.12)))
     }
 
     /// For cover art when the track changes: the old art flips away and the new

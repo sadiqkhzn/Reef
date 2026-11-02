@@ -58,13 +58,9 @@ struct TimerPageView: View {
     }
 
     private var header: some View {
+        // The bottom tab bar labels the page; the header keeps only the
+        // timer/stopwatch toggle.
         HStack(spacing: ReefTheme.Spacing.s) {
-            Text("Timer")
-                .font(ReefTheme.Typography.caption)
-                .foregroundStyle(accent)
-                .padding(.horizontal, ReefTheme.Spacing.s)
-                .padding(.vertical, 3)
-                .background(Capsule().fill(accent.opacity(0.18)))
             modeToggle
             Spacer(minLength: notchWidth + ReefTheme.Spacing.s)
         }

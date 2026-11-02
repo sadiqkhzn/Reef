@@ -52,9 +52,7 @@ struct IslandTabBar: View {
         .animation(.spring(response: 0.3, dampingFraction: 0.82), value: current)
     }
 
-    /// The Now-Playing tab also owns the bare "home" state (no track playing).
     private func isSelected(_ tab: IslandTab) -> Bool {
-        if tab.page == .nowPlaying { return current == .nowPlaying || current == .home }
-        return tab.page == current
+        tab.page == current
     }
 }
