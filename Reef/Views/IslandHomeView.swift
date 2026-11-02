@@ -32,9 +32,7 @@ struct IslandHomeView: View {
     var onOpenTimer: () -> Void = {}
     /// Open the weather forecast page. The weather line taps through to it.
     var onOpenWeather: () -> Void = {}
-    /// Open the battery detail page. The battery badge taps through to it.
-    var onOpenBattery: () -> Void = {}
-    /// Hide the battery number, showing only the glyph and ring.
+    /// Hide the battery number, showing only the ring and glyph.
     var hidesBatteryPercentage: Bool = false
     /// The active macOS Focus, shown as a status chip when one is on.
     var focus: FocusStatus? = nil
@@ -47,118 +45,55 @@ struct IslandHomeView: View {
 
     /// Low Power Mode, read from the system and kept live by the notification.
     @State private var lowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
+    /// Connected Bluetooth devices that report a battery level, for the cluster.
+    @State private var devices: [DeviceBattery] = []
 
     /// Inset from the island's rounded edge for the cards, wide enough that they
     /// do not crowd the corners.
     private let inset: CGFloat = 10
 
+    /// Top clearance: the full header height to clear the notch in the attached
+    /// style, or a small inset when floating.
+    private var topInset: CGFloat {
+        notchWidth > 0 ? headerHeight : ReefTheme.Spacing.s
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            header
-                .frame(height: headerHeight)
+            Color.clear.frame(height: topInset)
 
-            HStack(spacing: ReefTheme.Spacing.s) {
+            HStack(alignment: .top, spacing: ReefTheme.Spacing.s) {
                 clockCard
-                if battery.isPresent {
-                    batteryCard
-                        .frame(width: 160)
+                    .frame(maxHeight: .infinity)
+                if !batteryItems.isEmpty {
+                    batteryCluster
+                        .frame(maxHeight: .infinity)
+                        .frame(width: 150)
                 }
             }
             .padding(.horizontal, inset)
-            .padding(.top, 4)
-            .padding(.bottom, inset)
+            .padding(.bottom, 14)
         }
-    }
-
-    // MARK: - Header
-
-    private var header: some View {
-        // The bottom tab bar labels the page, so the header is just the quick
-        // controls on the left and the status cluster on the right.
-        HStack(spacing: 0) {
-            if shelfCount > 0 {
-                Button(action: onOpenShelf) {
-                    HStack(spacing: 3) {
-                        Image(systemName: "tray.full")
-                        Text("\(shelfCount)")
-                    }
-                    .font(ReefTheme.Typography.caption)
-                    .foregroundStyle(ReefTheme.Ink.secondary)
-                    .padding(.leading, ReefTheme.Spacing.s)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .help("Open the shelf")
-            }
-            Button(action: onOpenCalendar) {
-                Image(systemName: "calendar")
-                    .font(ReefTheme.Typography.caption)
-                    .foregroundStyle(ReefTheme.Ink.secondary)
-                    .padding(.leading, ReefTheme.Spacing.s)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .help("Open the calendar")
-            Button(action: onOpenTimer) {
-                Image(systemName: "timer")
-                    .font(ReefTheme.Typography.caption)
-                    .foregroundStyle(ReefTheme.Ink.secondary)
-                    .padding(.leading, ReefTheme.Spacing.s)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .help("Open the timer")
-            Button(action: onToggleAwake) {
-                Image(systemName: isAwake ? "cup.and.saucer.fill" : "cup.and.saucer")
-                    .font(ReefTheme.Typography.caption)
-                    .foregroundStyle(isAwake ? accent : ReefTheme.Ink.secondary)
-                    .padding(.leading, ReefTheme.Spacing.s)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .help(isAwake ? "Keeping the Mac awake" : "Keep the Mac awake")
-            Button(action: onOpenSettings) {
-                Image(systemName: "gearshape")
-                    .font(ReefTheme.Typography.caption)
-                    .foregroundStyle(ReefTheme.Ink.secondary)
-                    .padding(.leading, ReefTheme.Spacing.s)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .help("Open Reef settings")
-
-            Spacer(minLength: notchWidth + ReefTheme.Spacing.l)
-
-            statusCluster
-            if battery.isPresent {
-                Button(action: onOpenBattery) {
-                    BatteryBadge(snapshot: battery, showsPercentage: !hidesBatteryPercentage)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .help("Battery details")
-            }
-        }
-        .padding(.horizontal, ReefTheme.Spacing.l)
         .onReceive(NotificationCenter.default.publisher(
             for: .NSProcessInfoPowerStateDidChange)) { _ in
             lowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
         }
     }
 
-    /// The right-wing status glance: the active Focus and Low Power Mode, each
-    /// shown only while on. Quiet chips that sit just left of the battery badge.
-    @ViewBuilder
-    private var statusCluster: some View {
-        HStack(spacing: 5) {
-            if let focus {
-                statusChip(symbol: focus.symbol, tint: accent, help: "Focus · \(focus.name)")
-            }
-            if lowPower {
-                statusChip(symbol: "bolt.fill", tint: ReefTheme.Status.warning, help: "Low Power Mode")
-            }
+    // MARK: - Controls
+
+    private func headerButton(
+        _ symbol: String, tint: Color, help: String, action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(tint)
+                .frame(width: 22, height: 22)
+                .contentShape(Rectangle())
         }
-        .padding(.trailing, focus != nil || lowPower ? ReefTheme.Spacing.s : 0)
+        .buttonStyle(.plain)
+        .help(help)
     }
 
     private func statusChip(symbol: String, tint: Color, help: String) -> some View {
@@ -174,45 +109,76 @@ struct IslandHomeView: View {
 
     private var clockCard: some View {
         TimelineView(.everyMinute) { context in
-            VStack(alignment: .leading, spacing: 2) {
-                Spacer(minLength: 0)
+            VStack(alignment: .leading, spacing: 0) {
+                // Top: date on the left, utility controls on the right.
+                HStack(spacing: ReefTheme.Spacing.s) {
+                    Text(context.date, format: .dateTime.weekday(.wide).day().month(.wide))
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(ReefTheme.Ink.secondary)
+                        .lineLimit(1)
+                    Spacer(minLength: 0)
+                    if let focus {
+                        statusChip(symbol: focus.symbol, tint: accent, help: "Focus · \(focus.name)")
+                    }
+                    headerButton(
+                        isAwake ? "cup.and.saucer.fill" : "cup.and.saucer",
+                        tint: isAwake ? accent : ReefTheme.Ink.secondary,
+                        help: isAwake ? "Keeping the Mac awake" : "Keep the Mac awake",
+                        action: onToggleAwake)
+                    headerButton(
+                        "gearshape",
+                        tint: ReefTheme.Ink.secondary,
+                        help: "Open Reef settings",
+                        action: onOpenSettings)
+                }
+
+                Spacer(minLength: ReefTheme.Spacing.s)
+
                 Text(context.date, format: .dateTime.hour().minute())
                     .font(ReefTheme.Typography.display)
+                    .monospacedDigit()
                     .foregroundStyle(ReefTheme.Ink.primary)
                     .contentTransition(.numericText())
-                Text(context.date, format: .dateTime.weekday(.wide).day().month(.wide))
-                    .font(ReefTheme.Typography.caption)
-                    .foregroundStyle(ReefTheme.Ink.secondary)
-                if let event = nextEvent {
-                    eventLine(event, now: context.date)
-                        .padding(.top, 3)
-                }
-                if let weather {
-                    weatherLine(weather)
-                        .padding(.top, 3)
+
+                Spacer(minLength: ReefTheme.Spacing.s)
+
+                // Bottom glance well.
+                VStack(alignment: .leading, spacing: 4) {
+                    if let event = nextEvent {
+                        eventLine(event, now: context.date)
+                    }
+                    if let weather {
+                        weatherLine(weather)
+                    }
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         }
-        .islandCard(padding: ReefTheme.Spacing.l)
+        .islandCard(padding: ReefTheme.Spacing.m)
     }
 
     /// A one-line glance at the next event: a dot in its calendar color, the
     /// title, and a live countdown. Taps through to the agenda.
     private func eventLine(_ event: CalendarEvent, now: Date) -> some View {
         Button(action: onOpenCalendar) {
-            HStack(spacing: 5) {
-                Circle()
+            HStack(spacing: ReefTheme.Spacing.s) {
+                RoundedRectangle(cornerRadius: 1.5, style: .continuous)
                     .fill(event.colorHex.flatMap(Color.init(hex:)) ?? accent)
-                    .frame(width: 6, height: 6)
+                    .frame(width: 3, height: 12)
                 Text(event.title)
+                    .font(ReefTheme.Typography.caption)
                     .foregroundStyle(ReefTheme.Ink.primary)
                     .lineLimit(1)
+                Spacer(minLength: 4)
                 Text(event.countdownText(now: now))
+                    .font(.system(size: 10, weight: .medium))
+                    .monospacedDigit()
                     .foregroundStyle(ReefTheme.Ink.secondary)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Capsule().fill(.white.opacity(0.08)))
                     .lineLimit(1)
             }
-            .font(ReefTheme.Typography.caption)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -238,56 +204,106 @@ struct IslandHomeView: View {
         .buttonStyle(.plain)
     }
 
-    private var batteryTint: Color {
-        switch battery.status {
-        case .charging, .fullyCharged:
-            return ReefTheme.Status.charging
-        case .notCharging, .onBattery:
-            if battery.percent <= BatteryActivityPolicy.criticalThreshold {
-                return ReefTheme.Status.critical
+    // MARK: - Battery cluster
+
+    /// One battery source shown as a ring: the Mac and each connected device.
+    private struct BatteryItem: Identifiable {
+        let id: String
+        let percent: Int
+        let isCharging: Bool
+        let symbol: String
+    }
+
+    /// The Mac plus connected devices that report a level, capped at four so the
+    /// cluster stays a clean one-to-four grid.
+    private var batteryItems: [BatteryItem] {
+        var items: [BatteryItem] = []
+        if battery.isPresent {
+            items.append(BatteryItem(
+                id: "mac", percent: battery.percent,
+                isCharging: battery.isCharging, symbol: "laptopcomputer"))
+        }
+        for device in devices {
+            if let overall = device.overall {
+                items.append(BatteryItem(
+                    id: device.name, percent: overall,
+                    isCharging: false, symbol: device.kind.symbol))
             }
-            if battery.percent <= BatteryActivityPolicy.lowThreshold {
-                return ReefTheme.Status.warning
+        }
+        return Array(items.prefix(4))
+    }
+
+    /// The cluster: one big ring for a single source, a side-by-side pair for
+    /// two, or a 2×2 grid for three or four. Each ring shrinks as more appear.
+    @ViewBuilder
+    private var batteryCluster: some View {
+        let items = batteryItems
+        Group {
+            switch items.count {
+            case 1:
+                ring(items[0], size: 62, numberSize: 19, glyphSize: 12)
+            case 2:
+                HStack(spacing: ReefTheme.Spacing.s) {
+                    ForEach(items) { ring($0, size: 52, numberSize: 15, glyphSize: 10) }
+                }
+            default:
+                LazyVGrid(
+                    columns: [
+                        GridItem(.flexible(), spacing: ReefTheme.Spacing.s),
+                        GridItem(.flexible(), spacing: ReefTheme.Spacing.s),
+                    ],
+                    spacing: ReefTheme.Spacing.s) {
+                    ForEach(items) { ring($0, size: 44, numberSize: 13, glyphSize: 9) }
+                }
             }
-            return accent
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .islandCard()
+        .onAppear(perform: refreshDevices)
+        .onReceive(Timer.publish(every: 15, on: .main, in: .common).autoconnect()) { _ in
+            refreshDevices()
         }
     }
 
-    private var batteryCard: some View {
-        HStack(spacing: ReefTheme.Spacing.m) {
-            RingGauge(progress: Double(battery.percent) / 100, tint: batteryTint, lineWidth: 6)
-                .frame(width: 58, height: 58)
-                .overlay {
-                    Image(systemName: battery.isCharging ? "bolt.fill" : "battery.75percent")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(batteryTint)
-                }
-
-            VStack(alignment: .leading, spacing: 2) {
-                if hidesBatteryPercentage {
-                    // No number: the status reads as the main label instead.
-                    Text(battery.status.title)
-                        .font(ReefTheme.Typography.title)
-                        .foregroundStyle(ReefTheme.Ink.primary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.85)
-                } else {
-                    Text("\(battery.percent)%")
-                        .font(ReefTheme.Typography.title)
-                        .monospacedDigit()
-                        .foregroundStyle(ReefTheme.Ink.primary)
-                        .contentTransition(.numericText())
-                    Text(battery.status.title)
-                        .font(ReefTheme.Typography.caption)
-                        .foregroundStyle(ReefTheme.Ink.secondary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.85)
+    private func ring(
+        _ item: BatteryItem, size: CGFloat, numberSize: CGFloat, glyphSize: CGFloat
+    ) -> some View {
+        let tint = ringTint(for: item)
+        return RingGauge(
+            progress: Double(item.percent) / 100, tint: tint, lineWidth: size > 50 ? 5 : 4)
+            .frame(width: size, height: size)
+            .overlay {
+                VStack(spacing: 1) {
+                    Image(systemName: item.isCharging ? "bolt.fill" : item.symbol)
+                        .font(.system(size: glyphSize, weight: .semibold))
+                        .foregroundStyle(tint)
+                    if !hidesBatteryPercentage {
+                        Text("\(item.percent)")
+                            .font(.system(size: numberSize, weight: .semibold, design: .rounded))
+                            .monospacedDigit()
+                            .foregroundStyle(ReefTheme.Ink.primary)
+                    }
                 }
             }
-            Spacer(minLength: 0)
-        }
-        .islandCard()
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Battery \(battery.percent) percent, \(battery.status.title)")
+    }
+
+    /// Ring color: charging green wins, then Low Power Mode paints the Mac ring
+    /// yellow (so it reads as power-saver without a separate badge), then the
+    /// usual low/critical levels.
+    private func ringTint(for item: BatteryItem) -> Color {
+        if item.isCharging { return ReefTheme.Status.charging }
+        if item.id == "mac" && lowPower { return ReefTheme.Status.warning }
+        return batteryTint(item.percent, charging: false)
+    }
+
+    private func batteryTint(_ percent: Int, charging: Bool) -> Color {
+        if charging { return ReefTheme.Status.charging }
+        if percent <= BatteryActivityPolicy.criticalThreshold { return ReefTheme.Status.critical }
+        if percent <= BatteryActivityPolicy.lowThreshold { return ReefTheme.Status.warning }
+        return accent
+    }
+
+    private func refreshDevices() {
+        devices = BluetoothBatteryReader.all()
     }
 }

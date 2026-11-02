@@ -44,13 +44,13 @@ struct AgendaView: View {
     private var widePanes: some View {
         HStack(alignment: .top, spacing: ReefTheme.Spacing.s) {
             MonthGridView(eventDays: eventDays, accent: accent)
-                .islandCard(padding: ReefTheme.Spacing.s)
+                .islandCard(padding: ReefTheme.Spacing.xs)
                 .frame(width: 236)
             agendaPane
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .padding(.horizontal, ReefTheme.Spacing.s)
-        .padding(.bottom, ReefTheme.Spacing.s)
+        .padding(.bottom, 22)
     }
 
     /// The agenda list, an event's detail when one is open, or an empty note.
@@ -69,8 +69,18 @@ struct AgendaView: View {
                     }
                 }
                 .padding(.horizontal, ReefTheme.Spacing.l)
-                .padding(.vertical, 8)
+                // Inset so the first and last rows sit past the fades.
+                .padding(.vertical, 12)
             }
+            // The same slider fades top and bottom as the weather lists.
+            .mask(
+                VStack(spacing: 0) {
+                    LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom)
+                        .frame(height: 12)
+                    Rectangle().fill(.black)
+                    LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom)
+                        .frame(height: 12)
+                })
         }
     }
 
@@ -93,7 +103,8 @@ struct AgendaView: View {
                     }
                 }
                 .padding(.horizontal, ReefTheme.Spacing.l)
-                .padding(.vertical, 8)
+                .padding(.top, 8)
+                .padding(.bottom, 16)
             }
         }
     }
@@ -109,10 +120,8 @@ struct AgendaView: View {
                         .labelStyle(.titleAndIcon)
                         .font(ReefTheme.Typography.caption)
                         .foregroundStyle(accent)
-                        .padding(.horizontal, ReefTheme.Spacing.s)
                         .padding(.vertical, 3)
-                        .background(Capsule().fill(accent.opacity(0.18)))
-                        .contentShape(Capsule())
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             }

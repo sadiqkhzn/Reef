@@ -56,12 +56,20 @@ struct IslandCard: ViewModifier {
         content
             .padding(padding)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // A recessed dark well — darker than the glass shell — so the card
+            // reads as carved into the surface rather than a raised gray box.
             .background(
                 RoundedRectangle(cornerRadius: ReefTheme.Radius.card, style: .continuous)
-                    .fill(ReefTheme.Ink.fill))
+                    .fill(Color.black.opacity(0.22)))
+            // Top-lit hairline: a touch of light on the top edge, fading down.
             .overlay(
                 RoundedRectangle(cornerRadius: ReefTheme.Radius.card, style: .continuous)
-                    .strokeBorder(ReefTheme.Ink.stroke, lineWidth: 0.5))
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: [.white.opacity(0.10), .white.opacity(0.03)],
+                            startPoint: .top,
+                            endPoint: .bottom),
+                        lineWidth: 0.5))
     }
 }
 

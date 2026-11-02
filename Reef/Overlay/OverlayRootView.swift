@@ -216,6 +216,23 @@ struct OverlayRootView: View {
         }
     }
 
+    /// Reef's signature: while a timer runs, its remaining time is traced as a
+    /// light pipe along the island's own outer edge — ambient telemetry that
+    /// shows on every pane and even while collapsed.
+    @ViewBuilder
+    private var reefRim: some View {
+        if timer.isActive {
+            let tint = timer.isFinished ? ReefTheme.Status.warning : settings.accent.color
+            shape
+                .trim(from: 0, to: timer.isFinished ? 1 : max(0.0001, CGFloat(1 - timer.progress)))
+                .stroke(tint, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                .shadow(color: tint.opacity(0.6), radius: 3)
+                .opacity(0.9)
+                .frame(width: state.visibleSize.width, height: state.visibleSize.height)
+                .allowsHitTesting(false)
+        }
+    }
+
     /// Solid band height that keeps the hardware notch hidden under glass.
     private var notchBand: CGFloat {
         style == .attached && state.hasNotch ? state.collapsedSize.height : 0
@@ -263,7 +280,6 @@ struct OverlayRootView: View {
         tabs += [
             IslandTab(page: .calendar, symbol: "calendar", title: "Calendar"),
             IslandTab(page: .weather, symbol: "cloud.sun.fill", title: "Weather"),
-            IslandTab(page: .battery, symbol: "battery.100percent", title: "Battery"),
             IslandTab(page: .timer, symbol: "timer", title: "Timer"),
             IslandTab(page: .shelf, symbol: "tray.fill", title: "Shelf"),
         ]
@@ -276,7 +292,7 @@ struct OverlayRootView: View {
 
     /// Tabs that open the island to the wide, two-pane width.
     private func isWidePage(_ page: OpenPage) -> Bool {
-        page == .calendar
+        page == .calendar || page == .timer || page == .shelf
     }
 
     /// Keep the shared wide flag in step with the open tab, so the silhouette
@@ -342,17 +358,9 @@ struct OverlayRootView: View {
                             headerHeight: state.collapsedSize.height,
                             notchWidth: notchClearance,
                             onClose: { openPage = shownTrack != nil ? .nowPlaying : .home })
-                            .frame(width: state.visibleSize.width, height: pageHeight, alignment: .top)
-                            .transition(.islandOpen)
-                    } else if openPage == .battery {
-                        BatteryDetailView(
-                            snapshot: battery.snapshot,
-                            accent: settings.accent.color,
-                            headerHeight: state.collapsedSize.height,
-                            notchWidth: notchClearance,
-                            deviceArtwork: settings.deviceArtwork,
-                            onClose: { openPage = shownTrack != nil ? .nowPlaying : .home })
-                            .frame(width: state.visibleSize.width, height: pageHeight, alignment: .top)
+                            // Full island height so the sky wash fills behind the
+                            // nav bar too; the view keeps its own content above it.
+                            .frame(width: state.visibleSize.width, height: state.visibleSize.height, alignment: .top)
                             .transition(.islandOpen)
                     } else if let nowPlaying = shownTrack, !showsHome {
                         MediaView(nowPlaying: nowPlaying, media: media,
@@ -377,7 +385,6 @@ struct OverlayRootView: View {
                             onOpenCalendar: { openPage = .calendar },
                             onOpenTimer: { openPage = .timer },
                             onOpenWeather: { openPage = .weather },
-                            onOpenBattery: { openPage = .battery },
                             hidesBatteryPercentage: settings.hidesBatteryPercentage,
                             focus: focus.current,
                             isAwake: settings.keepAwake,
@@ -506,7 +513,7 @@ struct OverlayRootView: View {
                 current: openPage,
                 accent: settings.accent.color,
                 onSelect: selectTab)
-                .padding(.bottom, 8)
+                .padding(.bottom, 5)
                 .frame(
                     width: state.visibleSize.width,
                     height: state.visibleSize.height,
@@ -515,6 +522,8 @@ struct OverlayRootView: View {
                 .offset(y: isOpen ? 0 : -12)
                 .allowsHitTesting(isOpen)
                 .onHover { if isOpen { state.isOverControl = $0 } }
+
+            reefRim
         }
         .scaleEffect(isPressed && !isOpen && !state.isOverControl ? 0.96 : 1, anchor: .top)
         .animation(

@@ -48,25 +48,37 @@ struct MediaView: View {
                 .transition(.artworkFlip)
                 .animation(.easeInOut(duration: 0.4), value: nowPlaying.artworkToken)
 
-            VStack(alignment: .leading, spacing: 5) {
-                MarqueeText(
-                    text: nowPlaying.displayTitle(cleaned: cleanTitle),
-                    color: .white,
-                    font: .system(size: 15, weight: .semibold, design: .rounded),
-                    alignment: .leading)
-                    .frame(height: 19)
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 5) {
+                    MarqueeText(
+                        text: nowPlaying.displayTitle(cleaned: cleanTitle),
+                        color: .white,
+                        font: .system(size: 14, weight: .semibold, design: .rounded),
+                        alignment: .leading)
+                        .frame(height: 18)
+                    if nowPlaying.bundleIdentifier != nil {
+                        Button(action: showInApp) {
+                            Image(systemName: "arrow.up.forward")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(.white.opacity(0.55))
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .help("Open in app")
+                    }
+                }
 
                 Text(nowPlaying.artist)
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .font(.system(size: 11, weight: .medium, design: .rounded))
                     .foregroundStyle(.white.opacity(0.7))
                     .lineLimit(1)
 
-                Spacer(minLength: 6)
+                Spacer(minLength: 2)
 
                 ScrubBar(track: nowPlaying, tint: tint) { media.seek(to: $0) }
 
                 controls
-                    .padding(.top, 6)
+                    .padding(.top, 2)
             }
             .frame(height: 96)
 
@@ -93,8 +105,6 @@ struct MediaView: View {
             .frame(width: 96, height: 96)
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             .background(glow)
-            .overlay(alignment: .bottomLeading) { equalizer }
-            .overlay(alignment: .bottomTrailing) { sourceBadge }
     }
 
     /// The live equalizer tucked into the artwork's bottom-left corner, on a
@@ -183,6 +193,13 @@ struct MediaView: View {
                     .blur(radius: 40)
                     .opacity(0.45)
                     .overlay(Color.black.opacity(0.3))
+                    // Bottom-heavy scrim so the scrubber and transport stay legible
+                    // over bright album colors.
+                    .overlay(
+                        LinearGradient(
+                            colors: [.clear, .black.opacity(0.35)],
+                            startPoint: .center,
+                            endPoint: .bottom))
                     .allowsHitTesting(false)
             } else {
                 tint.opacity(0.22).allowsHitTesting(false)
@@ -207,11 +224,11 @@ struct MediaView: View {
             Spacer(minLength: 0)
             transportToggle("shuffle", on: nowPlaying.shuffleOn) { media.toggleShuffle() }
             Spacer(minLength: 0)
-            transportButton("backward.fill", size: 15, diameter: 30) { media.previous() }
+            transportButton("backward.fill", size: 13, diameter: 26) { media.previous() }
             Spacer(minLength: 0)
             playButton
             Spacer(minLength: 0)
-            transportButton("forward.fill", size: 15, diameter: 30) { media.next() }
+            transportButton("forward.fill", size: 13, diameter: 26) { media.next() }
             Spacer(minLength: 0)
             transportToggle(repeatSymbol, on: nowPlaying.repeatMode != .off) { media.cycleRepeat() }
         }
@@ -235,9 +252,9 @@ struct MediaView: View {
             }
         } label: {
             Image(systemName: currentOutputSymbol)
-                .font(.system(size: 12, weight: .semibold))
+                .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.55))
-                .frame(width: 26, height: 26)
+                .frame(width: 24, height: 24)
                 .contentShape(Circle())
         }
         .menuStyle(.borderlessButton)
@@ -265,9 +282,9 @@ struct MediaView: View {
     private var playButton: some View {
         Button(action: { media.playPause() }) {
             ZStack {
-                Circle().fill(accent.opacity(0.9)).frame(width: 38, height: 38)
+                Circle().fill(accent.opacity(0.9)).frame(width: 32, height: 32)
                 Image(systemName: nowPlaying.isPlaying ? "pause.fill" : "play.fill")
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.system(size: 14, weight: .bold))
                     .foregroundStyle(.white)
                     .contentTransition(.symbolEffect(.replace))
             }
@@ -295,10 +312,10 @@ struct MediaView: View {
     ) -> some View {
         Button(action: action) {
             Image(systemName: symbol)
-                .font(.system(size: 12, weight: .semibold))
+                .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(on ? tint : .white.opacity(0.45))
                 .contentTransition(.symbolEffect(.replace))
-                .frame(width: 26, height: 26)
+                .frame(width: 24, height: 24)
                 .contentShape(Circle())
         }
         .buttonStyle(HoverScaleStyle())
