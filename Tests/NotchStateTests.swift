@@ -27,7 +27,9 @@ final class NotchStateTests: XCTestCase {
 
         XCTAssertEqual(state.targetSize.width, NotchState.expandedMinWidth, accuracy: 0.001)
         XCTAssertEqual(
-            state.targetSize.height, 32 + NotchState.expandedBodyHeight, accuracy: 0.001)
+            state.targetSize.height,
+            32 + NotchState.expandedBodyHeight + NotchState.tabBarHeight,
+            accuracy: 0.001)
     }
 
     func testExpandedKeepsWiderCollapsedWidth() {
