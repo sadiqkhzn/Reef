@@ -21,6 +21,7 @@ enum OpenPage {
     case downloads
     case monitor
     case webcam
+    case notes
 }
 
 /// The SwiftUI root hosted inside the overlay panel.
@@ -56,6 +57,8 @@ struct OverlayRootView: View {
     @StateObject private var monitor = SystemMonitorModel()
     /// The front-camera mirror session.
     @StateObject private var webcam = WebcamModel()
+    /// The notes scratchpad.
+    @StateObject private var notes = NotesModel()
     /// The island's stopwatch, run from the timer page.
     @StateObject private var stopwatch = StopwatchController()
     /// Live audio levels for the resting waveform.
@@ -313,6 +316,9 @@ struct OverlayRootView: View {
         if settings.showsWebcam {
             tabs.append(IslandTab(page: .webcam, symbol: "web.camera", title: "Mirror"))
         }
+        if settings.showsNotes {
+            tabs.append(IslandTab(page: .notes, symbol: "note.text", title: "Notes"))
+        }
         return tabs
     }
 
@@ -431,6 +437,15 @@ struct OverlayRootView: View {
                     } else if openPage == .webcam {
                         WebcamView(
                             model: webcam,
+                            accent: settings.accent.color,
+                            headerHeight: state.collapsedSize.height,
+                            notchWidth: notchClearance,
+                            onClose: { openPage = shownTrack != nil ? .nowPlaying : .home })
+                            .frame(width: state.visibleSize.width, height: pageHeight, alignment: .top)
+                            .transition(.islandOpen)
+                    } else if openPage == .notes {
+                        NotesView(
+                            model: notes,
                             accent: settings.accent.color,
                             headerHeight: state.collapsedSize.height,
                             notchWidth: notchClearance,

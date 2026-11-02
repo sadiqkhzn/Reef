@@ -35,6 +35,7 @@ struct PanesSettingsPage: View {
         case "downloads": return $settings.showsDownloads
         case "monitor": return $settings.showsMonitor
         case "webcam": return $settings.showsWebcam
+        case "notes": return $settings.showsNotes
         default: return .constant(true)
         }
     }
@@ -59,6 +60,8 @@ struct PaneOption: Identifiable {
             blurb: "Live CPU, memory, and network telemetry.", tint: .red),
         PaneOption(id: "webcam", title: "Mirror", symbol: "web.camera",
             blurb: "A quick front-camera check before a call.", tint: .blue),
+        PaneOption(id: "notes", title: "Notes", symbol: "note.text",
+            blurb: "A quick always-saved scratchpad.", tint: .yellow),
     ]
 }
 
