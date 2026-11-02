@@ -468,6 +468,12 @@ struct OverlayRootView: View {
             // lingering outside the shrinking silhouette.
             .frame(width: state.visibleSize.width, height: state.visibleSize.height, alignment: .top)
             .clipShape(shape)
+            // Switching tabs cross-fades the body: the page swap animates so each
+            // page's blur-fade transition plays instead of snapping. Reduce Motion
+            // makes it an instant swap.
+            .animation(
+                MotionStyle.animation(settings.motion.peek, reduceMotion: reduceMotion),
+                value: openPage)
 
             if isOpen {
                 IslandTabBar(
