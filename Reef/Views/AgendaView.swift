@@ -19,6 +19,8 @@ struct AgendaView: View {
     @State private var mode: Mode = .list
     /// The event whose detail is open, if any.
     @State private var selected: CalendarEvent?
+    /// The agenda row currently hovered, for the row highlight.
+    @State private var hoveredID: CalendarEvent.ID?
 
     private var upcoming: [CalendarEvent] {
         let now = Date()
@@ -28,8 +30,9 @@ struct AgendaView: View {
     var body: some View {
         VStack(spacing: 0) {
             header
+                // Clear the notch band; the cards flank the notch so they need the
+                // full collapsed height above them, but no extra padding.
                 .frame(height: headerHeight)
-                .padding(.top, 8)
 
             if wide {
                 widePanes
@@ -45,12 +48,12 @@ struct AgendaView: View {
         HStack(alignment: .top, spacing: ReefTheme.Spacing.s) {
             MonthGridView(eventDays: eventDays, accent: accent)
                 .islandCard(padding: ReefTheme.Spacing.xs)
-                .frame(width: 236)
+                .frame(width: 182)
             agendaPane
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .padding(.horizontal, ReefTheme.Spacing.s)
-        .padding(.bottom, 22)
+        .padding(.bottom, 12)
     }
 
     /// The agenda list, an event's detail when one is open, or an empty note.
@@ -62,13 +65,16 @@ struct AgendaView: View {
             empty
         } else {
             ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 4) {
                     ForEach(upcoming) { event in
-                        Button { selected = event } label: { row(event) }
-                            .buttonStyle(.plain)
+                        Button { selected = event } label: {
+                            row(event, hovered: hoveredID == event.id)
+                        }
+                        .buttonStyle(.plain)
+                        .onHover { hoveredID = $0 ? event.id : (hoveredID == event.id ? nil : hoveredID) }
                     }
                 }
-                .padding(.horizontal, ReefTheme.Spacing.l)
+                .padding(.horizontal, ReefTheme.Spacing.m)
                 // Inset so the first and last rows sit past the fades.
                 .padding(.vertical, 12)
             }
@@ -96,13 +102,16 @@ struct AgendaView: View {
             empty
         } else {
             ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 4) {
                     ForEach(upcoming) { event in
-                        Button { selected = event } label: { row(event) }
-                            .buttonStyle(.plain)
+                        Button { selected = event } label: {
+                            row(event, hovered: hoveredID == event.id)
+                        }
+                        .buttonStyle(.plain)
+                        .onHover { hoveredID = $0 ? event.id : (hoveredID == event.id ? nil : hoveredID) }
                     }
                 }
-                .padding(.horizontal, ReefTheme.Spacing.l)
+                .padding(.horizontal, ReefTheme.Spacing.m)
                 .padding(.top, 8)
                 .padding(.bottom, 16)
             }
@@ -162,7 +171,7 @@ struct AgendaView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    private func row(_ event: CalendarEvent) -> some View {
+    private func row(_ event: CalendarEvent, hovered: Bool) -> some View {
         HStack(spacing: 8) {
             RoundedRectangle(cornerRadius: 2, style: .continuous)
                 .fill(event.colorHex.flatMap(Color.init(hex:)) ?? accent)
@@ -188,11 +197,16 @@ struct AgendaView: View {
                 }
             }
             Spacer(minLength: 0)
-            Image(systemName: "chevron.right")
-                .font(.system(size: 9, weight: .semibold))
-                .foregroundStyle(ReefTheme.Ink.tertiary)
         }
+        // The whole row is tappable; a hover highlight stands in for the old
+        // right-edge chevron and frees up horizontal room for the title.
+        .padding(.horizontal, 6)
+        .padding(.vertical, 4)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(.white.opacity(hovered ? 0.05 : 0)))
         .contentShape(Rectangle())
+        .animation(.easeOut(duration: 0.12), value: hovered)
     }
 
     /// "All day" or a day-and-time label like "Today 3:00 PM" / "Fri 9:30 AM".

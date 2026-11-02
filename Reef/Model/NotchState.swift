@@ -34,6 +34,11 @@ final class NotchState: ObservableObject {
     /// (a button), so hovering a control does not open the island.
     @Published var isOverControl: Bool = false
 
+    /// True while an in-island panel or overlay is open (the volume panel, the
+    /// lyrics view), so the island stays open even if a drag inside it briefly
+    /// drops the hover tracking.
+    @Published var keepsOpen: Bool = false
+
     /// True while a track is playing or paused, so the resting overlay widens to
     /// show the media wing (cover and equalizer).
     @Published var nowPlayingActive: Bool = false
