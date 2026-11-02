@@ -33,21 +33,22 @@ struct BatteryDetailView: View {
                 .ignoresSafeArea()
             VStack(spacing: 0) {
                 header
-                    .frame(height: headerHeight)
-                    .padding(.top, 8)
+                    .frame(height: topInset)
                 content
             }
         }
     }
 
+    /// Top clearance: the full header height to clear the notch in the attached
+    /// style, or a small inset when floating so there is no dead space.
+    private var topInset: CGFloat {
+        notchWidth > 0 ? headerHeight : ReefTheme.Spacing.s
+    }
+
     private var header: some View {
+        // The bottom tab bar already labels this page, so the header is just the
+        // top clearance.
         HStack(spacing: 0) {
-            Text("Battery")
-                .font(ReefTheme.Typography.caption)
-                .foregroundStyle(accent)
-                .padding(.horizontal, ReefTheme.Spacing.s)
-                .padding(.vertical, 3)
-                .background(Capsule().fill(accent.opacity(0.18)))
             Spacer(minLength: notchWidth + ReefTheme.Spacing.l)
         }
         .padding(.horizontal, ReefTheme.Spacing.l)

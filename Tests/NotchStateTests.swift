@@ -35,10 +35,11 @@ final class NotchStateTests: XCTestCase {
     func testExpandedKeepsWiderCollapsedWidth() {
         let state = NotchState()
         // A collapsed width already wider than the expanded minimum.
-        state.collapsedSize = CGSize(width: 460, height: 38)
+        let wide = NotchState.expandedMinWidth + 60
+        state.collapsedSize = CGSize(width: wide, height: 38)
         state.phase = .expanded
 
-        XCTAssertEqual(state.targetSize.width, 460, accuracy: 0.001)
+        XCTAssertEqual(state.targetSize.width, wide, accuracy: 0.001)
     }
 
     func testExpandedHeaderMatchesRestingHeight() {

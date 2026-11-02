@@ -71,8 +71,15 @@ final class NotchState: ObservableObject {
         width: ScreenMetrics.defaultPillWidth,
         height: ScreenMetrics.fallbackPillHeight)
 
-    /// Minimum width the overlay opens to, regardless of the collapsed size.
-    static let expandedMinWidth: CGFloat = 440
+    /// Width the overlay opens to. Every tab opens to this one width, single or
+    /// two-pane, so the island stays the same size as tabs change.
+    static let expandedMinWidth: CGFloat = 520
+    /// The open width is uniform across tabs; the wide width matches it.
+    static let expandedWideWidth: CGFloat = 520
+
+    /// Retained so the panel reserves the open width; the island no longer
+    /// changes width per tab, so this stays false.
+    @Published var openPageWide: Bool = false
     /// Height of the open body below the header row. The header row is as tall
     /// as the resting overlay, so its items sit beside the notch.
     static let expandedBodyHeight: CGFloat = 176
@@ -107,9 +114,15 @@ final class NotchState: ObservableObject {
             height: collapsed.height + expandedBodyHeight + tabBarHeight)
     }
 
-    /// Size of the overlay when fully open.
+    /// Size of the overlay when fully open. A two-pane page opens wider; the
+    /// rest keep the compact width.
     var expandedSize: CGSize {
-        Self.expandedSize(collapsed: collapsedSize)
+        let width = max(
+            collapsedSize.width,
+            openPageWide ? Self.expandedWideWidth : Self.expandedMinWidth)
+        return CGSize(
+            width: width,
+            height: collapsedSize.height + Self.expandedBodyHeight + Self.tabBarHeight)
     }
 
     /// The media wing's own resting width, independent of whatever is currently

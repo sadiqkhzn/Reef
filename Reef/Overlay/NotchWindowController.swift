@@ -180,9 +180,12 @@ final class NotchWindowController {
     /// around it.
     private func panelSize(collapsed: CGSize) -> CGSize {
         let open = NotchState.expandedSize(collapsed: collapsed)
+        // Reserve the widest the island ever opens to (a two-pane page), so the
+        // fixed panel can host any tab; narrower tabs just center within it.
+        let openWidth = max(collapsed.width, NotchState.expandedWideWidth)
         let winged = collapsed.width + NotchState.wingWidth * 2 + NotchState.peekGrow.width
         return CGSize(
-            width: max(open.width, winged) + panelSidePadding,
+            width: max(openWidth, winged) + panelSidePadding,
             height: open.height + panelBottomPadding)
     }
 
@@ -300,10 +303,13 @@ final class NotchWindowController {
     }
 
     /// Keep the click-through region in step with the phase. The panel does not
-    /// resize; only the interactive area changes.
+    /// resize; only the interactive area changes. A two-pane tab widens the open
+    /// island, so the region follows that too.
     private func observePhase() {
         state.$phase
             .removeDuplicates()
+            .map { _ in () }
+            .merge(with: state.$openPageWide.removeDuplicates().map { _ in () })
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in
                 self?.updateInteractiveRect()

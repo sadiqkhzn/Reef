@@ -252,23 +252,37 @@ struct OverlayRootView: View {
         max(0, state.visibleSize.height - NotchState.tabBarHeight)
     }
 
-    /// The open island's tabs, in order.
+    /// The open island's tabs, in order. Home is always present; Now Playing is
+    /// an extra tab only while a track is on, so the home dashboard stays
+    /// reachable during playback.
     private var islandTabs: [IslandTab] {
-        [
-            IslandTab(
-                page: .nowPlaying,
-                symbol: shownTrack != nil ? "music.note" : "house.fill",
-                title: shownTrack != nil ? "Playing" : "Home"),
+        var tabs = [IslandTab(page: .home, symbol: "house.fill", title: "Home")]
+        if shownTrack != nil {
+            tabs.append(IslandTab(page: .nowPlaying, symbol: "music.note", title: "Playing"))
+        }
+        tabs += [
             IslandTab(page: .calendar, symbol: "calendar", title: "Calendar"),
             IslandTab(page: .weather, symbol: "cloud.sun.fill", title: "Weather"),
             IslandTab(page: .battery, symbol: "battery.100percent", title: "Battery"),
             IslandTab(page: .timer, symbol: "timer", title: "Timer"),
             IslandTab(page: .shelf, symbol: "tray.fill", title: "Shelf"),
         ]
+        return tabs
     }
 
     private func selectTab(_ page: OpenPage) {
-        openPage = (page == .nowPlaying && shownTrack == nil) ? .home : page
+        openPage = page
+    }
+
+    /// Tabs that open the island to the wide, two-pane width.
+    private func isWidePage(_ page: OpenPage) -> Bool {
+        page == .calendar
+    }
+
+    /// Keep the shared wide flag in step with the open tab, so the silhouette
+    /// widens for two-pane pages and shrinks back for the rest.
+    private func updateOpenWidth() {
+        state.openPageWide = isOpen && isWidePage(openPage)
     }
 
     var body: some View {
@@ -306,6 +320,7 @@ struct OverlayRootView: View {
                             headerHeight: state.collapsedSize.height,
                             notchWidth: notchClearance,
                             eventDays: calendar.monthEventDays,
+                            wide: true,
                             onClose: { openPage = shownTrack != nil ? .nowPlaying : .home })
                             .frame(width: state.visibleSize.width, height: pageHeight, alignment: .top)
                             .transition(.islandOpen)
@@ -483,20 +498,23 @@ struct OverlayRootView: View {
                 MotionStyle.animation(settings.motion.peek, reduceMotion: reduceMotion),
                 value: openPage)
 
-            if isOpen {
-                IslandTabBar(
-                    tabs: islandTabs,
-                    current: openPage,
-                    accent: settings.accent.color,
-                    onSelect: selectTab)
-                    .padding(.bottom, 8)
-                    .frame(
-                        width: state.visibleSize.width,
-                        height: state.visibleSize.height,
-                        alignment: .bottom)
-                    .onHover { state.isOverControl = $0 }
-                    .transition(.opacity)
-            }
+            // Always mounted so the selected-tab pill keeps its matched-geometry
+            // position; it just fades and eases down from the top as the island
+            // opens, rather than sliding in from the left.
+            IslandTabBar(
+                tabs: islandTabs,
+                current: openPage,
+                accent: settings.accent.color,
+                onSelect: selectTab)
+                .padding(.bottom, 8)
+                .frame(
+                    width: state.visibleSize.width,
+                    height: state.visibleSize.height,
+                    alignment: .bottom)
+                .opacity(isOpen ? 1 : 0)
+                .offset(y: isOpen ? 0 : -12)
+                .allowsHitTesting(isOpen)
+                .onHover { if isOpen { state.isOverControl = $0 } }
         }
         .scaleEffect(isPressed && !isOpen && !state.isOverControl ? 0.96 : 1, anchor: .top)
         .animation(
@@ -531,6 +549,7 @@ struct OverlayRootView: View {
             state.isHovering = hovering
         }
         .animation(sizeAnimation, value: state.phase)
+        .animation(sizeAnimation, value: state.openPageWide)
         .animation(
             MotionStyle.animation(settings.motion.peek, reduceMotion: reduceMotion),
             value: state.isHovering)
@@ -583,10 +602,12 @@ struct OverlayRootView: View {
         .onChange(of: settings.useLiveWaveform) { _, _ in updateAudioMonitor() }
         .onChange(of: isOpen) { _, open in
             if !open { resetOpenPage() }
+            updateOpenWidth()
             if settings.haptics {
                 NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)
             }
         }
+        .onChange(of: openPage) { _, _ in updateOpenWidth() }
         .onChange(of: settings.mediaSource) { _, _ in updateNowPlayingActive() }
         .onChange(of: settings.hidesMediaWhenSourceFrontmost) { _, _ in updateNowPlayingActive() }
         .onChange(of: frontmostBundleId) { _, _ in updateNowPlayingActive() }
