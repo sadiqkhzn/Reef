@@ -10,5 +10,12 @@
          one. -->
     <key>com.apple.security.app-sandbox</key>
     <false/>
+    <!-- Allow the hardened runtime to load the embedded third-party frameworks
+         (Sparkle, Vortex, MediaRemoteAdapter) when the app is only ad-hoc
+         signed. Without this, library validation rejects them ("different Team
+         IDs") and the Release build crashes on launch. A Developer ID +
+         notarized build signs everything with one team and would not need it. -->
+    <key>com.apple.security.cs.disable-library-validation</key>
+    <true/>
 </dict>
 </plist>
