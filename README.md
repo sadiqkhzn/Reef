@@ -109,12 +109,13 @@ xcodebuild -project Reef.xcodeproj -scheme Reef -destination 'platform=macOS' te
 To build a distributable disk image yourself:
 
 ```
+brew install create-dmg   # one-time
 scripts/make-dmg.sh
 ```
 
-This builds a Release `Reef.app` and writes `dist/Reef-<version>.dmg` with an
-Applications drop-link. The version comes from `MARKETING_VERSION` in
-`project.yml`.
+This builds a Release `Reef.app` and writes a styled `dist/Reef-<version>.dmg`
+(custom background, a drag-to-Applications layout, and a volume icon). The
+version comes from `MARKETING_VERSION` in `project.yml`.
 
 ## Principles
 
