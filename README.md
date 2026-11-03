@@ -106,15 +106,16 @@ To run the tests from the command line:
 xcodebuild -project Reef.xcodeproj -scheme Reef -destination 'platform=macOS' test
 ```
 
-To build a distributable disk image yourself:
+To build a distributable disk image yourself (needs Node.js for `npx`):
 
 ```
 scripts/make-dmg.sh
 ```
 
-This builds a Release `Reef.app` and writes `dist/Reef-<version>.dmg` with an
-Applications drop-link. The version comes from `MARKETING_VERSION` in
-`project.yml`.
+This builds a Release `Reef.app` and uses
+[create-dmg](https://github.com/sindresorhus/create-dmg) (via `npx`) to write a
+styled `dist/Reef-<version>.dmg` with a drag-to-Applications layout and a volume
+icon. The version comes from `MARKETING_VERSION` in `project.yml`.
 
 ## Principles
 

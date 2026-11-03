@@ -1,23 +1,32 @@
 #!/usr/bin/env bash
-# Build a Release Reef.app and package it into a distributable .dmg.
+# Build a Release Reef.app and package it into a distributable .dmg using
+# sindresorhus/create-dmg (via npx) — the same recipe Atoll ships with. It
+# auto-generates the window background, the Applications drop-link, the icon
+# layout, and a volume icon from the app icon.
 # Usage: scripts/make-dmg.sh
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 
 SCHEME="Reef"
 APP_NAME="Reef"
 BUILD_DIR="$PWD/.dmgbuild"
-STAGE_DIR="$BUILD_DIR/stage"
-DIST_DIR="$PWD/dist"
+OUT="$BUILD_DIR/out"
+DIST="$PWD/dist"
+
+if ! command -v npx >/dev/null 2>&1; then
+  echo "error: npx (Node.js) not found. Install Node, e.g. brew install node" >&2
+  exit 1
+fi
 
 VERSION="$(/usr/bin/grep -E 'MARKETING_VERSION' project.yml | head -1 | sed -E 's/.*"([^"]+)".*/\1/')"
 VERSION="${VERSION:-0.0.0}"
-DMG_PATH="$DIST_DIR/${APP_NAME}-${VERSION}.dmg"
+FINAL="$DIST/${APP_NAME}-${VERSION}.dmg"
 
 echo "==> Building ${APP_NAME} ${VERSION} (Release)"
 rm -rf "$BUILD_DIR"
-mkdir -p "$STAGE_DIR" "$DIST_DIR"
+mkdir -p "$OUT" "$DIST"
 
 xcodebuild \
   -scheme "$SCHEME" \
@@ -32,19 +41,19 @@ if [[ ! -d "$APP_PATH" ]]; then
   exit 1
 fi
 
-echo "==> Staging app + Applications shortcut"
-cp -R "$APP_PATH" "$STAGE_DIR/"
-ln -s /Applications "$STAGE_DIR/Applications"
+echo "==> Creating the DMG (sindresorhus/create-dmg)"
+# create-dmg writes "<Name> <version>.dmg" into the destination directory. It can
+# exit non-zero on a cosmetic warning while still producing the image, so check
+# for the file afterwards.
+( cd "$OUT" && npx --yes create-dmg "$APP_PATH" . --overwrite --no-code-sign ) || true
 
-echo "==> Creating DMG"
-rm -f "$DMG_PATH"
-hdiutil create \
-  -volname "$APP_NAME" \
-  -srcfolder "$STAGE_DIR" \
-  -fs HFS+ \
-  -format UDZO \
-  -ov \
-  "$DMG_PATH" >/dev/null
+GENERATED="$(find "$OUT" -maxdepth 1 -name '*.dmg' | head -1)"
+if [[ -z "$GENERATED" ]]; then
+  echo "error: create-dmg produced no .dmg in $OUT" >&2
+  exit 1
+fi
 
+rm -f "$FINAL"
+mv "$GENERATED" "$FINAL"
 rm -rf "$BUILD_DIR"
-echo "==> Done: $DMG_PATH"
+echo "==> Done: $FINAL"
